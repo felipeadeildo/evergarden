@@ -15,4 +15,6 @@ Read [docs/design.md](docs/design.md) before changing server code and [docs/desi
 ## Linting and formatting
 
 - After making code changes, run `bunx oxlint --fix`, then `bunx oxfmt`.
+- Never silence a rule with `oxlint-disable`; change the code so the rule passes.
+- Comment only what the code cannot say: a reason, a constraint, a surprising external behavior. One line when possible.
 - Before finishing, run `bun run check`.
