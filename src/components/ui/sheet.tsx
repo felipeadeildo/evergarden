@@ -1,4 +1,6 @@
-import { type ReactNode, useEffect, useRef } from "react";
+import type { ReactNode } from "react";
+
+import { useModal } from "./modal";
 
 /**
  * A modal dialog that rises from the bottom on phones and sits in the middle on larger screens.
@@ -17,14 +19,7 @@ export function Sheet({
   children: ReactNode;
   className?: string;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-
-  useEffect(() => {
-    const element = dialog.current;
-    if (!element) return;
-    if (open && !element.open) element.showModal();
-    if (!open && element.open) element.close();
-  }, [open]);
+  const dialog = useModal(open);
 
   // A click on the backdrop lands on the dialog itself; Escape already closes it natively.
   return (
