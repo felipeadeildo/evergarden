@@ -8,6 +8,7 @@ import { VersionsMenu } from "#/components/document/versions-menu";
 import { FolderPath } from "#/components/navigation/folder-path";
 import { TopBar } from "#/components/navigation/top-bar";
 import { ContentsIcon } from "#/components/ui/icons";
+import { Page, PageHeader } from "#/components/ui/page";
 import { Sheet } from "#/components/ui/sheet";
 import { getDocumentPage } from "#/functions/library.functions";
 
@@ -48,29 +49,20 @@ function DocumentPage() {
       >
         <FolderPath key={document.id} path={folder} documentId={document.id} />
       </TopBar>
-      <div className="reading">
-        {hasContents ? (
-          <aside className="reading-contents">
-            <Contents headings={body.headings} />
-          </aside>
+      <Page aside={hasContents ? <Contents headings={body.headings} /> : null}>
+        {isOld ? (
+          <p className="old-version">
+            You are reading version {version.number} of {document.version}.{" "}
+            <Link to="/d/$id" params={{ id: document.id }}>
+              Read the current version
+            </Link>
+          </p>
         ) : null}
-        <main id="main" className="reading-text">
-          {isOld ? (
-            <p className="old-version">
-              You are reading version {version.number} of {document.version}.{" "}
-              <Link to="/d/$id" params={{ id: document.id }}>
-                Read the current version
-              </Link>
-            </p>
-          ) : null}
-          <header className="document-header">
-            <h1>{document.title}</h1>
-            <VersionsMenu documentId={document.id} versions={versions} shown={version.number} />
-          </header>
-          <DocumentBody tree={body.tree} />
-        </main>
-        <div className="reading-margin" aria-hidden="true" />
-      </div>
+        <PageHeader title={document.title}>
+          <VersionsMenu documentId={document.id} versions={versions} shown={version.number} />
+        </PageHeader>
+        <DocumentBody tree={body.tree} />
+      </Page>
       <Sheet open={contentsOpen} onClose={() => setContentsOpen(false)} label="Contents">
         <Contents headings={body.headings} onNavigate={() => setContentsOpen(false)} />
       </Sheet>

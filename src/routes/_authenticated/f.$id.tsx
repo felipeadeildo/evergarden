@@ -4,6 +4,7 @@ import { DocumentRow, FolderRow, RepositoryLink } from "#/components/library/row
 import { type FolderView, useFolder } from "#/components/library/use-folder";
 import { FolderPath } from "#/components/navigation/folder-path";
 import { TopBar } from "#/components/navigation/top-bar";
+import { Page, PageHeader } from "#/components/ui/page";
 import { getFolderPage } from "#/functions/library.functions";
 
 export const Route = createFileRoute("/_authenticated/f/$id")({
@@ -23,16 +24,15 @@ function FolderPage() {
       <TopBar>
         <FolderPath key={folder.id} path={folder.path} />
       </TopBar>
-      <main id="main" className="library">
-        <header className="folder-header">
-          <h1>{folder.name}</h1>
-          <p className="folder-meta">
+      <Page>
+        <PageHeader title={folder.name}>
+          <p className="page-details">
             {folder.documents === 1 ? "1 document" : `${folder.documents} documents`}
             {folder.repo ? <RepositoryLink repo={folder.repo} /> : null}
           </p>
-        </header>
+        </PageHeader>
         <FolderListing listing={listing} path={folder.path.map((step) => step.name).join("/")} />
-      </main>
+      </Page>
     </>
   );
 }
@@ -41,7 +41,7 @@ function FolderListing({ listing, path }: { listing: FolderView; path: string })
   if (listing.state !== "ready") return null;
   if (listing.folders.length + listing.documents.length === 0) {
     return (
-      <p className="folder-empty">
+      <p className="page-note">
         Nothing here yet. An agent files a document here by publishing it with the folder{" "}
         <code>{path}</code>.
       </p>
