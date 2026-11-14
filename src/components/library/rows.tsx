@@ -7,13 +7,8 @@ import type { DocumentEntry, FolderSummary } from "#/server/library";
 
 import type { ReadyFolder } from "./use-folder";
 
-/*
- * Every list in the library uses one row: icon, name, where it sits, and when it changed (or, for
- * a folder, its repository and size). The rows of a list share their columns, so names, places
- * and times line up whatever their length. See .rows in styles.css.
- */
+// The rows of a list share their columns (subgrid), so names, places and times line up.
 
-/** A document; `unread` when it changed since you last read it. */
 export function DocumentRow({
   entry,
   place,
@@ -44,7 +39,6 @@ export function DocumentRow({
   );
 }
 
-/** A folder, with the repository it is linked to and how many documents it holds. */
 export function FolderRow({ entry }: { entry: FolderSummary }) {
   return (
     <li>
@@ -60,7 +54,6 @@ export function FolderRow({ entry }: { entry: FolderSummary }) {
   );
 }
 
-/** The repository a folder is linked to, opening it on its host. */
 export function RepositoryLink({ repo }: { repo: string }) {
   return (
     <a className="repository" href={`https://${repo}`} target="_blank" rel="noreferrer">
@@ -70,7 +63,6 @@ export function RepositoryLink({ repo }: { repo: string }) {
   );
 }
 
-/** Loads the next page of a folder's documents, saying how many come next. */
 export function LoadMore({ folder }: { folder: ReadyFolder }) {
   if (folder.more === 0) return null;
   return (

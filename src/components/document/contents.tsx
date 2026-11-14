@@ -2,7 +2,7 @@ import { type RefObject, useEffect, useRef, useState } from "react";
 
 import type { Heading } from "#/render";
 
-/** Follows the section being read: the last heading that has passed the top third of the screen. */
+/** The heading being read is the last one past the top third of the screen. */
 function useCurrentHeading(headings: Heading[]): string | undefined {
   const [current, setCurrent] = useState(headings[0]?.id);
 
@@ -62,10 +62,7 @@ export function Contents({
   );
 }
 
-/**
- * Keeps the current heading in view when the list is taller than the screen, and says which ends
- * have more headings past them ("top", "bottom", both or neither), so CSS fades only those ends.
- */
+/** Reports which ends of the list have more headings past them, so CSS fades only those ends. */
 function useFollow(nav: RefObject<HTMLElement | null>, current: string | undefined): string {
   const [more, setMore] = useState("");
 

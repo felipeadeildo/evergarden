@@ -1,9 +1,8 @@
 import { env, waitUntil } from "cloudflare:workers";
 
 /**
- * Emails a sign-in code through Cloudflare Email Service. The request returns before the email
- * goes out, so the response time does not reveal whether the address has an account. In local
- * development the binding sends nothing, so the code is also printed in the terminal.
+ * Returns before the email goes out, so the response time does not reveal which addresses can
+ * sign in. `bun run dev` sends nothing, so the code is also printed.
  */
 export function sendSignInCode(email: string, code: string): void {
   if (import.meta.env?.DEV) console.log(`[evergarden] sign-in code for ${email}: ${code}`);

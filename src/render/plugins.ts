@@ -57,7 +57,6 @@ function data(file: VFile): RenderData {
   return file.data.evergarden;
 }
 
-/** Reads `title` from YAML frontmatter. */
 export function remarkFrontmatterTitle() {
   return (tree: MdastRoot, file: VFile) => {
     const yaml = tree.children.find((node) => node.type === "yaml");
@@ -74,10 +73,7 @@ export function remarkFrontmatterTitle() {
   };
 }
 
-/**
- * Runs after sanitising, on trusted structure: callouts, mermaid figures, source offsets,
- * heading ids, the title, the plain text for search, and which client features the page needs.
- */
+/** Runs after sanitising, so it only adds trusted structure. */
 export function rehypeEvergarden() {
   return (tree: Root, file: VFile) => {
     const result = data(file);
@@ -171,7 +167,6 @@ function languageOf(code: Element): string | undefined {
   return language?.slice("language-".length);
 }
 
-/** A highlighted code block in a figure, which carries the block's offsets and language. */
 function codeFigure(
   pre: Element,
   language: string | undefined,
@@ -193,8 +188,8 @@ function codeFigure(
 }
 
 /**
- * A mermaid block drawn by Pele. The server draws it so the page shows the diagram before any
- * script runs; the browser draws it again from the hidden source, at the width it really has.
+ * Drawn on the server so the diagram shows before any script runs; the browser draws it again
+ * from the hidden source, at the width it really has.
  */
 function diagramFigure(source: string, offsets: string | undefined): Element {
   const figure = (children: Element[], error?: string): Element => ({

@@ -12,16 +12,10 @@ import {
 } from "#/components/ui/icons";
 import type { FolderStep } from "#/server/library";
 
-/** A folder in the menu's trail; `id: null` is the top of the library. */
 type Stop = { id: string | null; name: string };
 
 const LIBRARY: Stop = { id: null, name: "Library" };
 
-/**
- * Where a document or a folder sits, as one control in the top bar. It opens on the last folder
- * of the path; the back button climbs one folder at a time up to the library, and the menu's
- * title opens the folder shown as a page. Phones show only the last folder of the path.
- */
 export function FolderPath({ path, documentId }: { path: FolderStep[]; documentId?: string }) {
   const menuId = useId();
   const menu = useRef<HTMLDivElement>(null);
@@ -73,12 +67,10 @@ function FolderMenu({
   onLeave,
 }: {
   trail: Stop[];
-  /** Whether a folder holds the document, so the menu can mark the way back to it. */
   isOnPath: (id: string) => boolean;
   documentId?: string;
   onEnter: (stop: Stop) => void;
   onBack: () => void;
-  /** Closes the menu when one of its links navigates away. */
   onLeave: () => void;
 }) {
   const current = trail.at(-1) ?? LIBRARY;

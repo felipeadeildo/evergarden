@@ -1,10 +1,6 @@
 import type { ReactNode } from "react";
 
-/**
- * The frame of every library page: a side column, the text column and the margin. Documents,
- * folders, the library and settings all put their content in the same column, so moving between
- * them never shifts the page. The side column holds a document's contents; elsewhere it is empty.
- */
+/** Every library page uses this frame, so moving between pages never shifts the text column. */
 export function Page({ aside, children }: { aside?: ReactNode; children: ReactNode }) {
   return (
     <div className="page">
@@ -17,7 +13,6 @@ export function Page({ aside, children }: { aside?: ReactNode; children: ReactNo
   );
 }
 
-/** A page's title, with one line of details under it. */
 export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <header className="page-header">

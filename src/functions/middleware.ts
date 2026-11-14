@@ -11,7 +11,6 @@ export const libraryAccess = createMiddleware({ type: "function" }).server(async
   return next({ context: { principal } });
 });
 
-/** For what only the owner, in a browser, may do: connect and revoke agents. */
 export const ownerAccess = createMiddleware({ type: "function" }).server(async ({ next }) => {
   const principal = await principalFrom(getRequestHeaders());
   authorize(principal);

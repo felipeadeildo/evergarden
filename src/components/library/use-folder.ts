@@ -7,7 +7,6 @@ export type ReadyFolder = {
   state: "ready";
   folders: FolderSummary[];
   documents: DocumentEntry[];
-  /** Documents not loaded yet. */
   more: number;
   loadingMore: boolean;
   loadMore: () => void;
@@ -18,10 +17,7 @@ export type FolderView =
   | { state: "failed"; retry: () => void }
   | ReadyFolder;
 
-/**
- * What a folder holds, `null` being the top of the library. Loaded once per folder and shared:
- * the library tree and the folder menu in the top bar read the same cache.
- */
+/** Shared by the library and the folder menu, so each folder loads once. */
 export function useFolder(folderId: string | null, first?: FolderPage): FolderView {
   const query = useInfiniteQuery({
     queryKey: ["folder", folderId],

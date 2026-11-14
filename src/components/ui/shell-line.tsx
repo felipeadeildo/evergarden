@@ -8,7 +8,6 @@ const highlighter = createHighlighter({ languages: [shell] });
 // index, so it can be muted and the values between flags stand out.
 const FLAG = /(?<=^|\s)(--?[a-z][\w-]*)/;
 
-/** One line of shell, coloured with the same `th-*` classes as code in documents. */
 export function ShellLine({ text }: { text: string }) {
   const parts: ReactNode[] = [];
   function add(value: string, className?: string) {

@@ -14,7 +14,6 @@ export type Principal =
   | { kind: "agent"; agentId: string; name: string }
   | { kind: "guest"; userId: string; name: string; email: string };
 
-/** An API key from `Authorization: Bearer eg_…` or `x-api-key`, otherwise the session cookie. */
 export async function principalFrom(headers: Headers): Promise<Principal | null> {
   const key = apiKeyFrom(headers);
   if (key) {
@@ -35,10 +34,7 @@ export async function principalFrom(headers: Headers): Promise<Principal | null>
     : { kind: "guest", userId: viewer.id, name: viewer.name, email: viewer.email };
 }
 
-/**
- * The agent behind a verified OAuth access token. The token alone is not enough: the owner may
- * have revoked the agent since it was issued, and only the owner's agents get in.
- */
+/** A valid token is not enough: the owner may have revoked the agent since it was issued. */
 export async function principalFromToken(claims: JWTPayload): Promise<Principal> {
   const userId = claims.sub;
   const clientId = typeof claims.azp === "string" ? claims.azp : claims.client_id;
@@ -57,7 +53,6 @@ export async function principalFromToken(claims: JWTPayload): Promise<Principal>
   return { kind: "agent", agentId: found.id, name: found.name };
 }
 
-/** Throws unless the principal may read and write the library. */
 export function authorize(principal: Principal | null): asserts principal is Principal {
   if (!principal) {
     throw new EvergardenError("unauthorized", "Sign in, or send an API key, to use this library.");
@@ -73,7 +68,6 @@ export function authorOf(principal: Principal): Author {
     : { kind: "user", id: principal.userId, name: principal.name };
 }
 
-/** An evergarden API key, as opposed to an OAuth access token in the same header. */
 export function apiKeyFrom(headers: Headers): string | null {
   const bearer = /^Bearer\s+(eg_\S+)$/i.exec(headers.get("authorization") ?? "")?.[1];
   return bearer ?? headers.get("x-api-key");

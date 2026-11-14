@@ -5,10 +5,6 @@ import { CheckIcon, HistoryIcon, OpenMenuIcon } from "#/components/ui/icons";
 import { RelativeTime } from "#/components/ui/relative-time";
 import type { VersionEntry } from "#/server/library";
 
-/**
- * "Updated 2 hours ago by pi". With more than one version it opens the list, newest first,
- * to read an older one; with a single version there is nothing to choose, so it is plain text.
- */
 export function VersionsMenu({
   documentId,
   versions,

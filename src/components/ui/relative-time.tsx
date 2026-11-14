@@ -36,10 +36,7 @@ export function formatShort(date: Date, now = Date.now()): string {
   return (sameYear ? day : dayOfYear).format(date);
 }
 
-/**
- * "2 hours ago", or "2h" when `short`, with the full date on hover. Server and browser clocks may
- * differ by a minute, so hydration accepts a different text.
- */
+/** Server and browser clocks may differ by a minute, so hydration accepts a different text. */
 export function RelativeTime({ date, short = false }: { date: Date; short?: boolean }) {
   return (
     <time dateTime={date.toISOString()} title={absolute.format(date)} suppressHydrationWarning>

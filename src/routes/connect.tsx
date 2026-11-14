@@ -5,10 +5,6 @@ import { getConnectRequest, nameConnectingAgent } from "#/functions/agents.funct
 import { authClient } from "#/lib/auth-client";
 import { textField } from "#/lib/form";
 
-/**
- * Where Better Auth sends the owner when an agent asks to connect over OAuth: name the agent,
- * then allow or deny. The signed request rides on the URL.
- */
 export const Route = createFileRoute("/connect")({
   // The signature covers the raw query, repeated keys included, which the router's parsed search
   // does not keep. So this page renders in the browser, where window.location has it intact.

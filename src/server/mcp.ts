@@ -20,7 +20,6 @@ const INSTRUCTIONS = [
   "syntax and how your user wants documents written.",
 ].join(" ");
 
-/** Serves one MCP request for an authorised principal. The server is stateless. */
 export function serveMcp(request: Request, principal: Principal): Promise<Response> {
   const origin = new URL(request.url).origin;
   return createMcpHandler(() => mcpServer(principal, origin)).fetch(request);

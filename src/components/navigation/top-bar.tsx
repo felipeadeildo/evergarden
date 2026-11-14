@@ -5,7 +5,6 @@ import { SearchIcon, SettingsIcon } from "#/components/ui/icons";
 
 import { useOpenSearch } from "./search";
 
-/** The quiet bar above every library page: the name, where you are, search and settings. */
 export function TopBar({ children, actions }: { children?: ReactNode; actions?: ReactNode }) {
   const openSearch = useOpenSearch();
   return (

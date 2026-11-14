@@ -8,7 +8,6 @@ import { EvergardenError } from "#/server/errors";
 
 const MAX_NAME_LENGTH = 100;
 
-/** `reports/2026` becomes `["reports", "2026"]`. */
 export function parseFolderPath(path: string): string[] {
   const names = path
     .split("/")
@@ -62,7 +61,6 @@ async function childFolder(parentId: string | null, name: string): Promise<strin
   return found?.id;
 }
 
-/** Finds a folder by path, or returns null when any part is missing. */
 export async function findFolder(names: string[]): Promise<string | null> {
   let parentId: string | null = null;
   for (const name of names) {
@@ -73,7 +71,7 @@ export async function findFolder(names: string[]): Promise<string | null> {
   return parentId;
 }
 
-/** Finds a folder by path, creating the missing parts at the end of their parents. */
+/** Missing parts are created at the end of their parents. */
 export async function ensureFolder(names: string[], repo?: string): Promise<string | null> {
   let parentId: string | null = null;
   for (const [index, name] of names.entries()) {
@@ -130,7 +128,6 @@ export async function resolveTarget(path?: string, repo?: string): Promise<strin
 
 export type FolderStep = { id: string; name: string };
 
-/** The folders from the root down to a folder, such as reports, then 2026. */
 export async function folderPath(folderId: string | null): Promise<FolderStep[]> {
   const path: FolderStep[] = [];
   for (let id = folderId; id;) {

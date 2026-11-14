@@ -9,7 +9,7 @@ export async function sha256(text: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-/** Stores the text and its rendered tree. Rows are keyed by hash, so storing twice is harmless. */
+/** Rows are keyed by hash, so storing twice is harmless. */
 export async function store(sha: string, markdown: string, output: Rendered): Promise<void> {
   const cache = { rendered: await gzip(output), rendererVersion: RENDERER_VERSION };
   await db
@@ -28,7 +28,6 @@ export async function source(sha: string): Promise<string> {
   return row.markdown;
 }
 
-/** The rendered tree, from the cache when this renderer version already produced it. */
 export async function rendered(sha: string): Promise<Rendered> {
   const row = await db.select().from(content).where(eq(content.sha256, sha)).get();
   if (!row) throw new Error(`Missing content ${sha}`);

@@ -1,19 +1,12 @@
-/** One agent's way to add the evergarden MCP server from a terminal. */
 export type AgentCommand = {
   client: string;
-  /** The shell lines to run, in order. */
   lines: string[];
   note?: string;
 };
 
 const NAME = "evergarden";
 
-/**
- * The commands each agent CLI takes to add this server. Without `key` the agent signs in over
- * OAuth, in the browser, the first time it connects; with `key` it sends the key on every call.
- * Syntax checked against each CLI: pi `--header KEY=VALUE`, Claude Code and Gemini CLI
- * `--header "Name: value"`, Codex reads a token only from an environment variable.
- */
+/** Codex takes a token only from an environment variable, so its key case needs an export. */
 export function agentCommands(server: string, key?: string): AgentCommand[] {
   return key ? withKey(server, key) : withOAuth(server);
 }

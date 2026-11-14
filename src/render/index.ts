@@ -28,9 +28,7 @@ export type Rendered = {
   /** From frontmatter `title` or a leading `# heading`; the heading is then removed from `tree`. */
   title: string | null;
   headings: Heading[];
-  /** Plain text of the body, for the search index. */
   text: string;
-  /** Client code the page has to load. */
   features: { math: boolean; diagram: boolean };
 };
 
@@ -44,7 +42,6 @@ const schema: Schema = {
   },
 };
 
-/** Renders markdown into a sanitised hast tree whose blocks carry `data-sourcepos="start-end"`. */
 export async function render(source: string): Promise<Rendered> {
   const processor = unified()
     .use(remarkParse)

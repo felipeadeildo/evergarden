@@ -46,10 +46,8 @@ export type FolderEntry = {
   repo: string | null;
 };
 
-/** A folder in a list, with how many documents it holds, its subfolders included. */
 export type FolderSummary = FolderEntry & { documents: number };
 
-/** What sits directly inside a folder: its folders, and one page of its documents. */
 export type FolderPage = { folders: FolderSummary[]; documents: DocumentEntry[]; more: number };
 
 export type VersionEntry = {
@@ -74,7 +72,6 @@ const currentVersion = and(
   eq(version.number, document.currentVersion),
 );
 
-/** Documents that are not deleted, with their current version's author. */
 function liveDocuments(where?: SQL) {
   return db
     .select(documentEntry)
@@ -100,9 +97,8 @@ export async function getDocument(id: string): Promise<DocumentEntry> {
 export type Published = { id: string; version: number; created: boolean };
 
 /**
- * Creates a document. Publishing content that is already the current version of a document
- * returns that document instead, so an agent retrying after a timeout creates no duplicate.
- * `title` is used only when the content has no frontmatter title or leading heading.
+ * Publishing content that is already a document's current version returns that document,
+ * so an agent retrying after a timeout creates no duplicate.
  */
 export async function publish(
   input: { content: string; title?: string; folder?: string; repo?: string },
@@ -137,10 +133,7 @@ export async function publish(
 
 export type Updated = { id: string; version: number; changed: boolean };
 
-/**
- * Saves a new version. Content equal to the current version saves nothing. With `baseVersion`,
- * the call fails when someone else saved a version since, instead of overwriting it.
- */
+/** With `baseVersion`, fails when someone saved a version since, instead of overwriting it. */
 export async function update(
   id: string,
   input: { content: string; baseVersion?: number },
@@ -217,7 +210,6 @@ export async function versions(id: string): Promise<VersionEntry[]> {
 
 export type Library = { folders: FolderEntry[]; documents: DocumentEntry[] };
 
-/** Every folder and live document, or only the subtree of a folder path or linked repository. */
 export async function list(filter: { folder?: string; repo?: string } = {}): Promise<Library> {
   const folders = await db.select(folderColumns).from(folder).all();
   const documents = await liveDocuments().all();
@@ -248,11 +240,7 @@ export async function list(filter: { folder?: string; repo?: string } = {}): Pro
   };
 }
 
-/**
- * The folders and documents directly inside a folder, or at the top of the library for `null`.
- * Documents come `FOLDER_PAGE_SIZE` at a time from `offset`; `more` counts the ones left after this page.
- * Folders come with the first page only.
- */
+/** Folders come with the first page only. */
 export async function folderContents(folderId: string | null, offset = 0): Promise<FolderPage> {
   const inFolder = folderId ? eq(document.folderId, folderId) : isNull(document.folderId);
   const [folders, documents, total] = await Promise.all([
@@ -271,7 +259,6 @@ export async function folderContents(folderId: string | null, offset = 0): Promi
   return { folders, documents, more: Math.max(0, (total?.count ?? 0) - offset - documents.length) };
 }
 
-/** The folders directly inside a folder, each with the documents in its whole subtree. */
 async function childFolders(parentId: string | null): Promise<FolderSummary[]> {
   const children = await db
     .select(folderColumns)
@@ -285,7 +272,6 @@ async function childFolders(parentId: string | null): Promise<FolderSummary[]> {
   return children.map((entry) => Object.assign(entry, { documents: byRoot.get(entry.id) ?? 0 }));
 }
 
-/** The documents in each folder's whole subtree, for the given folder ids. */
 function countDocuments(ids: string[]): Promise<Array<{ root: string; documents: number }>> {
   return db.all<{ root: string; documents: number }>(sql`
     with recursive tree(root, id) as (
@@ -300,7 +286,6 @@ function countDocuments(ids: string[]): Promise<Array<{ root: string; documents:
   `);
 }
 
-/** Adds the folder path of each document, reading the folder table once. */
 export async function withPlaces<T extends DocumentEntry>(
   entries: T[],
 ): Promise<Array<T & { place: string | null }>> {
@@ -319,7 +304,6 @@ export async function withPlaces<T extends DocumentEntry>(
   });
 }
 
-/** Records that `userId` read `versionNumber`; "New for you" compares against it. */
 export async function markRead(userId: string, documentId: string, versionNumber: number) {
   await db
     .insert(readMark)
@@ -333,13 +317,9 @@ export async function markRead(userId: string, documentId: string, versionNumber
     });
 }
 
-/** A recently updated document, with whether the reader has seen its current version. */
 export type RecentDocument = DocumentEntry & { place: string | null; unread: boolean };
 
-/**
- * The documents updated most recently, newest first. For a signed-in reader, `unread` marks the
- * ones whose current version they have not opened; a document never opened counts as unread.
- */
+/** A document the reader never opened counts as unread. */
 export async function recent(userId: string | null, limit = 10): Promise<RecentDocument[]> {
   const unread = sql<number>`${userId === null ? 0 : 1}
     and coalesce(${readMark.versionNumber}, 0) < ${document.currentVersion}`.mapWith(Boolean);
@@ -358,7 +338,6 @@ export async function recent(userId: string | null, limit = 10): Promise<RecentD
   return withPlaces(rows);
 }
 
-/** One folder with the folders above it and the documents in its subtree, for its page. */
 export async function folderInfo(id: string): Promise<FolderSummary & { path: FolderStep[] }> {
   const row = await db.select(folderColumns).from(folder).where(eq(folder.id, id)).get();
   if (!row) throw new EvergardenError("not_found", "There is no folder with this id.");

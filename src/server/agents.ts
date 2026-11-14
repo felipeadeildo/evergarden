@@ -14,19 +14,15 @@ import {
 } from "#/server/db/schema";
 import { EvergardenError } from "#/server/errors";
 
-/** An agent as the owner sees it in settings. */
 export type AgentEntry = {
   id: string;
   name: string;
-  /** How it connected: approved over OAuth, or holding an API key. */
   method: "oauth" | "key";
-  /** The name the agent's software gave itself, such as "pi" or "Claude Code". */
   client: string | null;
   createdAt: Date;
   lastUsedAt: Date | null;
 };
 
-/** The agent signing a request: its row id and the name that signs what it writes. */
 export type AgentIdentity = { id: string; name: string };
 
 const MAX_NAME = 40;
@@ -37,7 +33,6 @@ function cleanName(name: string): string {
   return trimmed;
 }
 
-/** The OAuth client asking for access, for the /connect page: its own name and where it returns. */
 export async function clientForConsent(clientId: string): Promise<{ name: string | null }> {
   const found = await db
     .select({ name: oauthClient.name })
@@ -48,7 +43,6 @@ export async function clientForConsent(clientId: string): Promise<{ name: string
   return { name: found.name };
 }
 
-/** The name the owner already gave this OAuth client, if it connected before. */
 export async function existingName(userId: string, clientId: string): Promise<string | null> {
   const found = await db
     .select({ name: agent.name })
@@ -58,7 +52,6 @@ export async function existingName(userId: string, clientId: string): Promise<st
   return found?.name ?? null;
 }
 
-/** Records the name the owner chose on /connect, before the consent is sent. */
 export async function nameOAuthAgent(
   userId: string,
   clientId: string,
@@ -71,7 +64,7 @@ export async function nameOAuthAgent(
     .onConflictDoUpdate({ target: [agent.userId, agent.clientId], set: { name: chosen } });
 }
 
-/** Creates an API key for an agent and returns its value; this is the only time it is readable. */
+/** The only time the key is readable. */
 export async function createKeyAgent(userId: string, name: string): Promise<string> {
   const chosen = cleanName(name);
   const created = await auth.api.createApiKey({ body: { name: chosen, userId } });
@@ -79,7 +72,6 @@ export async function createKeyAgent(userId: string, name: string): Promise<stri
   return created.key;
 }
 
-/** The agent behind an OAuth access token, or null when the owner revoked it. */
 export async function agentForClient(
   userId: string,
   clientId: string,
@@ -92,7 +84,7 @@ export async function agentForClient(
   return found ?? null;
 }
 
-/** The agent holding an API key. A key without an agent row predates agents and gets one. */
+/** A key created before agents existed gets its agent row here. */
 export async function agentForKey(
   apiKeyId: string,
   userId: string,
@@ -112,7 +104,6 @@ export async function agentForKey(
   return created;
 }
 
-/** Notes that an agent reached the library, at most once a minute. */
 export async function touchAgent(id: string): Promise<void> {
   const now = Date.now();
   await db
@@ -147,8 +138,8 @@ export async function listAgents(userId: string): Promise<AgentEntry[]> {
 }
 
 /**
- * Locks an agent out at once. A key is deleted; an OAuth agent loses its consent and tokens, so
- * reconnecting asks the owner again. The agent row goes last, which is what /mcp checks.
+ * Deleting the consent and tokens makes reconnecting ask the owner again. The agent row goes
+ * last, because /mcp checks it on every request.
  */
 export async function revokeAgent(userId: string, id: string): Promise<void> {
   const found = await db
@@ -182,18 +173,13 @@ export async function revokeAgent(userId: string, id: string): Promise<void> {
   await removeAgent;
 }
 
-/** The parts of a consent request the /connect page shows, after checking its signature. */
 export type ConnectRequest = {
   clientId: string;
-  /** What the agent's software calls itself, such as "pi". */
   clientName: string | null;
-  /** Where the browser goes back to after approval. */
   returnsTo: string;
-  /** The name to prefill: the one given before, or the software's own. */
   suggestedName: string;
 };
 
-/** Reads and verifies the signed query Better Auth put on the /connect URL. */
 export async function connectRequest(userId: string, search: string): Promise<ConnectRequest> {
   const params = new URLSearchParams(search);
   const signed = new Set(["sig", "ba_param", ...params.getAll("ba_param")]);

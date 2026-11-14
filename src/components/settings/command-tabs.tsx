@@ -5,7 +5,6 @@ import { ShellLine } from "#/components/ui/shell-line";
 
 import type { AgentCommand } from "./agent-commands";
 
-/** One tab per agent CLI, each with the command to run and a button that copies it. */
 export function CommandTabs({ commands }: { commands: AgentCommand[] }) {
   const [chosen, setChosen] = useState(0);
   const command = commands[chosen]!;

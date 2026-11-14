@@ -19,7 +19,6 @@ export const getAgents = createServerFn({ method: "GET" })
     return listAgents(owner.userId);
   });
 
-/** Returns the new key; the page shows it once. */
 export const createAgentKey = createServerFn({ method: "POST" })
   .middleware([ownerAccess])
   .validator(z.object({ name: z.string().max(80) }))
@@ -30,7 +29,6 @@ export const revokeAgentAccess = createServerFn({ method: "POST" })
   .validator(z.object({ id: z.string() }))
   .handler(({ data, context: { owner } }) => revokeAgent(owner.userId, data.id));
 
-/** The agent asking to connect, read from the signed query on the /connect URL. */
 export const getConnectRequest = createServerFn({ method: "GET" })
   .middleware([ownerAccess])
   .validator(z.object({ search: z.string().max(8000) }))

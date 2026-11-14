@@ -21,7 +21,6 @@ function isCalloutKind(kind: string): kind is keyof typeof CalloutIcons {
   return kind in CalloutIcons;
 }
 
-/** A callout keeps the title the renderer wrote and gains the icon of its kind. */
 function Aside({ node, children, ...props }: WithNode<"aside">) {
   const kind = node && stringProperty(node, "dataCallout");
   const Icon = kind && isCalloutKind(kind) ? CalloutIcons[kind] : null;
@@ -76,7 +75,6 @@ const components = {
   h4: sectionHeading("h4"),
 };
 
-/** The rendered markdown of one version, as React elements. */
 export function DocumentBody({ tree }: { tree: Root }) {
   const body = useMemo(
     () => toJsxRuntime(tree, { Fragment, jsx, jsxs, components, passNode: true }),

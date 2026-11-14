@@ -8,11 +8,7 @@ import { stringProperty } from "#/lib/hast";
 
 import { DiagramViewer } from "./diagram-viewer";
 
-/**
- * A diagram the server already drew. In the browser Pele draws it again at the real width and
- * with the real fonts, which can turn a wide flowchart vertical on a phone. The page shows the
- * whole diagram; opening it shows it full screen, to move around and zoom into.
- */
+/** Pele draws it again at the real width, which can turn a wide flowchart vertical on a phone. */
 export function Diagram({ node }: { node: Element }) {
   const drawing = node.children.find(
     (child): child is Element => child.type === "element" && child.tagName === "div",

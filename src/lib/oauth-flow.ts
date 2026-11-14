@@ -2,8 +2,7 @@
 const SIGNING_PARAMS = ["sig", "exp", "ba_iat", "ba_pl", "ba_param"];
 
 /**
- * When an agent's OAuth request opened the sign-in page, the URL that resumes it once signed in:
- * the original authorize request, which now finds a session and moves on to /connect.
+ * The original authorize request, which finds a session once signed in and moves on to /connect.
  */
 export function resumeAuthorizeUrl(search: string): string | null {
   const params = new URLSearchParams(search);

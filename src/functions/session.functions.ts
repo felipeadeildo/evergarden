@@ -14,7 +14,6 @@ export const getViewer = createServerFn({ method: "GET" }).handler(
   },
 );
 
-/** The address agents connect to: this deployment's /mcp, as the browser reached it. */
 export const getMcpAddress = createServerFn({ method: "GET" }).handler(
   () => new URL("/mcp", getRequestUrl()).href,
 );

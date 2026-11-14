@@ -43,7 +43,6 @@ export const getFolderPage = createServerFn({ method: "GET" })
     }
   });
 
-/** One folder's contents, `id: null` for the top of the library, loaded when the folder opens. */
 export const getFolder = createServerFn({ method: "GET" })
   .middleware([libraryAccess])
   .validator(z.object({ id: z.string().nullable(), offset: z.int().nonnegative() }))
@@ -73,10 +72,7 @@ export const getDocumentPage = createServerFn({ method: "GET", strict: { output:
     }
   });
 
-/**
- * Records that the owner opened this version. The document page calls it once it renders: the
- * page's loader also runs when a link is merely hovered, so it must not write.
- */
+/** Called by the page once it renders: the loader also runs when a link is merely hovered. */
 export const markDocumentRead = createServerFn({ method: "POST" })
   .middleware([libraryAccess])
   .validator(z.object({ id: z.string(), version: z.int().positive() }))

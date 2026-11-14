@@ -6,10 +6,6 @@ import { PanZoom } from "#/components/ui/pan-zoom";
 
 type Drawing = { svg: string; width: number; height: number };
 
-/**
- * A diagram on the whole screen, drawn again at its natural size, to move around and zoom into.
- * It is laid out for the screen rather than the text column, so a wide flowchart can stay wide.
- */
 export function DiagramViewer({
   source,
   open,

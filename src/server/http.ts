@@ -3,7 +3,6 @@ import { z } from "zod";
 import { authorize, type Principal, principalFrom } from "#/server/access";
 import { EvergardenError } from "#/server/errors";
 
-/** Runs a handler for an authorised caller and turns errors into JSON with the right status. */
 export async function handle(
   request: Request,
   handler: (principal: Principal) => Promise<unknown>,
@@ -40,7 +39,6 @@ export async function jsonBody<T>(request: Request, schema: z.ZodType<T>): Promi
   return schema.parse(body);
 }
 
-/** The public URL of a document. */
 export function documentUrl(request: Request, id: string): string {
   return new URL(`/d/${id}`, request.url).href;
 }

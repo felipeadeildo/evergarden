@@ -2,10 +2,7 @@ import { useState } from "react";
 
 import { CheckIcon, CopyIcon } from "#/components/ui/icons";
 
-/**
- * Copies `text` and says so for a moment. With `iconOnly` it keeps one size while the icon turns
- * into a check, so nothing around it moves; the words still reach screen readers.
- */
+/** With `iconOnly` the size never changes, so nothing around it moves. */
 export function CopyButton({
   text,
   label = "Copy",
@@ -41,7 +38,6 @@ export function CopyButton({
   );
 }
 
-/** What the button says: "Copied" for a moment, otherwise its label, which an icon button keeps for its aria-label. */
 function caption(copied: boolean, iconOnly: boolean, label: string): string {
   if (copied) return "Copied";
   return iconOnly ? "" : label;

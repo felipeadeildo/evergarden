@@ -7,10 +7,6 @@ import { agentCommands } from "./agent-commands";
 import { CommandTabs } from "./command-tabs";
 import { useAgents } from "./use-agents";
 
-/**
- * How to connect an agent. Agents sign in over OAuth: add the server, and the first connection
- * opens the browser here to name the agent. A key is the fallback for clients without OAuth.
- */
 export function ConnectAgent({ server }: { server: string }) {
   const [withKey, setWithKey] = useState(false);
 
@@ -35,7 +31,6 @@ export function ConnectAgent({ server }: { server: string }) {
   );
 }
 
-/** Names an agent and hands back a key for it, shown only this once. */
 function KeyForm({ server, onCancel }: { server: string; onCancel: () => void }) {
   const { createKey } = useAgents();
   const [created, setCreated] = useState<{ name: string; key: string } | null>(null);
