@@ -17,6 +17,7 @@ import {
 import { indexStatements } from "./search";
 
 export { rendered } from "./content";
+export { folderNames } from "./folders";
 export { search, type SearchHit } from "./search";
 
 /** Documents are rendered inside a request, so their size is capped. */
