@@ -17,11 +17,11 @@ type Stop = { id: string | null; name: string };
 const LIBRARY: Stop = { id: null, name: "Library" };
 
 /**
- * Where a document sits, as one control in the top bar. It opens on the document's folder;
- * the back button climbs one folder at a time up to the library, and any folder or document
- * in between is one click away. Phones show only the last folder of the path.
+ * Where a document or a folder sits, as one control in the top bar. It opens on the last folder
+ * of the path; the back button climbs one folder at a time up to the library, and the menu's
+ * title opens the folder shown as a page. Phones show only the last folder of the path.
  */
-export function FolderPath({ path, documentId }: { path: FolderStep[]; documentId: string }) {
+export function FolderPath({ path, documentId }: { path: FolderStep[]; documentId?: string }) {
   const menuId = useId();
   const menu = useRef<HTMLDivElement>(null);
   const start = [LIBRARY, ...path];
@@ -55,7 +55,7 @@ export function FolderPath({ path, documentId }: { path: FolderStep[]; documentI
             documentId={documentId}
             onEnter={(stop) => setTrail([...trail, stop])}
             onBack={() => setTrail(trail.slice(0, -1))}
-            onOpenDocument={() => menu.current?.hidePopover()}
+            onLeave={() => menu.current?.hidePopover()}
           />
         ) : null}
       </div>
@@ -69,15 +69,16 @@ function FolderMenu({
   documentId,
   onEnter,
   onBack,
-  onOpenDocument,
+  onLeave,
 }: {
   trail: Stop[];
   /** Whether a folder holds the document, so the menu can mark the way back to it. */
   onPath: (id: string) => boolean;
-  documentId: string;
+  documentId?: string;
   onEnter: (stop: Stop) => void;
   onBack: () => void;
-  onOpenDocument: () => void;
+  /** Closes the menu when one of its links navigates away. */
+  onLeave: () => void;
 }) {
   const current = trail.at(-1) ?? LIBRARY;
   const parent = trail.at(-2);
@@ -96,7 +97,15 @@ function FolderMenu({
             <BackIcon />
           </button>
         ) : null}
-        <p className="menu-title">{current.name}</p>
+        {current.id ? (
+          <Link to="/f/$id" params={{ id: current.id }} className="menu-title" onClick={onLeave}>
+            {current.name}
+          </Link>
+        ) : (
+          <Link to="/" className="menu-title" onClick={onLeave}>
+            {current.name}
+          </Link>
+        )}
       </div>
       {folder.state === "loading" ? <p className="menu-note">Opening…</p> : null}
       {folder.state === "failed" ? (
@@ -130,7 +139,7 @@ function FolderMenu({
                 params={{ id: entry.id }}
                 className="menu-item"
                 aria-current={entry.id === documentId ? "page" : undefined}
-                onClick={onOpenDocument}
+                onClick={onLeave}
               >
                 <DocumentIcon className="menu-icon" />
                 <span className="menu-label">{entry.title}</span>
