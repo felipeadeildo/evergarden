@@ -1,6 +1,7 @@
 import { type SubmitEvent, useId, useState } from "react";
 
 import { CopyButton } from "#/components/ui/copy-button";
+import { ShellLine } from "#/components/ui/shell-line";
 import { textField } from "#/lib/form";
 
 import { agentCommands } from "./agent-commands";
@@ -104,7 +105,7 @@ function NewKey({
         <div className="line line-command">
           <code>
             {command.lines.map((text) => (
-              <span key={text}>{text}</span>
+              <ShellLine key={text} text={text} />
             ))}
           </code>
           <CopyButton text={command.lines.join("\n")} label="Copy command" iconOnly />
