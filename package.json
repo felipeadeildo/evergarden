@@ -98,19 +98,10 @@
         "description": "Signs sessions. Generate one with `openssl rand -base64 32`."
       },
       "OWNER_EMAIL": {
-        "description": "The email you sign in with. That account becomes the **owner** of this instance; everyone else is a guest."
+        "description": "The email you sign in with. Sign-in codes go only to this address, and its account becomes the **owner** of this instance."
       },
-      "GITHUB_CLIENT_ID": {
-        "description": "From a [GitHub OAuth app](https://github.com/settings/developers). Callback URL: `https://<your-worker>/api/auth/callback/github`."
-      },
-      "GITHUB_CLIENT_SECRET": {
-        "description": "The secret of the same GitHub OAuth app."
-      },
-      "GOOGLE_CLIENT_ID": {
-        "description": "Optional. Lets guests sign in with Google. Leave empty to offer GitHub only."
-      },
-      "GOOGLE_CLIENT_SECRET": {
-        "description": "Optional. The secret of the same Google OAuth client."
+      "EMAIL_FROM": {
+        "description": "The sender of sign-in codes, such as `evergarden@example.com`. Its domain must use Cloudflare DNS and be onboarded under **Compute > Email Service > Email Sending**."
       },
       "BETTER_AUTH_URL": {
         "description": "The public URL, such as `https://evergarden.example.com`, without a trailing slash. Agents sign in over OAuth against it, so it must match the address you open."
