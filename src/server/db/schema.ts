@@ -9,7 +9,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
-import { user } from "./auth-schema";
+import { apikey, oauthClient, user } from "./auth-schema";
 
 export * from "./auth-schema";
 
@@ -170,4 +170,28 @@ export const readMark = sqliteTable(
     readAt: integer("read_at", { mode: "timestamp_ms" }).notNull(),
   },
   (table) => [primaryKey({ columns: [table.userId, table.documentId] })],
+);
+
+/**
+ * Every agent that may use the library, however it connected: over OAuth (`clientId`), when the
+ * owner approved it on /connect, or with an API key (`apiKeyId`). Its name signs what it writes.
+ * Deleting the row locks the agent out, even with an access token that has not expired.
+ */
+export const agent = sqliteTable(
+  "agent",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    clientId: text("client_id").references(() => oauthClient.clientId, { onDelete: "cascade" }),
+    apiKeyId: text("api_key_id").references(() => apikey.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+    lastUsedAt: integer("last_used_at", { mode: "timestamp_ms" }),
+  },
+  (table) => [
+    uniqueIndex("agent_client_idx").on(table.userId, table.clientId),
+    uniqueIndex("agent_api_key_idx").on(table.apiKeyId),
+  ],
 );
