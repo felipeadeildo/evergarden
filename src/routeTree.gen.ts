@@ -10,11 +10,20 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiV1DocumentsRouteImport } from './routes/api/v1/documents'
+import { Route as ApiV1SearchRouteImport } from './routes/api/v1/search'
+import { Route as ApiV1DocumentsIdRouteImport } from './routes/api/v1/documents.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -22,31 +31,80 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1DocumentsRoute = ApiV1DocumentsRouteImport.update({
+  id: '/api/v1/documents',
+  path: '/api/v1/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1SearchRoute = ApiV1SearchRouteImport.update({
+  id: '/api/v1/search',
+  path: '/api/v1/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1DocumentsIdRoute = ApiV1DocumentsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiV1DocumentsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/mcp': typeof McpRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/v1/documents': typeof ApiV1DocumentsRouteWithChildren
+  '/api/v1/search': typeof ApiV1SearchRoute
+  '/api/v1/documents/$id': typeof ApiV1DocumentsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/mcp': typeof McpRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/v1/documents': typeof ApiV1DocumentsRouteWithChildren
+  '/api/v1/search': typeof ApiV1SearchRoute
+  '/api/v1/documents/$id': typeof ApiV1DocumentsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/mcp': typeof McpRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/v1/documents': typeof ApiV1DocumentsRouteWithChildren
+  '/api/v1/search': typeof ApiV1SearchRoute
+  '/api/v1/documents/$id': typeof ApiV1DocumentsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/auth/$'
+  fullPaths:
+    | '/'
+    | '/mcp'
+    | '/api/auth/$'
+    | '/api/v1/documents'
+    | '/api/v1/search'
+    | '/api/v1/documents/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/auth/$'
-  id: '__root__' | '/' | '/api/auth/$'
+  to:
+    | '/'
+    | '/mcp'
+    | '/api/auth/$'
+    | '/api/v1/documents'
+    | '/api/v1/search'
+    | '/api/v1/documents/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/mcp'
+    | '/api/auth/$'
+    | '/api/v1/documents'
+    | '/api/v1/search'
+    | '/api/v1/documents/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  McpRoute: typeof McpRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiV1DocumentsRoute: typeof ApiV1DocumentsRouteWithChildren
+  ApiV1SearchRoute: typeof ApiV1SearchRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,6 +116,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -65,12 +130,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/documents': {
+      id: '/api/v1/documents'
+      path: '/api/v1/documents'
+      fullPath: '/api/v1/documents'
+      preLoaderRoute: typeof ApiV1DocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/search': {
+      id: '/api/v1/search'
+      path: '/api/v1/search'
+      fullPath: '/api/v1/search'
+      preLoaderRoute: typeof ApiV1SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/documents/$id': {
+      id: '/api/v1/documents/$id'
+      path: '/$id'
+      fullPath: '/api/v1/documents/$id'
+      preLoaderRoute: typeof ApiV1DocumentsIdRouteImport
+      parentRoute: typeof ApiV1DocumentsRoute
+    }
   }
 }
 
+interface ApiV1DocumentsRouteChildren {
+  ApiV1DocumentsIdRoute: typeof ApiV1DocumentsIdRoute
+}
+
+const ApiV1DocumentsRouteChildren: ApiV1DocumentsRouteChildren = {
+  ApiV1DocumentsIdRoute: ApiV1DocumentsIdRoute,
+}
+
+const ApiV1DocumentsRouteWithChildren = ApiV1DocumentsRoute._addFileChildren(
+  ApiV1DocumentsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  McpRoute: McpRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiV1DocumentsRoute: ApiV1DocumentsRouteWithChildren,
+  ApiV1SearchRoute: ApiV1SearchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
