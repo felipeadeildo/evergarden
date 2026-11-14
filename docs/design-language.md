@@ -16,6 +16,7 @@ The name comes from Violet Evergarden, who writes letters on other people's beha
 | `prussian` | `#23395B` | `#93B1DF` | Links, primary actions, focus rings                         |
 | `emerald`  | `#0D7A5A` | `#4CC598` | Reviewer marks: highlights, pins, notes, inserted words     |
 | `alizarin` | `#A3243B` | `#E07A8B` | Removed words in a suggestion, destructive actions          |
+| `ochre`    | `#8A5B12` | `#D9A85A` | Warning callouts, strings in code                           |
 
 Emerald appears only where a person has marked the text. The page is otherwise blue-black on paper, so a reviewed document visibly carries its notes.
 
@@ -27,6 +28,8 @@ Emerald appears only where a person has marked the text. The page is otherwise b
 | Paper Mono                              | Code, ASCII figures, document ids, keys | OFL                                                                                                                         |
 
 There is no sans-serif. Literata was drawn for long reading on screens and has an optical size axis, so the same family holds a 13 px button label and a 40 px title. Paper Mono appears only where the content really is code or an identifier.
+
+Code uses the same palette: keywords and tags in `prussian`, strings in `ochre`, numbers in `alizarin`, comments in italic `ink-soft`, function names in a heavier weight. Diagrams take `paper`, `sheet` and `ink` for their shapes and lines, and `prussian`, `ochre` and `alizarin` first among their series colours, so a chart reads as part of the page.
 
 Body text is 19 px on desktop and 17.5 px on phones, line height 1.6, at most 66 characters per line. Headings step by about 1.25 (32, 24, 19.5 px), weight 600, set with `text-wrap: balance`. Paragraphs use `text-wrap: pretty`. Numbers in tables use tabular figures.
 
@@ -69,6 +72,10 @@ Text is left aligned, never justified: justified text on narrow phone columns op
 The margin notes. On desktop, a closed comment is one line in the right margin at the height of its passage, set in Literata italic in emerald. Opening it lays the replies out under it on a `sheet` ground and draws a hairline to the passage, whose highlight deepens. Pins on figures are small emerald numerals in a circle, matching the numeral on their note. Notes have no bubbles, avatars or timestamps in the margin; the author's name follows the note in `ink-soft`. Everything else on the page stays quiet.
 
 On a phone the margin becomes a sheet that rises to half the screen, so the passage stays visible above the note, and `‹ ›` in the sheet walk through the comments while the text scrolls along.
+
+## Icons
+
+Phosphor, regular weight, at 1.15 times the size of the text beside them and in its colour. An icon always comes with words: next to a label, or as the only visible content of a phone toolbar button whose label stays readable by screen readers. Callouts get one icon per kind (note, tip, important, warning, caution); documents, folders and linked repositories get theirs in the library.
 
 ## Motion
 

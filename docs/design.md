@@ -6,19 +6,23 @@ This page explains the decisions and the parts. What people and agents do with i
 
 ## Decisions
 
-| Decision          | Choice                                                                                          | Why                                                                                                     | Cost                                                                        |
-| ----------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| Source of truth   | evergarden itself. Each `publish` or `update` creates an immutable version                      | Matches how documents are produced today (an agent writes, then uploads), with no git in the loop       | No sync with repositories; an export can come later                         |
-| Addresses         | A random 10-character id (`k7q2mxa9pt`); folders live only in the library                       | Links survive renames and moves, and a link reveals nothing about the title or the folder               | URLs say nothing about what they point to; link previews carry the title    |
-| Review model      | Comments posted one at a time, as in Google Docs, on text, blocks or points in figures          | Matches how the owner reviews: read, mark, move on. The agent reads open comments when asked            | No batching: an agent that reads early sees a review in progress            |
-| Versions          | Kept, listed quietly, readable; no diff view                                                    | Comments need the text they were written about; share links can pin a version                           | Storage for every version, small since content is deduplicated by hash      |
-| Who comments      | The owner, plus guests who sign in through a share link                                         | Reviews from other people are part of the use                                                           | Our own auth, and a minimum of moderation (delete a comment, revoke a link) |
-| Rich content      | Markdown with directives (`::graph-*`) and a ` ```mockup ` block rendered in a sandboxed iframe | The source stays readable anywhere; nothing runs in the app's origin                                    | One renderer per directive, written by us                                   |
-| Framework         | TanStack Start on Workers                                                                       | Server rendering for shared links (fast first paint, link previews), typed server functions, one deploy | More moving parts than a static SPA                                         |
-| Database          | D1 through Drizzle, with SQLite FTS5 for search                                                 | Better Auth reaches D1 through Kysely or Drizzle; Drizzle gives one schema for app and auth tables      | The FTS table is written by hand, outside Drizzle's schema                  |
-| Content storage   | R2, keyed by SHA-256                                                                            | Immutable versions become cache keys that never invalidate                                              | One extra read beside D1                                                    |
-| Auth              | Better Auth with GitHub, Google and API keys                                                    | Open source, runs on Workers, has plugins for API keys and for MCP OAuth                                | Two OAuth apps to configure per install                                     |
-| Agent credentials | API key in a header                                                                             | The Better Auth MCP OAuth plugin needs an SSRF-safe CIMD transport that we would write for Workers      | Clients that only speak OAuth (Claude.ai, ChatGPT) wait for a later version |
+| Decision          | Choice                                                                                          | Why                                                                                                                                                                                                                                                                     | Cost                                                                        |
+| ----------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Source of truth   | evergarden itself. Each `publish` or `update` creates an immutable version                      | Matches how documents are produced today (an agent writes, then uploads), with no git in the loop                                                                                                                                                                       | No sync with repositories; an export can come later                         |
+| Addresses         | A random 10-character id (`k7q2mxa9pt`); folders live only in the library                       | Links survive renames and moves, and a link reveals nothing about the title or the folder                                                                                                                                                                               | URLs say nothing about what they point to; link previews carry the title    |
+| Review model      | Comments posted one at a time, as in Google Docs, on text, blocks or points in figures          | Matches how the owner reviews: read, mark, move on. The agent reads open comments when asked                                                                                                                                                                            | No batching: an agent that reads early sees a review in progress            |
+| Versions          | Kept, listed quietly, readable; no diff view                                                    | Comments need the text they were written about; share links can pin a version                                                                                                                                                                                           | Storage for every version, small since content is deduplicated by hash      |
+| Who comments      | The owner, plus guests who sign in through a share link                                         | Reviews from other people are part of the use                                                                                                                                                                                                                           | Our own auth, and a minimum of moderation (delete a comment, revoke a link) |
+| Rich content      | Markdown with directives (`::graph-*`) and a ` ```mockup ` block rendered in a sandboxed iframe | The source stays readable anywhere; nothing runs in the app's origin                                                                                                                                                                                                    | One renderer per directive, written by us                                   |
+| Markdown          | unified (remark and rehype)                                                                     | Full GFM, source offsets on every node (comments need them), sanitising and directives. TanStack Markdown was considered: it covers a docs subset of GFM, has no math or sanitiser, and its small bundle would not reach readers, since rendering happens on the server |
+| Diagrams          | Mermaid syntax drawn by [Pele](https://pele.run)                                                | Agents already write Mermaid. Pele draws every Mermaid diagram type at a sixth of Mermaid's size, takes its colours from CSS variables, and redraws wide diagrams vertically on phones                                                                                  |
+| Code highlighting | [TanStack Highlight](https://tanstack.com/highlight)                                            | Synchronous, about 80 languages, `th-*` classes coloured from CSS. Measured locally with Bun, the first render of the example report took 457 ms with Shiki and 62 ms with TanStack Highlight and Pele                                                                  |
+| Icons             | Phosphor, regular weight, through `src/components/ui/icons.tsx`                                 | Line icons that sit well beside Literata; one module names them by meaning, so the set can change in one place                                                                                                                                                          |
+| Framework         | TanStack Start on Workers                                                                       | Server rendering for shared links (fast first paint, link previews), typed server functions, one deploy                                                                                                                                                                 | More moving parts than a static SPA                                         |
+| Database          | D1 through Drizzle, with SQLite FTS5 for search                                                 | Better Auth reaches D1 through Kysely or Drizzle; Drizzle gives one schema for app and auth tables                                                                                                                                                                      | The FTS table is written by hand, outside Drizzle's schema                  |
+| Content storage   | R2, keyed by SHA-256                                                                            | Immutable versions become cache keys that never invalidate                                                                                                                                                                                                              | One extra read beside D1                                                    |
+| Auth              | Better Auth with GitHub, Google and API keys                                                    | Open source, runs on Workers, has plugins for API keys and for MCP OAuth                                                                                                                                                                                                | Two OAuth apps to configure per install                                     |
+| Agent credentials | API key in a header                                                                             | The Better Auth MCP OAuth plugin needs an SSRF-safe CIMD transport that we would write for Workers                                                                                                                                                                      | Clients that only speak OAuth (Claude.ai, ChatGPT) wait for a later version |
 
 ## Concepts
 
@@ -36,7 +40,7 @@ The code is organised around five modules with small interfaces. Server function
 
 | Module                | Interface                                                                              | Hides                                                                                          |
 | --------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `src/render`          | `render(source) → { tree, title, headings, blocks }`, `RENDERER_VERSION`               | The unified pipeline, source positions, directive handling, sanitising                         |
+| `src/render`          | `render(source) → { tree, title, headings, text, features }`, `RENDERER_VERSION`       | The unified pipeline, source offsets, sanitising, highlighting, diagrams, callouts             |
 | `src/anchor`          | `anchorFrom(source, selection)`, `relocate(anchor, before, after) → Anchor \| null`    | Prefix and suffix capture, block fingerprints, diff mapping, fuzzy search                      |
 | `src/server/library`  | `publish`, `update`, `read`, `list`, `search`, `versions`, `move`, `arrange`, `remove` | Ids, hashing, R2 writes, version numbering, conflict checks, titles, folders, the search index |
 | `src/server/comments` | `comment`, `reply`, `resolve`, `acceptSuggestion`, `openComments`, `relocateAll`       | Re-anchoring after an update, what the agent has seen, the agent-facing markdown format        |
@@ -44,23 +48,63 @@ The code is organised around five modules with small interfaces. Server function
 
 `render` and `anchor` are pure and run in both the Worker and the browser, which is what keeps a selection in the browser and an anchor on the server in agreement.
 
+## Where the code lives
+
+```
+src/
+  render/            markdown to a hast tree; pure, runs anywhere
+  server/            runs only in the Worker
+    db/              Drizzle schema; auth-schema.ts is generated by `bun run auth:schema`
+    library/         documents, versions, folders, search, R2 content
+    access.ts        who is calling and what they may do
+    auth.ts          Better Auth
+    http.ts, mcp.ts  the /api/v1 and /mcp adapters
+  functions/         *.functions.ts: server functions for the UI, each behind libraryAccess
+  routes/            TanStack file routes, one file per URL
+    _authenticated   pathless layout: signs the owner in before any library page
+    api/, mcp.ts     server routes, no UI
+  components/
+    document/        what renders a document: body, code, diagrams, contents, versions
+    library/         the folder tree
+    navigation/      the top bar and search
+    ui/              small pieces with no product knowledge: sheet, icons, relative time
+  lib/               client-safe helpers
+test/                setup for the Worker test pool
+```
+
+A few rules keep it that way:
+
+- A route file loads data and lays out a page. Anything reused by two routes, or longer than a screen, moves to `components/`.
+- Code that touches D1, R2 or secrets lives in `server/` and is reached from the UI only through `functions/`. Following the TanStack Start convention, files that export server functions end in `.functions.ts`.
+- `_authenticated` is the only pathless layout. It exists because every page under it shares one access check and the search dialog; a folder that only groups files would use a `(group)` folder instead.
+- Pages for people without an account (share links, in step 3) get their own routes outside `_authenticated` and reuse `components/document`.
+
 ## Rendering
 
 The Worker renders markdown into a hast tree and stores it in R2 at `render/<sha>@<RENDERER_VERSION>.json`. A version never changes, so the cache never needs invalidating; changing the renderer changes the key.
 
 ```
 markdown
-  → remark: gfm, frontmatter, directive, math
-  → rehype: source positions, shiki (JavaScript regex engine, no WASM), katex, sanitize
-  → hast-util-to-jsx-runtime: each directive becomes a React component
+  → remark: gfm, frontmatter, math ($$ only)
+  → rehype: raw HTML, sanitize
+  → evergarden: callouts, source offsets, heading ids, title, search text,
+                code highlighted by TanStack Highlight, mermaid drawn by Pele
+  → katex
+  → React, through hast-util-to-jsx-runtime: figures, callouts and headings get components
 ```
+
+Sanitising runs before the evergarden step, so what that step adds (highlighted code, Pele's SVG) is trusted output, not author input. Pele escapes diagram text and filters links and styles itself.
+
+A single `$` is never math. Reports are full of prices, and `$0.045 per GB … $950` would otherwise turn into a formula; inline math is written `$$x$$`.
+
+A diagram is drawn twice. The server draws it so the page shows it before any script runs; in the browser, Pele draws it again from the hidden source at the real column width and with the real fonts, which turns a wide flowchart vertical on a phone and adds pinch zoom.
 
 | Syntax                                                            | Renders as                                                                                                                        |
 | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | GFM: tables, task lists, footnotes, autolinks                     | The usual                                                                                                                         |
 | `> [!NOTE]`, `[!TIP]`, `[!WARNING]`, `[!CAUTION]`, `[!IMPORTANT]` | Callouts                                                                                                                          |
 | `$x$`, `$$…$$`                                                    | KaTeX                                                                                                                             |
-| ` ```mermaid `                                                    | A diagram; the mermaid bundle loads only on documents that use it                                                                 |
+| ` ```mermaid `                                                    | A diagram drawn by Pele; its browser code loads only on documents that have one                                                   |
 | ` ```mockup `                                                     | HTML in `<iframe sandbox="allow-scripts" srcdoc>` without `allow-same-origin`: a null origin with no access to cookies or the API |
 | `::graph-timeline`, `::graph-decision`, and the rest              | Figures following the [mdxcn](https://mdxcn.dev/llms.txt) grammar, written as directives                                          |
 
