@@ -1,10 +1,30 @@
+import { cloudflareTest, readD1Migrations } from "@cloudflare/vitest-plugin";
 import { defineConfig } from "vitest/config";
 
-// Unit tests cover the pure modules (render, anchor) and run in Node, without the Workers runtime.
+// Pure modules run in Node; server modules run in workerd with local D1 and R2.
 export default defineConfig({
   resolve: { tsconfigPaths: true },
   test: {
-    include: ["src/**/*.test.ts"],
-    environment: "node",
+    projects: [
+      {
+        extends: true,
+        test: { name: "unit", include: ["src/{lib,render}/**/*.test.ts"], environment: "node" },
+      },
+      {
+        extends: true,
+        plugins: [
+          cloudflareTest(async () => ({
+            main: "./src/server/test-worker.ts",
+            wrangler: { configPath: "./wrangler.jsonc" },
+            miniflare: { bindings: { TEST_MIGRATIONS: await readD1Migrations("migrations") } },
+          })),
+        ],
+        test: {
+          name: "workers",
+          include: ["src/server/**/*.test.ts"],
+          setupFiles: ["./src/server/test-setup.ts"],
+        },
+      },
+    ],
   },
 });

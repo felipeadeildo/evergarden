@@ -7,8 +7,10 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["vite/client"],
-    "paths": { "#/*": ["./src/*"] },
+    "types": ["vite/client", "@cloudflare/vitest-plugin/types"],
+    "paths": {
+      "#/*": ["./src/*"]
+    },
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noEmit": true,

@@ -10,7 +10,10 @@
     "typeAware": true,
     "typeCheck": true
   },
-  "env": { "browser": true, "es2024": true },
+  "env": {
+    "browser": true,
+    "es2024": true
+  },
   "rules": {
     "typescript/no-floating-promises": "error",
     "typescript/no-misused-promises": "error",
@@ -19,13 +22,23 @@
     "react/exhaustive-deps": "warn",
     "react/react-in-jsx-scope": "off",
     "import/no-cycle": "error",
-    "unicorn/filename-case": ["error", { "cases": { "kebabCase": true } }]
+    "unicorn/filename-case": [
+      "error",
+      {
+        "cases": {
+          "kebabCase": true
+        }
+      }
+    ],
+    "no-await-in-loop": "off"
   },
   "ignorePatterns": ["src/routeTree.gen.ts", "worker-configuration.d.ts", "migrations/**"],
   "overrides": [
     {
       "files": ["src/routes/**"],
-      "rules": { "unicorn/filename-case": "off" }
+      "rules": {
+        "unicorn/filename-case": "off"
+      }
     }
   ]
 }
