@@ -1,6 +1,7 @@
 import { apiKey } from "@better-auth/api-key";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError } from "better-auth/api";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { env } from "cloudflare:workers";
 
@@ -12,6 +13,21 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL || undefined,
   database: drizzleAdapter(db, { provider: "sqlite", schema }),
+  // Password sign-in exists only in `bun run dev`, where there is no OAuth app to sign in with.
+  emailAndPassword: { enabled: import.meta.env?.DEV },
+  databaseHooks: {
+    user: {
+      create: {
+        // Only the owner has an account until share links let guests in.
+        before: async (user) => {
+          if (!isOwner(user.email)) {
+            throw new APIError("FORBIDDEN", { message: "This library is private." });
+          }
+          return { data: user };
+        },
+      },
+    },
+  },
   socialProviders: {
     github: { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET },
     ...(env.GOOGLE_CLIENT_ID && {
@@ -23,7 +39,8 @@ export const auth = betterAuth({
     ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
   },
   plugins: [
-    apiKey({ defaultPrefix: "eg_", apiKeyHeaders: "x-api-key" }),
+    // Keys belong to the owner's agents, so the plugin's default limit of 10 requests a day is off.
+    apiKey({ defaultPrefix: "eg_", apiKeyHeaders: "x-api-key", rateLimit: { enabled: false } }),
     // Must stay last.
     tanstackStartCookies(),
   ],
