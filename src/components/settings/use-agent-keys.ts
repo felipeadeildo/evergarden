@@ -33,7 +33,8 @@ export function useAgentKeys() {
   }
 
   async function revoke(id: string): Promise<void> {
-    await authClient.apiKey.delete({ keyId: id });
+    const result = await authClient.apiKey.delete({ keyId: id });
+    if (result.error) throw new Error(result.error.message ?? "The key was not revoked.");
     await client.invalidateQueries({ queryKey: KEY });
   }
 
