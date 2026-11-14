@@ -4,7 +4,7 @@ A place to publish what your agents write, and review it like a pull request.
 
 Your agent publishes a markdown document (a report, a plan, a spec) over MCP. You read it in a page made for reading, select a passage, comment or suggest a rewrite, and submit a review. The agent reads the review, publishes a new revision, and answers each comment. A share link lets anyone else read it, or comment after signing in.
 
-It runs on Cloudflare: one Worker with TanStack Start, D1 for metadata, R2 for content. Each instance belongs to one person and lives on their own Cloudflare account.
+It runs on Cloudflare: one Worker with TanStack Start, D1 for everything it stores. Each instance belongs to one person and lives on their own Cloudflare account.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/felipeadeildo/evergarden)
 

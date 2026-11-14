@@ -1,6 +1,6 @@
 # Deploying evergarden
 
-Every evergarden instance is one Worker on the owner's Cloudflare account, with its own D1 database and R2 bucket. Nothing in the repository points at a specific account: the configuration names the resources, and Wrangler creates them on the first deploy.
+Every evergarden instance is one Worker on the owner's Cloudflare account, with its own D1 database. Nothing in the repository points at a specific account: the configuration names the resources, and Wrangler creates them on the first deploy.
 
 There are two ways to get an instance. Pick the first if you want to run evergarden; pick the second if you develop it and want each push to `main` deployed.
 
@@ -8,7 +8,7 @@ There are two ways to get an instance. Pick the first if you want to run evergar
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/felipeadeildo/evergarden)
 
-The button copies this repository into your GitHub account, creates the database and the bucket, asks for the secrets (with the descriptions in `package.json` under `cloudflare.bindings`), and deploys. Your copy is connected to Workers Builds, so pushing to it deploys again.
+The button copies this repository into your GitHub account, creates the database, asks for the secrets (with the descriptions in `package.json` under `cloudflare.bindings`), and deploys. Your copy is connected to Workers Builds, so pushing to it deploys again.
 
 Before you click, create a GitHub OAuth app at <https://github.com/settings/developers>. Its callback URL is `https://<worker-name>.<your-subdomain>.workers.dev/api/auth/callback/github`; you can change it later if you add a custom domain.
 
@@ -23,7 +23,7 @@ Use this when the repository is yours and every commit on `main` should go live.
    bun run deploy
    ```
 
-   `wrangler deploy` creates the `evergarden` database and the `evergarden-content` bucket, then `db:migrate:remote` creates the tables.
+   `wrangler deploy` creates the `evergarden` database, then `db:migrate:remote` creates the tables.
 
 2. Set the secrets listed in [`.dev.vars.example`](../.dev.vars.example), in the dashboard under **Workers & Pages > evergarden > Settings > Variables and Secrets**, or one by one:
 

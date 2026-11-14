@@ -1,6 +1,6 @@
 # Design
 
-evergarden is one Cloudflare Worker running TanStack Start. Metadata lives in D1, document content in R2, and every version of a document is immutable, which keeps most of the system simple: content is addressed by its hash, rendered output is cached forever, and a comment always knows the exact text it was written about.
+evergarden is one Cloudflare Worker running TanStack Start. Everything lives in D1, and every version of a document is immutable, which keeps most of the system simple: content is addressed by its hash, rendered output is cached forever, and a comment always knows the exact text it was written about.
 
 This page explains the decisions and the parts. What people and agents do with it is in [flows.md](flows.md).
 
@@ -20,7 +20,7 @@ This page explains the decisions and the parts. What people and agents do with i
 | Icons             | Phosphor, regular weight, through `src/components/ui/icons.tsx`                                 | Line icons that sit well beside Literata; one module names them by meaning, so the set can change in one place                                                                                                                                                                                      |
 | Framework         | TanStack Start on Workers                                                                       | Server rendering for shared links (fast first paint, link previews), typed server functions, one deploy                                                                                                                                                                                             | More moving parts than a static SPA                                                                |
 | Database          | D1 through Drizzle, with SQLite FTS5 for search                                                 | Better Auth reaches D1 through Kysely or Drizzle; Drizzle gives one schema for app and auth tables                                                                                                                                                                                                  | The FTS table is written by hand, outside Drizzle's schema                                         |
-| Content storage   | R2, keyed by SHA-256                                                                            | Immutable versions become cache keys that never invalidate                                                                                                                                                                                                                                          | One extra read beside D1                                                                           |
+| Content storage   | D1, keyed by SHA-256, with the rendered tree gzipped beside the text                            | One database to deploy: R2 needs its own subscription, even on the free tier. Gzip brings a rendered tree, 5 to 10 times its markdown, back to about the markdown's size, under D1's 2 MB limit for a value                                                                                         | Images will need R2 (step 4)                                                                       |
 | Auth              | Better Auth with GitHub, Google and API keys                                                    | Open source, runs on Workers, has plugins for API keys and for MCP OAuth                                                                                                                                                                                                                            | Two OAuth apps to configure per install                                                            |
 | Agent credentials | OAuth 2.1 through the Better Auth MCP plugin, API keys as a fallback                            | MCP clients (pi, Claude Code, Codex, Gemini CLI, Claude.ai, ChatGPT) sign in with only the server address, and the owner names each agent while approving it. Clients register with RFC 7591 dynamic registration; Client ID Metadata Documents need an SSRF-safe fetch that Workers cannot provide | Anyone can register a client; registering grants nothing until the owner approves it on `/connect` |
 
@@ -38,13 +38,13 @@ This page explains the decisions and the parts. What people and agents do with i
 
 The code is organised around five modules with small interfaces. Server functions (for the UI), `/api/v1` (for the CLI) and `/mcp` (for agents) are thin adapters over the same modules, so a rule enforced once holds everywhere.
 
-| Module                | Interface                                                                              | Hides                                                                                          |
-| --------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `src/render`          | `render(source) → { tree, title, headings, text, features }`, `RENDERER_VERSION`       | The unified pipeline, source offsets, sanitising, highlighting, diagrams, callouts             |
-| `src/anchor`          | `anchorFrom(source, selection)`, `relocate(anchor, before, after) → Anchor \| null`    | Prefix and suffix capture, block fingerprints, diff mapping, fuzzy search                      |
-| `src/server/library`  | `publish`, `update`, `read`, `list`, `search`, `versions`, `move`, `arrange`, `remove` | Ids, hashing, R2 writes, version numbering, conflict checks, titles, folders, the search index |
-| `src/server/comments` | `comment`, `reply`, `resolve`, `acceptSuggestion`, `openComments`, `relocateAll`       | Re-anchoring after an update, what the agent has seen, the agent-facing markdown format        |
-| `src/server/access`   | `principalFrom(request)`, `authorize(principal, action, target)`                       | Sessions, API keys, share tokens, guest membership, the owner rule                             |
+| Module                | Interface                                                                              | Hides                                                                                            |
+| --------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `src/render`          | `render(source) → { tree, title, headings, text, features }`, `RENDERER_VERSION`       | The unified pipeline, source offsets, sanitising, highlighting, diagrams, callouts               |
+| `src/anchor`          | `anchorFrom(source, selection)`, `relocate(anchor, before, after) → Anchor \| null`    | Prefix and suffix capture, block fingerprints, diff mapping, fuzzy search                        |
+| `src/server/library`  | `publish`, `update`, `read`, `list`, `search`, `versions`, `move`, `arrange`, `remove` | Ids, hashing, stored text, version numbering, conflict checks, titles, folders, the search index |
+| `src/server/comments` | `comment`, `reply`, `resolve`, `acceptSuggestion`, `openComments`, `relocateAll`       | Re-anchoring after an update, what the agent has seen, the agent-facing markdown format          |
+| `src/server/access`   | `principalFrom(request)`, `authorize(principal, action, target)`                       | Sessions, API keys, share tokens, guest membership, the owner rule                               |
 
 `render` and `anchor` are pure and run in both the Worker and the browser, which is what keeps a selection in the browser and an anchor on the server in agreement.
 
@@ -55,7 +55,7 @@ src/
   render/            markdown to a hast tree; pure, runs anywhere
   server/            runs only in the Worker
     db/              Drizzle schema; auth-schema.ts is generated by `bun run auth:schema`
-    library/         documents, versions, folders, search, R2 content
+    library/         documents, versions, folders, search, stored text
     access.ts        who is calling and what they may do
     auth.ts          Better Auth
     http.ts, mcp.ts  the /api/v1 and /mcp adapters
@@ -75,13 +75,13 @@ test/                setup for the Worker test pool
 A few rules keep it that way:
 
 - A route file loads data and lays out a page. Anything reused by two routes, or longer than a screen, moves to `components/`.
-- Code that touches D1, R2 or secrets lives in `server/` and is reached from the UI only through `functions/`. Following the TanStack Start convention, files that export server functions end in `.functions.ts`.
+- Code that touches D1 or secrets lives in `server/` and is reached from the UI only through `functions/`. Following the TanStack Start convention, files that export server functions end in `.functions.ts`.
 - `_authenticated` is the only pathless layout. It exists because every page under it shares one access check and the search dialog; a folder that only groups files would use a `(group)` folder instead.
 - Pages for people without an account (share links, in step 3) get their own routes outside `_authenticated` and reuse `components/document`.
 
 ## Rendering
 
-The Worker renders markdown into a hast tree and stores it in R2 at `render/<sha>@<RENDERER_VERSION>.json`. A version never changes, so the cache never needs invalidating; changing the renderer changes the key.
+The Worker renders markdown into a hast tree and stores it, gzipped, in the `content` row of the text, with the `RENDERER_VERSION` that produced it. A version never changes, so the cache never needs invalidating; a newer renderer sees an older version number and renders again on the next read.
 
 ```
 markdown
