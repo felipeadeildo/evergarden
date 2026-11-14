@@ -1,7 +1,20 @@
+import { env } from "cloudflare:workers";
 import { describe, expect, it } from "vitest";
 
 import { normaliseRepo } from "./folders";
-import { folderContents, list, publish, read, search, update, versions, withPlaces } from "./index";
+import {
+  folderContents,
+  folderInfo,
+  list,
+  markRead,
+  publish,
+  read,
+  recent,
+  search,
+  update,
+  versions,
+  withPlaces,
+} from "./index";
 
 const pi = { kind: "agent", id: "key1", name: "pi" } as const;
 const felipe = { kind: "user", id: "user1", name: "Felipe" } as const;
@@ -109,7 +122,7 @@ describe("normaliseRepo", () => {
 });
 
 describe("folderContents", () => {
-  it("lists what sits directly in a folder, with counts for the folders inside", async () => {
+  it("lists what sits directly in a folder, counting documents in subfolders", async () => {
     await publish({ content: "# Q1 plan", folder: "browse/plans" }, pi);
     await publish({ content: "# Q2 plan", folder: "browse/plans" }, pi);
     await publish({ content: "# Old plan", folder: "browse/plans/archive" }, pi);
@@ -117,11 +130,11 @@ describe("folderContents", () => {
 
     const { folders: top } = await folderContents(null);
     const browse = top.find((entry) => entry.name === "browse");
-    expect(browse?.items).toBe(2);
+    expect(browse?.documents).toBe(4);
 
     const inside = await folderContents(browse!.id);
     expect(inside.documents.map((entry) => entry.title)).toEqual(["Browse notes"]);
-    expect(inside.folders.map((entry) => [entry.name, entry.items])).toEqual([["plans", 3]]);
+    expect(inside.folders.map((entry) => [entry.name, entry.documents])).toEqual([["plans", 3]]);
   });
 
   it("pages documents and counts the ones left", async () => {
@@ -142,5 +155,36 @@ describe("withPlaces", () => {
     const { document } = await read(id);
     const [placed] = await withPlaces([document]);
     expect(placed?.place).toBe("reports/2026/q4");
+  });
+});
+
+describe("recent", () => {
+  it("lists the newest documents and marks the ones the reader has not opened", async () => {
+    const first = await publish({ content: "# Seen report", folder: "recent" }, pi);
+    const second = await publish({ content: "# Unseen report", folder: "recent" }, pi);
+    await env.DB.prepare(
+      "insert or ignore into user (id, name, email, email_verified, created_at, updated_at) values ('reader', 'Reader', 'reader@example.com', 0, 0, 0)",
+    ).run();
+    await markRead("reader", first.id, 1);
+
+    const entries = await recent("reader", 50);
+    const byId = new Map(entries.map((entry) => [entry.id, entry]));
+    expect(byId.get(first.id)?.unread).toBe(false);
+    expect(byId.get(second.id)?.unread).toBe(true);
+    expect(byId.get(second.id)?.place).toBe("recent");
+  });
+});
+
+describe("folderInfo", () => {
+  it("returns a folder with the path down to it", async () => {
+    await publish({ content: "# Inner", folder: "info/inner" }, pi);
+    const { folders } = await list({ folder: "info/inner" });
+    const detail = await folderInfo(folders[0]!.id);
+    expect(detail.path.map((step) => step.name)).toEqual(["info", "inner"]);
+    expect(detail.documents).toBe(1);
+  });
+
+  it("fails for an unknown folder", async () => {
+    await expect(folderInfo("nope")).rejects.toThrow("no folder");
   });
 });

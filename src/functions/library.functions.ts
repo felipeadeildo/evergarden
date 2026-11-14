@@ -6,14 +6,14 @@ import { z } from "zod";
 import { EvergardenError } from "#/server/errors";
 import {
   folderContents,
+  folderInfo,
   folderPath,
   markRead,
-  newFor,
   read,
+  recent,
   rendered,
   search,
   versions,
-  withPlaces,
 } from "#/server/library";
 
 import { libraryAccess } from "./middleware";
@@ -22,11 +22,25 @@ export const getLibrary = createServerFn({ method: "GET" })
   .middleware([libraryAccess])
   .handler(async ({ context: { principal } }) => {
     setResponseHeader("cache-control", "private, no-store");
-    const [root, unread] = await Promise.all([
+    const [latest, top] = await Promise.all([
+      recent(principal.kind === "owner" ? principal.userId : null, 8),
       folderContents(null),
-      principal.kind === "owner" ? newFor(principal.userId, 8).then(withPlaces) : [],
     ]);
-    return { root, unread };
+    return { latest, top };
+  });
+
+export const getFolderPage = createServerFn({ method: "GET" })
+  .middleware([libraryAccess])
+  .validator(z.object({ id: z.string() }))
+  .handler(async ({ data }) => {
+    setResponseHeader("cache-control", "private, no-store");
+    try {
+      const [folder, contents] = await Promise.all([folderInfo(data.id), folderContents(data.id)]);
+      return { folder, contents };
+    } catch (error) {
+      if (error instanceof EvergardenError && error.code === "not_found") throw notFound();
+      throw error;
+    }
   });
 
 /** One folder's contents, `id: null` for the top of the library, loaded when the folder opens. */

@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, isNull, lt, or, type SQL, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNull, type SQL, sql } from "drizzle-orm";
 
 import { newId } from "#/lib/id";
 import { render } from "#/render";
@@ -9,6 +9,8 @@ import { EvergardenError } from "#/server/errors";
 import { sha256, source, store } from "./content";
 import {
   findFolder,
+  folderPath,
+  type FolderStep,
   firstDocumentPosition,
   normaliseRepo,
   parseFolderPath,
@@ -43,14 +45,11 @@ export type FolderEntry = {
   repo: string | null;
 };
 
-/** A folder as the library shows it before it is opened: how many things it holds. */
-export type FolderSummary = FolderEntry & { items: number };
+/** A folder in a list, with how many documents it holds, its subfolders included. */
+export type FolderSummary = FolderEntry & { documents: number };
 
 /** What sits directly inside a folder: its folders, and one page of its documents. */
 export type FolderPage = { folders: FolderSummary[]; documents: DocumentEntry[]; more: number };
-
-/** A document with the path of the folder it sits in, such as "reports/2026". */
-export type PlacedDocument = DocumentEntry & { place: string | null };
 
 export type VersionEntry = {
   number: number;
@@ -257,22 +256,8 @@ const PAGE_SIZE = 50;
  */
 export async function folderContents(folderId: string | null, offset = 0): Promise<FolderPage> {
   const inFolder = folderId ? eq(document.folderId, folderId) : isNull(document.folderId);
-  // Written out: inside a subquery, Drizzle would print folder.id unqualified, as the inner id.
-  const items = sql<number>`(
-    (select count(*) from folder as child where child.parent_id = "folder"."id")
-    + (select count(*) from document as inside
-       where inside.folder_id = "folder"."id" and inside.deleted_at is null)
-  )`;
-
   const [folders, documents, total] = await Promise.all([
-    offset > 0
-      ? []
-      : db
-          .select({ ...folderColumns, items })
-          .from(folder)
-          .where(folderId ? eq(folder.parentId, folderId) : isNull(folder.parentId))
-          .orderBy(asc(folder.position))
-          .all(),
+    offset > 0 ? [] : childFolders(folderId),
     liveDocuments(inFolder).orderBy(asc(document.position)).limit(PAGE_SIZE).offset(offset).all(),
     db
       .select({ count: count() })
@@ -283,8 +268,39 @@ export async function folderContents(folderId: string | null, offset = 0): Promi
   return { folders, documents, more: Math.max(0, (total?.count ?? 0) - offset - documents.length) };
 }
 
+/** The folders directly inside a folder, each with the documents in its whole subtree. */
+async function childFolders(parentId: string | null): Promise<FolderSummary[]> {
+  const children = await db
+    .select(folderColumns)
+    .from(folder)
+    .where(parentId ? eq(folder.parentId, parentId) : isNull(folder.parentId))
+    .orderBy(asc(folder.position))
+    .all();
+  if (children.length === 0) return [];
+  const counts = await countDocuments(children.map((entry) => entry.id));
+  const byRoot = new Map(counts.map((row) => [row.root, row.documents]));
+  return children.map((entry) => Object.assign(entry, { documents: byRoot.get(entry.id) ?? 0 }));
+}
+
+/** The documents in each folder's whole subtree, for the given folder ids. */
+function countDocuments(ids: string[]): Promise<Array<{ root: string; documents: number }>> {
+  return db.all<{ root: string; documents: number }>(sql`
+    with recursive tree(root, id) as (
+      select id, id from folder where id in ${ids}
+      union all
+      select tree.root, folder.id from folder join tree on folder.parent_id = tree.id
+    )
+    select tree.root as root, count(document.id) as documents
+    from tree left join document
+      on document.folder_id = tree.id and document.deleted_at is null
+    group by tree.root
+  `);
+}
+
 /** Adds the folder path of each document, reading the folder table once. */
-export async function withPlaces(entries: DocumentEntry[]): Promise<PlacedDocument[]> {
+export async function withPlaces<T extends DocumentEntry>(
+  entries: T[],
+): Promise<Array<T & { place: string | null }>> {
   if (entries.length === 0) return [];
   const folders = new Map(
     (await db.select(folderColumns).from(folder).all()).map((f) => [f.id, f]),
@@ -296,7 +312,7 @@ export async function withPlaces(entries: DocumentEntry[]): Promise<PlacedDocume
       if (name === undefined) break;
       names.unshift(name);
     }
-    return { ...entry, place: names.length ? names.join("/") : null };
+    return Object.assign(entry, { place: names.length ? names.join("/") : null });
   });
 }
 
@@ -314,22 +330,37 @@ export async function markRead(userId: string, documentId: string, versionNumber
     });
 }
 
-/** Documents updated since `userId` last read them, newest first. Never-read documents count. */
-export async function newFor(userId: string, limit = 20): Promise<DocumentEntry[]> {
-  return db
-    .select(documentEntry)
+/** A recently updated document, with whether the reader has seen its current version. */
+export type RecentDocument = DocumentEntry & { place: string | null; unread: boolean };
+
+/**
+ * The documents updated most recently, newest first. For a signed-in reader, `unread` marks the
+ * ones whose current version they have not opened; a document never opened counts as unread.
+ */
+export async function recent(userId: string | null, limit = 10): Promise<RecentDocument[]> {
+  const unread = sql<number>`${userId === null ? 0 : 1}
+    and coalesce(${readMark.versionNumber}, 0) < ${document.currentVersion}`.mapWith(Boolean);
+  const rows = await db
+    .select({ ...documentEntry, unread })
     .from(document)
     .innerJoin(version, currentVersion)
-    .leftJoin(readMark, and(eq(readMark.documentId, document.id), eq(readMark.userId, userId)))
-    .where(
-      and(
-        isNull(document.deletedAt),
-        or(isNull(readMark.versionNumber), lt(readMark.versionNumber, document.currentVersion)),
-      ),
+    .leftJoin(
+      readMark,
+      and(eq(readMark.documentId, document.id), eq(readMark.userId, userId ?? "")),
     )
+    .where(isNull(document.deletedAt))
     .orderBy(desc(document.updatedAt))
     .limit(limit)
     .all();
+  return withPlaces(rows);
+}
+
+/** One folder with the folders above it and the documents in its subtree, for its page. */
+export async function folderInfo(id: string): Promise<FolderSummary & { path: FolderStep[] }> {
+  const row = await db.select(folderColumns).from(folder).where(eq(folder.id, id)).get();
+  if (!row) throw new EvergardenError("not_found", "There is no folder with this id.");
+  const [counted] = await countDocuments([row.id]);
+  return Object.assign(row, { documents: counted?.documents ?? 0, path: await folderPath(id) });
 }
 
 const folderColumns = {
