@@ -15,6 +15,7 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDIdRouteImport } from './routes/_authenticated/d.$id'
+import { Route as AuthenticatedFIdRouteImport } from './routes/_authenticated/f.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiV1DocumentsRouteImport } from './routes/api/v1/documents'
 import { Route as ApiV1SearchRouteImport } from './routes/api/v1/search'
@@ -49,6 +50,11 @@ const AuthenticatedDIdRoute = AuthenticatedDIdRouteImport.update({
   path: '/d/$id',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedFIdRoute = AuthenticatedFIdRouteImport.update({
+  id: '/f/$id',
+  path: '/f/$id',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/d/$id': typeof AuthenticatedDIdRoute
+  '/f/$id': typeof AuthenticatedFIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/documents': typeof ApiV1DocumentsRouteWithChildren
   '/api/v1/search': typeof ApiV1SearchRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/': typeof AuthenticatedIndexRoute
   '/d/$id': typeof AuthenticatedDIdRoute
+  '/f/$id': typeof AuthenticatedFIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/documents': typeof ApiV1DocumentsRouteWithChildren
   '/api/v1/search': typeof ApiV1SearchRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/d/$id': typeof AuthenticatedDIdRoute
+  '/_authenticated/f/$id': typeof AuthenticatedFIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/documents': typeof ApiV1DocumentsRouteWithChildren
   '/api/v1/search': typeof ApiV1SearchRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/settings'
     | '/d/$id'
+    | '/f/$id'
     | '/api/auth/$'
     | '/api/v1/documents'
     | '/api/v1/search'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/'
     | '/d/$id'
+    | '/f/$id'
     | '/api/auth/$'
     | '/api/v1/documents'
     | '/api/v1/search'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/'
     | '/_authenticated/d/$id'
+    | '/_authenticated/f/$id'
     | '/api/auth/$'
     | '/api/v1/documents'
     | '/api/v1/search'
@@ -195,6 +207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/f/$id': {
+      id: '/_authenticated/f/$id'
+      path: '/f/$id'
+      fullPath: '/f/$id'
+      preLoaderRoute: typeof AuthenticatedFIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -230,12 +249,14 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedDIdRoute: typeof AuthenticatedDIdRoute
+  AuthenticatedFIdRoute: typeof AuthenticatedFIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedDIdRoute: AuthenticatedDIdRoute,
+  AuthenticatedFIdRoute: AuthenticatedFIdRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
