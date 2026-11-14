@@ -8,6 +8,7 @@ CREATE TABLE `comment` (
 	`status` text DEFAULT 'open' NOT NULL,
 	`author_kind` text NOT NULL,
 	`author_id` text NOT NULL,
+	`author_name` text NOT NULL,
 	`agent_seen_at` integer,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
 	`resolved_at` integer,
@@ -58,6 +59,7 @@ CREATE TABLE `reply` (
 	`body` text NOT NULL,
 	`author_kind` text NOT NULL,
 	`author_id` text NOT NULL,
+	`author_name` text NOT NULL,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
 	`edited_at` integer,
 	FOREIGN KEY (`comment_id`) REFERENCES `comment`(`id`) ON UPDATE no action ON DELETE cascade
@@ -95,6 +97,7 @@ CREATE TABLE `version` (
 	`sha256` text NOT NULL,
 	`author_kind` text NOT NULL,
 	`author_id` text NOT NULL,
+	`author_name` text NOT NULL,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
 	FOREIGN KEY (`document_id`) REFERENCES `document`(`id`) ON UPDATE no action ON DELETE cascade
 );

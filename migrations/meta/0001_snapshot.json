@@ -1,6 +1,6 @@
 {
-  "id": "a777e2db-833b-4c87-8b8a-cc791f3b3899",
-  "prevId": "4f06d824-522c-430a-8a9c-bbf40e3eade6",
+  "id": "8ba29688-64e7-4999-b59e-468f691dc1a2",
+  "prevId": "09310747-db08-4204-8126-f65d88c2aac9",
   "version": "6",
   "dialect": "sqlite",
   "tables": {
@@ -66,6 +66,13 @@
         },
         "author_id": {
           "name": "author_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "author_name": {
+          "name": "author_name",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -427,6 +434,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "author_name": {
+          "name": "author_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "integer",
@@ -682,6 +696,13 @@
         },
         "author_id": {
           "name": "author_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "author_name": {
+          "name": "author_name",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
