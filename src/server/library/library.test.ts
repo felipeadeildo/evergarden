@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { normaliseRepo } from "./folders";
-import { list, publish, read, search, update, versions } from "./index";
+import { folderContents, list, publish, read, search, update, versions, withPlaces } from "./index";
 
 const pi = { kind: "agent", id: "key1", name: "pi" } as const;
 const felipe = { kind: "user", id: "user1", name: "Felipe" } as const;
@@ -105,5 +105,42 @@ describe("normaliseRepo", () => {
     ["github.com/ranqia/ada", "github.com/ranqia/ada"],
   ])("%s gives %s", (input, expected) => {
     expect(normaliseRepo(input)).toBe(expected);
+  });
+});
+
+describe("folderContents", () => {
+  it("lists what sits directly in a folder, with counts for the folders inside", async () => {
+    await publish({ content: "# Q1 plan", folder: "browse/plans" }, pi);
+    await publish({ content: "# Q2 plan", folder: "browse/plans" }, pi);
+    await publish({ content: "# Old plan", folder: "browse/plans/archive" }, pi);
+    await publish({ content: "# Browse notes", folder: "browse" }, pi);
+
+    const { folders: top } = await folderContents(null);
+    const browse = top.find((entry) => entry.name === "browse");
+    expect(browse?.items).toBe(2);
+
+    const inside = await folderContents(browse!.id);
+    expect(inside.documents.map((entry) => entry.title)).toEqual(["Browse notes"]);
+    expect(inside.folders.map((entry) => [entry.name, entry.items])).toEqual([["plans", 3]]);
+  });
+
+  it("pages documents and counts the ones left", async () => {
+    for (let i = 0; i < 52; i++) await publish({ content: `# Page ${i}`, folder: "paged" }, pi);
+    const { folders } = await folderContents(null);
+    const paged = folders.find((entry) => entry.name === "paged")!;
+
+    const first = await folderContents(paged.id);
+    expect([first.documents.length, first.more]).toEqual([50, 2]);
+    const second = await folderContents(paged.id, 50);
+    expect([second.documents.length, second.more, second.folders]).toEqual([2, 0, []]);
+  });
+});
+
+describe("withPlaces", () => {
+  it("adds the folder path of each document", async () => {
+    const { id } = await publish({ content: "# Placed", folder: "reports/2026/q4" }, pi);
+    const { document } = await read(id);
+    const [placed] = await withPlaces([document]);
+    expect(placed?.place).toBe("reports/2026/q4");
   });
 });

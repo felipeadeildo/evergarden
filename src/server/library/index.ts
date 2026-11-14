@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, lt, or, type SQL, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNull, lt, or, type SQL, sql } from "drizzle-orm";
 
 import { newId } from "#/lib/id";
 import { render } from "#/render";
@@ -17,7 +17,7 @@ import {
 import { indexStatements } from "./search";
 
 export { rendered } from "./content";
-export { folderNames } from "./folders";
+export { folderPath, type FolderStep } from "./folders";
 export { search, type SearchHit } from "./search";
 
 /** Documents are rendered inside a request, so their size is capped. */
@@ -42,6 +42,15 @@ export type FolderEntry = {
   position: string;
   repo: string | null;
 };
+
+/** A folder as the library shows it before it is opened: how many things it holds. */
+export type FolderSummary = FolderEntry & { items: number };
+
+/** What sits directly inside a folder: its folders, and one page of its documents. */
+export type FolderPage = { folders: FolderSummary[]; documents: DocumentEntry[]; more: number };
+
+/** A document with the path of the folder it sits in, such as "reports/2026". */
+export type PlacedDocument = DocumentEntry & { place: string | null };
 
 export type VersionEntry = {
   number: number;
@@ -210,7 +219,7 @@ export type Library = { folders: FolderEntry[]; documents: DocumentEntry[] };
 
 /** Every folder and live document, or only the subtree of a folder path or linked repository. */
 export async function list(filter: { folder?: string; repo?: string } = {}): Promise<Library> {
-  const folders = await db.select().from(folder).all();
+  const folders = await db.select(folderColumns).from(folder).all();
   const documents = await liveDocuments().all();
 
   let rootId: string | null | undefined;
@@ -220,7 +229,7 @@ export async function list(filter: { folder?: string; repo?: string } = {}): Pro
   } else if (filter.folder) {
     rootId = await findFolder(parseFolderPath(filter.folder));
   }
-  if (rootId === undefined) return { folders: folders.map(folderEntry), documents };
+  if (rootId === undefined) return { folders, documents };
   if (rootId === null) return { folders: [], documents: [] };
 
   const inside = new Set([rootId]);
@@ -234,9 +243,61 @@ export async function list(filter: { folder?: string; repo?: string } = {}): Pro
     }
   }
   return {
-    folders: folders.filter((entry) => inside.has(entry.id)).map(folderEntry),
+    folders: folders.filter((entry) => inside.has(entry.id)),
     documents: documents.filter((entry) => entry.folderId && inside.has(entry.folderId)),
   };
+}
+
+const PAGE_SIZE = 50;
+
+/**
+ * The folders and documents directly inside a folder, or at the top of the library for `null`.
+ * Documents come `PAGE_SIZE` at a time from `offset`; `more` counts the ones left after this page.
+ * Folders come with the first page only.
+ */
+export async function folderContents(folderId: string | null, offset = 0): Promise<FolderPage> {
+  const inFolder = folderId ? eq(document.folderId, folderId) : isNull(document.folderId);
+  // Written out: inside a subquery, Drizzle would print folder.id unqualified, as the inner id.
+  const items = sql<number>`(
+    (select count(*) from folder as child where child.parent_id = "folder"."id")
+    + (select count(*) from document as inside
+       where inside.folder_id = "folder"."id" and inside.deleted_at is null)
+  )`;
+
+  const [folders, documents, total] = await Promise.all([
+    offset > 0
+      ? []
+      : db
+          .select({ ...folderColumns, items })
+          .from(folder)
+          .where(folderId ? eq(folder.parentId, folderId) : isNull(folder.parentId))
+          .orderBy(asc(folder.position))
+          .all(),
+    liveDocuments(inFolder).orderBy(asc(document.position)).limit(PAGE_SIZE).offset(offset).all(),
+    db
+      .select({ count: count() })
+      .from(document)
+      .where(and(inFolder, isNull(document.deletedAt)))
+      .get(),
+  ]);
+  return { folders, documents, more: Math.max(0, (total?.count ?? 0) - offset - documents.length) };
+}
+
+/** Adds the folder path of each document, reading the folder table once. */
+export async function withPlaces(entries: DocumentEntry[]): Promise<PlacedDocument[]> {
+  if (entries.length === 0) return [];
+  const folders = new Map(
+    (await db.select(folderColumns).from(folder).all()).map((f) => [f.id, f]),
+  );
+  return entries.map((entry) => {
+    const names: string[] = [];
+    for (let id = entry.folderId; id; id = folders.get(id)?.parentId ?? null) {
+      const name = folders.get(id)?.name;
+      if (name === undefined) break;
+      names.unshift(name);
+    }
+    return { ...entry, place: names.length ? names.join("/") : null };
+  });
 }
 
 /** Records that `userId` read `versionNumber`; "New for you" compares against it. */
@@ -271,15 +332,13 @@ export async function newFor(userId: string, limit = 20): Promise<DocumentEntry[
     .all();
 }
 
-function folderEntry(row: typeof folder.$inferSelect): FolderEntry {
-  return {
-    id: row.id,
-    parentId: row.parentId,
-    name: row.name,
-    position: row.position,
-    repo: row.repo,
-  };
-}
+const folderColumns = {
+  id: folder.id,
+  parentId: folder.parentId,
+  name: folder.name,
+  position: folder.position,
+  repo: folder.repo,
+};
 
 function versionRow(documentId: string, number: number, sha: string, author: Author) {
   return {

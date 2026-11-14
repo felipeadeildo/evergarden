@@ -128,20 +128,22 @@ export async function resolveTarget(path?: string, repo?: string): Promise<strin
   return id;
 }
 
-/** The names from the root down to a folder, such as `["reports", "2026"]`. */
-export async function folderNames(folderId: string | null): Promise<string[]> {
-  const names: string[] = [];
+export type FolderStep = { id: string; name: string };
+
+/** The folders from the root down to a folder, such as reports, then 2026. */
+export async function folderPath(folderId: string | null): Promise<FolderStep[]> {
+  const path: FolderStep[] = [];
   for (let id = folderId; id;) {
     const row = await db
-      .select({ name: folder.name, parentId: folder.parentId })
+      .select({ id: folder.id, name: folder.name, parentId: folder.parentId })
       .from(folder)
       .where(eq(folder.id, id))
       .get();
     if (!row) break;
-    names.unshift(row.name);
+    path.unshift({ id: row.id, name: row.name });
     id = row.parentId;
   }
-  return names;
+  return path;
 }
 
 /** New documents go to the top of their folder. */

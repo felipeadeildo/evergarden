@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-import { DocumentRow, LibraryTree, placeOf } from "#/components/library/tree";
+import { DocumentRow, LibraryTree } from "#/components/library/tree";
 import { TopBar } from "#/components/navigation/top-bar";
 import { getLibrary } from "#/functions/library.functions";
 
@@ -11,13 +11,14 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 function Library() {
-  const { folders, documents, unread } = Route.useLoaderData();
+  const { root, unread } = Route.useLoaderData();
+  const empty = root.folders.length === 0 && root.documents.length === 0;
 
   return (
     <>
       <TopBar />
       <main id="main" className="library">
-        {documents.length === 0 ? (
+        {empty ? (
           <section className="empty">
             <h1>No documents yet</h1>
             <p>
@@ -34,7 +35,7 @@ function Library() {
                 </h1>
                 <ul className="tree">
                   {unread.map((entry) => (
-                    <DocumentRow key={entry.id} entry={entry} place={placeOf(entry, folders)} />
+                    <DocumentRow key={entry.id} entry={entry} place={entry.place} />
                   ))}
                 </ul>
               </section>
@@ -43,7 +44,7 @@ function Library() {
               <h2 id="all-heading" className="library-heading">
                 Everything
               </h2>
-              <LibraryTree folders={folders} documents={documents} />
+              <LibraryTree root={root} />
             </section>
           </>
         )}
