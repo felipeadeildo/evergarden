@@ -3,12 +3,13 @@ import { mcp } from "@better-auth/mcp";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
-import { jwt } from "better-auth/plugins";
+import { emailOTP, jwt } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { env } from "cloudflare:workers";
 
 import { db } from "#/server/db";
 import * as schema from "#/server/db/schema";
+import { sendSignInCode } from "#/server/email";
 
 /** This deployment's public URL. OAuth for agents needs a fixed one, so it is required outside dev. */
 export const PUBLIC_URL = publicUrl(env.BETTER_AUTH_URL);
@@ -23,7 +24,8 @@ export const auth = betterAuth({
   // The JWT plugin's /token would hand the browser a session JWT signed like an access token.
   disabledPaths: ["/token"],
   database: drizzleAdapter(db, { provider: "sqlite", schema }),
-  // Password sign-in exists only in `bun run dev`, where there is no OAuth app to sign in with.
+  // People sign in with a code sent to their email (emailOTP below). Password sign-in exists only
+  // in `bun run dev`, with no form, for the screenshot script and local test runs.
   emailAndPassword: { enabled: import.meta.env?.DEV },
   databaseHooks: {
     user: {
@@ -38,17 +40,20 @@ export const auth = betterAuth({
       },
     },
   },
-  socialProviders: {
-    github: { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET },
-    ...(env.GOOGLE_CLIENT_ID && {
-      google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
-    }),
-  },
   advanced: {
     // Workers do not set X-Forwarded-For; without this every visitor shares one rate-limit bucket.
     ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
   },
   plugins: [
+    emailOTP({
+      expiresIn: 600,
+      allowedAttempts: 5,
+      storeOTP: "hashed",
+      // Codes go only to the owner, so the form cannot be used to email strangers.
+      sendVerificationOTP: async ({ email, otp, type }) => {
+        if (type === "sign-in" && isOwner(email)) sendSignInCode(email, otp);
+      },
+    }),
     // Keys belong to the owner's agents, so the plugin's default limit of 10 requests a day is off.
     apiKey({ defaultPrefix: "eg_", apiKeyHeaders: "x-api-key", rateLimit: { enabled: false } }),
     // Signs agent access tokens; /mcp checks them against its keys without a network call.

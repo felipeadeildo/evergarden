@@ -9,6 +9,8 @@
   "keep_vars": true,
   // No resource ids: `wrangler deploy` creates the database on first deploy
   // and links them by name afterwards, so every instance gets its own.
+  // Sends sign-in codes through Cloudflare Email Service; EMAIL_FROM names the sender.
+  "send_email": [{ "name": "EMAIL" }],
   "d1_databases": [
     { "binding": "DB", "database_name": "evergarden", "migrations_dir": "migrations" },
   ],

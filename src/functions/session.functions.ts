@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders, getRequestUrl } from "@tanstack/react-start/server";
-import { env } from "cloudflare:workers";
 
 import { principalFrom } from "#/server/access";
 
@@ -14,12 +13,6 @@ export const getViewer = createServerFn({ method: "GET" }).handler(
     return { kind: principal.kind, name: principal.name, email: principal.email };
   },
 );
-
-export const getSignInMethods = createServerFn({ method: "GET" }).handler(() => ({
-  github: Boolean(env.GITHUB_CLIENT_ID),
-  google: Boolean(env.GOOGLE_CLIENT_ID),
-  password: import.meta.env.DEV,
-}));
 
 /** The address agents connect to: this deployment's /mcp, as the browser reached it. */
 export const getMcpAddress = createServerFn({ method: "GET" }).handler(
