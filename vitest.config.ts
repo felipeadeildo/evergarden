@@ -20,7 +20,15 @@ export default defineConfig({
           cloudflareTest(async () => ({
             main: "./test/worker.ts",
             wrangler: { configPath: "./wrangler.jsonc" },
-            miniflare: { bindings: { TEST_MIGRATIONS: await readD1Migrations("migrations") } },
+            miniflare: {
+              bindings: {
+                TEST_MIGRATIONS: await readD1Migrations("migrations"),
+                // Fixed values, so tests behave the same with or without a local .dev.vars.
+                OWNER_EMAIL: "owner@example.com",
+                BETTER_AUTH_SECRET: "test-secret-for-vitest-only-0123456789",
+                BETTER_AUTH_URL: "http://localhost:3000",
+              },
+            },
           })),
         ],
         test: {
