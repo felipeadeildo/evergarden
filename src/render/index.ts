@@ -10,6 +10,7 @@ import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 import { VFile } from "vfile";
 
+import { remarkDollarMath } from "./dollar-math";
 import {
   type Heading,
   rehypeEvergarden,
@@ -20,7 +21,7 @@ import {
 export type { Heading };
 
 /** Part of every cache key for rendered trees: bump it whenever the output changes. */
-export const RENDERER_VERSION = 3;
+export const RENDERER_VERSION = 4;
 
 export type Rendered = {
   tree: Root;
@@ -50,8 +51,9 @@ export async function render(source: string): Promise<Rendered> {
     .use(remarkFrontmatter, ["yaml"])
     .use(remarkFrontmatterTitle)
     .use(remarkGfm)
-    // Reports are full of prices, so inline math needs $$…$$; a single $ stays a dollar sign.
+    // remark-math would read "$5 and $10" as math; remarkDollarMath reads $x$ the way Pandoc does.
     .use(remarkMath, { singleDollarTextMath: false })
+    .use(remarkDollarMath)
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
     .use(rehypeSanitize, schema)

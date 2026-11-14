@@ -16,8 +16,9 @@ heading is shown as the page title and not repeated in the body.
   > [!NOTE]
   > One of NOTE, TIP, IMPORTANT, WARNING or CAUTION.
 
-- Math with KaTeX: \`$$x^2$$\` inline, or \`$$\` on lines of their own around a block. A single
-  \`$\` is a dollar sign, so prices need no escaping.
+- Math with KaTeX: \`$x^2$\` or \`$$x^2$$\` inline, and \`$$\` on lines of their own around a
+  block. Prices need no escaping: a \`$\` followed by a space, or one that sits right before a
+  digit, never closes math, so "$5 and $10" stays text.
 - Diagrams in a \`\`\`mermaid code block, in Mermaid syntax: flowcharts, sequence, state, class,
   ER, gantt, timeline, mindmap, xychart, sankey, architecture, tree view and the rest. They adapt
   to narrow screens, so prefer them to ASCII drawings.

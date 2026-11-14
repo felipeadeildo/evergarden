@@ -85,7 +85,7 @@ The Worker renders markdown into a hast tree and stores it in R2 at `render/<sha
 
 ```
 markdown
-  → remark: gfm, frontmatter, math ($$ only)
+  → remark: gfm, frontmatter, math ($$x$$, and $x$ by the Pandoc rule)
   → rehype: raw HTML, sanitize
   → evergarden: callouts, source offsets, heading ids, title, search text,
                 code highlighted by TanStack Highlight, mermaid drawn by Pele
@@ -95,7 +95,7 @@ markdown
 
 Sanitising runs before the evergarden step, so what that step adds (highlighted code, Pele's SVG) is trusted output, not author input. Pele escapes diagram text and filters links and styles itself.
 
-A single `$` is never math. Reports are full of prices, and `$0.045 per GB … $950` would otherwise turn into a formula; inline math is written `$$x$$`.
+Reports are full of prices, so `$x$` follows the Pandoc rule instead of remark-math's: the opening `$` needs a non-space character after it, and the closing `$` needs a non-space character before it and no digit after it. `$c = 0.045 \times 21{,}000$` is math; in `$0.045 per GB … $950` the second `$` follows a space, so both stay prices.
 
 A diagram is drawn twice. The server draws it so the page shows it before any script runs; in the browser, Pele draws it again from the hidden source at the real column width and with the real fonts, which turns a wide flowchart vertical on a phone and adds pinch zoom.
 

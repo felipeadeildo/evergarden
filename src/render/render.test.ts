@@ -116,10 +116,22 @@ describe("render", () => {
     expect(toHtml(tree)).toContain('class="katex-display"');
   });
 
-  it("does not read dollar amounts as math", async () => {
-    const html = toHtml((await render("At $0.045 per GB that is about $950.")).tree);
+  it.each([
+    "At $0.045 per GB that is about $950.",
+    "Between $5 and $10 a month.",
+    "From $5-$10 a month.",
+    "It costs $5.",
+  ])("leaves prices as text: %s", async (source) => {
+    const html = toHtml((await render(source)).tree);
     expect(html).not.toContain("katex");
-    expect(html).toContain("$0.045 per GB");
+    expect(html).toContain(source.slice(0, -1));
+  });
+
+  it("reads $x$ as inline math", async () => {
+    const html = toHtml((await render("Saves $c = 0.045 \\times 21{,}000$ dollars.")).tree);
+    expect(html).toContain('class="katex"');
+    expect(html).toContain("Saves ");
+    expect(html).toContain(" dollars.");
   });
 
   it("shows the source of a diagram Pele cannot draw", async () => {
