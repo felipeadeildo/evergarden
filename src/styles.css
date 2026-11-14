@@ -81,6 +81,12 @@
     -webkit-tap-highlight-color: transparent;
     text-rendering: optimizeLegibility;
     scroll-padding-top: calc(var(--bar) + 1rem);
+    /* A thin bar in the page's own colours, without arrows; scrollbar-color is inherited. */
+    scrollbar-color: color-mix(in oklab, var(--ink) 22%, transparent) transparent;
+  }
+
+  * {
+    scrollbar-width: thin;
   }
 
   @media (min-width: 768px) {
@@ -370,7 +376,27 @@
     margin: 4.9rem 0 0 auto;
     max-height: calc(100dvh - var(--bar) - 4rem);
     overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
     padding-top: 0.2rem;
+    --fade: 2.5rem;
+  }
+
+  /* The list follows the reader, so it needs no bar; a fade shows which end has more. */
+  .reading-contents .toc[data-more="top"] {
+    mask-image: linear-gradient(to bottom, transparent, black var(--fade));
+  }
+  .reading-contents .toc[data-more="bottom"] {
+    mask-image: linear-gradient(to top, transparent, black var(--fade));
+  }
+  .reading-contents .toc[data-more="top bottom"] {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      black var(--fade),
+      black calc(100% - var(--fade)),
+      transparent
+    );
   }
 
   .toc ol {
@@ -437,22 +463,32 @@
   }
 
   .byline-button {
-    anchor-name: --versions;
     display: inline-flex;
-    align-items: baseline;
-    gap: 0.35rem;
-    padding: 0.1rem 0;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: -0.45rem;
+    padding: 0.2rem 0.45rem;
     border: 0;
+    border-radius: 6px;
     background: none;
+    font: inherit;
     font-size: 0.88rem;
     font-style: italic;
     color: var(--ink-soft);
-    text-decoration: underline dotted color-mix(in oklab, var(--ink-soft) 50%, transparent);
-    text-underline-offset: 0.25em;
+    cursor: pointer;
+    transition:
+      background-color 120ms var(--ease),
+      color 120ms var(--ease);
   }
 
-  .byline-button:hover {
+  .byline-button:hover,
+  .byline-button:focus-visible {
+    background: var(--sheet);
     color: var(--ink);
+  }
+
+  .byline-caret {
+    font-size: 0.8em;
   }
 
   .old-version {
@@ -494,58 +530,209 @@
     }
   }
 
-  @supports (anchor-name: --a) {
-    .versions {
-      position-anchor: --versions;
+  /*
+   * A popover opened by a popovertarget button is anchored to that button, so it can sit under
+   * it without naming the anchor. Without anchor positioning it opens in the middle of the screen.
+   */
+  @supports (position-area: bottom) {
+    .menu {
       inset: auto;
-      top: anchor(bottom);
-      left: anchor(left);
-      margin-top: 0.4rem;
-      position-try-fallbacks: flip-block;
+      position-area: block-end span-inline-end;
+      position-try-fallbacks: flip-block, flip-inline;
+      margin: 0.35rem 0;
     }
   }
 
-  .popover-title {
-    margin: 0.2rem 0.55rem 0.3rem;
-    font-size: 0.78rem;
+  .menu {
+    width: min(19rem, calc(100vw - 1.5rem));
+    max-height: min(26rem, 70dvh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    font-style: normal;
+  }
+
+  .menu-header {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 2rem;
+    padding: 0 0.15rem;
+  }
+
+  .menu-title {
+    margin: 0 0.4rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--ink-soft);
   }
 
-  .versions ol {
+  .menu-back {
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+
+  .menu-back:hover {
+    background: var(--sheet);
+    color: var(--ink);
+  }
+
+  .menu-list {
     margin: 0;
     padding: 0;
     list-style: none;
-    min-width: 15rem;
   }
 
-  .versions a {
+  .menu-item {
     display: grid;
-    gap: 0.05rem;
+    grid-template-columns: 1.25rem minmax(0, 1fr) auto auto;
+    align-items: center;
+    column-gap: 0.55rem;
+    width: 100%;
     padding: 0.45rem 0.55rem;
+    border: 0;
     border-radius: 6px;
-    color: inherit;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.9rem;
+    line-height: 1.35;
+    text-align: left;
     text-decoration: none;
+    cursor: pointer;
   }
 
-  .versions a:hover {
+  .menu-item:hover,
+  .menu-item:focus-visible {
     background: var(--sheet);
   }
 
-  .versions a[aria-current] .versions-number::after {
-    content: ", shown";
-    font-weight: 400;
-    color: var(--ink-soft);
-  }
-
-  .versions-number {
-    font-size: 0.9rem;
+  .menu-item[aria-current] {
+    color: var(--prussian);
     font-weight: 560;
   }
 
-  .versions-meta {
-    font-size: 0.78rem;
+  .menu-icon {
     color: var(--ink-soft);
+  }
+
+  .menu-item[aria-current] .menu-icon {
+    color: var(--prussian);
+  }
+
+  .menu-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .menu-detail {
+    font-size: 0.78rem;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-soft);
+  }
+
+  .menu-detail-below {
+    grid-column: 2 / -1;
+  }
+
+  .menu-tag {
+    margin-left: 0.5rem;
+    font-size: 0.75rem;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--emerald);
+  }
+
+  .menu-note {
+    margin: 0.35rem 0.55rem 0.4rem;
+    font-size: 0.82rem;
+    font-style: italic;
+    color: var(--ink-soft);
+    list-style: none;
+  }
+
+  /* The folder path in the top bar */
+
+  .folder-path > ol {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .folder-path > ol > li {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .folder-path > ol > li + li::before {
+    content: "/";
+    padding: 0 0.1rem;
+    color: color-mix(in oklab, var(--ink-soft) 55%, transparent);
+  }
+
+  .folder-path-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+    padding: 0.2rem 0.35rem;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--ink-soft);
+    font: inherit;
+    font-style: italic;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      background-color 120ms var(--ease),
+      color 120ms var(--ease);
+  }
+
+  .folder-path-button:hover,
+  .folder-path-button:focus-visible,
+  .folder-path-button:has(+ .menu:popover-open) {
+    background: var(--sheet);
+    color: var(--ink);
+  }
+
+  .folder-path-caret {
+    font-size: 0.75em;
+    opacity: 0;
+    transition: opacity 120ms var(--ease);
+  }
+
+  .folder-path-button:hover .folder-path-caret,
+  .folder-path-button:focus-visible .folder-path-caret,
+  .folder-path-button:has(+ .menu:popover-open) .folder-path-caret {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .folder-path-caret {
+      opacity: 1;
+    }
+  }
+
+  @media (max-width: 599px) {
+    .folder-path > ol > li:not(:last-child) {
+      display: none;
+    }
   }
 
   .sheet {
@@ -754,6 +941,39 @@
 
   .folder-name {
     font-weight: 600;
+  }
+
+  .folder-count {
+    margin-left: auto;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-soft);
+  }
+
+  .tree-note,
+  .tree-more {
+    margin: 0;
+    padding: 0.45rem 0 0.45rem 1.6rem;
+    font-size: 0.9rem;
+    font-style: italic;
+    color: var(--ink-soft);
+    list-style: none;
+  }
+
+  .link-button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--prussian);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+  }
+
+  .link-button:disabled {
+    color: var(--ink-soft);
+    cursor: default;
   }
 
   .folder-repo {
@@ -1336,6 +1556,171 @@
 
   .prose figure[data-kind="diagram"] {
     margin: 2em 0;
+  }
+
+  .diagram-open {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0.75rem 0;
+    border: 0;
+    border-radius: 10px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: zoom-in;
+  }
+
+  .diagram-open:hover {
+    background: color-mix(in oklab, var(--sheet) 55%, transparent);
+  }
+
+  .diagram-expand {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    background: var(--paper);
+    color: var(--ink-soft);
+    opacity: 0;
+    transition: opacity 120ms var(--ease);
+  }
+
+  .diagram-open:hover .diagram-expand,
+  .diagram-open:focus-visible .diagram-expand {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .diagram-expand {
+      opacity: 1;
+    }
+  }
+
+  /* The full-screen diagram */
+
+  .viewer {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .viewer[open] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .viewer::backdrop {
+    background: var(--paper);
+  }
+
+  .viewer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: max(0.6rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 0.6rem
+      max(1rem, env(safe-area-inset-left));
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .viewer-bar .quiet-button {
+    margin-left: auto;
+  }
+
+  .viewer-hint {
+    margin: 0;
+    font-size: 0.85rem;
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  .viewer .pan-zoom {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .pan-zoom-viewport {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grab;
+  }
+
+  .pan-zoom-viewport:active {
+    cursor: grabbing;
+  }
+
+  .pan-zoom-viewport:focus-visible {
+    outline: 2px solid var(--prussian);
+    outline-offset: -4px;
+  }
+
+  .pan-zoom-content .diagram,
+  .pan-zoom-content .diagram svg {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+  }
+
+  .pan-zoom-controls {
+    position: absolute;
+    left: 50%;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.25rem;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    background: var(--paper);
+    box-shadow: var(--lift);
+    transform: translateX(-50%);
+  }
+
+  .pan-zoom-controls button {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 0;
+    border-radius: 7px;
+    background: none;
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .pan-zoom-controls button:hover {
+    background: var(--sheet);
+  }
+
+  .pan-zoom-scale {
+    min-width: 3.4rem;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 767px) {
+    .viewer-hint {
+      display: none;
+    }
   }
 
   .diagram {
