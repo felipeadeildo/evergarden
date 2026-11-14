@@ -148,9 +148,11 @@ Their comments reach the agent like yours, with their name on each. Anyone who s
 
 ## You manage access
 
-`/settings` has four sections:
+`/settings` opens on what you come to do there: connect an agent. You type a name, such as "pi", and evergarden hands back the MCP configuration to paste into the agent, with the server address and a new key already inside. The key appears this once. The name appears as the author of everything the agent publishes and replies.
 
-- **Agents**: API keys. Creating one shows the key once, with the MCP configuration to paste into pi. Each key has a name ("pi") that appears as the author of its versions and replies.
+Under it:
+
+- **Connected agents**: each key, when its agent last reached the library, and a revoke button that asks once and then locks the agent out.
 - **Links**: every share, with revoke.
 - **People**: everyone who signed in through a link, the documents they commented on, and a button to remove their access.
 - **Authoring guide**: the document that `guide()` hands to agents.
