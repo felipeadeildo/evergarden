@@ -1,8 +1,10 @@
 # evergarden
 
+![A report in evergarden: a passage marked in emerald, a comment in the margin, and the agent's reply](brand/banner.png)
+
 A place to publish what your agents write, and comment on it like a Google Doc.
 
-Your agent publishes a markdown document (a report, a plan, a spec) over MCP. You read it in a page made for reading, select a passage, comment or suggest a rewrite, and submit a review. The agent reads the review, publishes a new revision, and answers each comment. A share link lets anyone else read it, or comment after signing in.
+Your agent publishes a markdown document (a report, a plan, a spec) over MCP. You read it in a page made for reading, select a passage, and comment or suggest a rewrite. The agent reads the open comments, publishes a new version, and answers each one. A share link lets anyone else read it, or comment after signing in.
 
 It runs on Cloudflare: one Worker with TanStack Start, D1 for everything it stores. Each instance belongs to one person and lives on their own Cloudflare account.
 

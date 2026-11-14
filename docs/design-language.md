@@ -73,6 +73,20 @@ The margin notes. On desktop, a closed comment is one line in the right margin a
 
 On a phone the margin becomes a sheet that rises to half the screen, so the passage stays visible above the note, and `‹ ›` in the sheet walk through the comments while the text scrolls along.
 
+## Brand
+
+The mark is a manicule, the pointing hand that readers drew in book margins to point at a passage. It is the glyph U+261E from Noto Sans Symbols 2, used under the SIL Open Font License, drawn in `prussian`. Commenting on a passage is what evergarden is for, and Violet Evergarden's own hands are mechanical, so the hand ties the name to the product.
+
+| File                                                          | What it is                                                                                                               |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `public/favicon.svg`                                          | The hand alone, with a thicker stroke so it reads at 16 px; light blue in the dark theme                                 |
+| `public/icon.svg`                                             | The app icon: the hand pointing at the emerald line among three, on paper, inside the safe zone of iOS and Android masks |
+| `public/apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | Rendered from `icon.svg`                                                                                                 |
+| `brand/banner.html`                                           | The README banner and the link preview: a real passage, marked and answered in the margin                                |
+| `brand/banner.png`, `public/og.png`                           | Rendered from `banner.html` at 1280 × 640 and 1200 × 630                                                                 |
+
+The wordmark is the hand followed by "evergarden" in Literata italic, as in the top bar (`src/components/ui/wordmark.tsx`). After changing `icon.svg` or `banner.html`, run `bun scripts/brand.ts` to render the PNGs again.
+
 ## Icons
 
 Phosphor, regular weight, at 1.15 times the size of the text beside them and in its colour. An icon always comes with words: next to a label, or as the only visible content of a phone toolbar button whose label stays readable by screen readers. Callouts get one icon per kind (note, tip, important, warning, caution); documents, folders and linked repositories get theirs in the library.
