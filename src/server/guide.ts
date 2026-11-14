@@ -17,9 +17,10 @@ heading is shown as the page title and not repeated in the body.
   > One of NOTE, TIP, IMPORTANT, WARNING or CAUTION.
 
 - Math with KaTeX: \`$x^2$\` inline, \`$$ … $$\` on its own lines.
-- Diagrams in a \`\`\`mermaid code block.
-- Highlighted code for bash, css, diff, go, html, javascript, json, jsx, markdown, python, rust,
-  sql, toml, tsx, typescript and yaml. Other languages show as plain text.
+- Diagrams in a \`\`\`mermaid code block, in Mermaid syntax: flowcharts, sequence, state, class,
+  ER, gantt, timeline, mindmap, xychart, sankey, architecture, tree view and the rest. They adapt
+  to narrow screens, so prefer them to ASCII drawings.
+- Highlighted code in about 80 languages; name the language after the opening fence.
 
 Raw HTML is sanitised: no scripts, styles or event handlers.
 

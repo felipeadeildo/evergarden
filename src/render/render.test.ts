@@ -81,9 +81,9 @@ describe("render", () => {
     expect(toHtml((await render(REPORT)).tree)).toContain('id="footnote-label"');
   });
 
-  it("highlights code with css variables", async () => {
+  it("highlights code with token classes", async () => {
     const html = toHtml((await render(REPORT)).tree);
-    expect(html).toContain("var(--shiki-token-keyword)");
+    expect(html).toContain('<span class="th-token th-keyword">const</span>');
   });
 
   it("keeps offsets on highlighted code blocks", async () => {
@@ -94,11 +94,20 @@ describe("render", () => {
     expect(REPORT.slice(start, end)).toBe("```ts\nconst total = 7_560;\n```");
   });
 
-  it("leaves mermaid source in a figure for the client", async () => {
+  it("draws mermaid blocks as SVG and keeps the source for the browser", async () => {
     const { tree, features } = await render(REPORT);
-    const figure = find(tree, (node) => node.properties.dataKind === "mermaid");
-    expect(toHtml(figure!)).toContain("ec2 --> nat --> s3");
-    expect(features).toEqual({ math: true, mermaid: true });
+    const figure = find(tree, (node) => node.properties.dataKind === "diagram");
+    const html = toHtml(figure!);
+    expect(html).toContain("<svg");
+    expect(html).toContain("ec2 --> nat --> s3");
+    expect(features).toEqual({ math: true, diagram: true });
+  });
+
+  it("shows the source of a diagram Pele cannot draw", async () => {
+    const { tree } = await render("```mermaid\nflowchart LR\n  a -->\n```");
+    const figure = find(tree, (node) => node.properties.dataKind === "diagram");
+    expect(figure?.properties.dataError).toBeTruthy();
+    expect(toHtml(figure!)).not.toContain("<svg");
   });
 
   it("renders math with KaTeX", async () => {

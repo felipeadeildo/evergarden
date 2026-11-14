@@ -1,10 +1,14 @@
 import GithubSlugger from "github-slugger";
 import type { Element, ElementContent, Root } from "hast";
+import { fromHtml } from "hast-util-from-html";
 import { toText } from "hast-util-to-text";
 import type { Root as MdastRoot } from "mdast";
+import { PeleError, render as renderDiagram } from "pele";
 import { SKIP, visit } from "unist-util-visit";
 import type { VFile } from "vfile";
 import { parse as parseYaml } from "yaml";
+
+import { highlighter } from "./highlight";
 
 export type Heading = { depth: 2 | 3; text: string; id: string };
 
@@ -13,7 +17,7 @@ export type RenderData = {
   title?: string;
   headings?: Heading[];
   text?: string;
-  features?: { math: boolean; mermaid: boolean };
+  features?: { math: boolean; diagram: boolean };
 };
 
 declare module "vfile" {
@@ -76,7 +80,7 @@ export function remarkFrontmatterTitle() {
 export function rehypeEvergarden() {
   return (tree: Root, file: VFile) => {
     const result = data(file);
-    const features = { math: false, mermaid: false };
+    const features = { math: false, diagram: false };
 
     visit(tree, "element", (node, index, parent) => {
       const offsets = sourceOffsets(node);
@@ -90,10 +94,10 @@ export function rehypeEvergarden() {
         const code = node.children.find(isElement);
         if (code?.tagName === "code") {
           const language = languageOf(code);
-          if (language === "mermaid") features.mermaid = true;
+          if (language === "mermaid") features.diagram = true;
           parent.children[index] =
             language === "mermaid"
-              ? mermaidFigure(toText(code), offsets)
+              ? diagramFigure(toText(code), offsets)
               : codeFigure(node, language, offsets);
           return SKIP;
         }
@@ -165,35 +169,65 @@ function languageOf(code: Element): string | undefined {
   return language?.slice("language-".length);
 }
 
-/** Shiki replaces the `pre`, so the offsets and language live on a figure around it. */
+/** A highlighted code block in a figure, which carries the block's offsets and language. */
 function codeFigure(
   pre: Element,
   language: string | undefined,
   offsets: string | undefined,
 ): Element {
   delete pre.properties.dataSourcepos;
+  const html = highlighter.highlightToHtml(toText(pre), { lang: language });
+  const highlighted = fromHtml(html, { fragment: true }).children.find(isElementLike);
   return {
     type: "element",
     tagName: "figure",
-    properties: { dataKind: "code", dataLanguage: language, dataSourcepos: offsets },
-    children: [pre],
+    properties: {
+      dataKind: "code",
+      dataLanguage: language && highlighter.normalizeLanguage(language),
+      dataSourcepos: offsets,
+    },
+    children: [highlighted ?? pre],
   };
 }
 
-function mermaidFigure(source: string, offsets: string | undefined): Element {
-  return {
+/**
+ * A mermaid block drawn by Pele. The server draws it so the page shows the diagram before any
+ * script runs; the browser draws it again from the hidden source, at the width it really has.
+ */
+function diagramFigure(source: string, offsets: string | undefined): Element {
+  const figure = (children: Element[], error?: string): Element => ({
     type: "element",
     tagName: "figure",
-    properties: { dataKind: "mermaid", dataSourcepos: offsets },
-    children: [
-      {
-        type: "element",
-        tagName: "pre",
-        properties: { className: ["mermaid-source"] },
-        children: [{ type: "text", value: source }],
-      },
-    ],
-  };
+    properties: { dataKind: "diagram", dataSourcepos: offsets, dataError: error },
+    children,
+  });
+  const sourceNode = (hidden: boolean): Element => ({
+    type: "element",
+    tagName: "pre",
+    properties: { className: ["diagram-source"], hidden },
+    children: [{ type: "text", value: source }],
+  });
+
+  try {
+    const { svg } = renderDiagram(source, {
+      fontFamily: "Literata Variable, Georgia, serif",
+      idPrefix: `diagram-${offsets ?? "0"}`,
+    });
+    const drawing: Element = {
+      type: "element",
+      tagName: "div",
+      properties: { className: ["diagram"] },
+      children: fromHtml(svg, { fragment: true, space: "svg" }).children.filter(isElementLike),
+    };
+    return figure([drawing, sourceNode(true)]);
+  } catch (error) {
+    if (!(error instanceof PeleError)) throw error;
+    return figure([sourceNode(false)], error.message);
+  }
+}
+
+function isElementLike(node: { type: string }): node is Element {
+  return node.type === "element";
 }
 
 /** The frontmatter title wins; otherwise a leading `# heading`, which then leaves the body. */

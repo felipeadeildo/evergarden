@@ -1,4 +1,3 @@
-import rehypeShikiFromHighlighter from "@shikijs/rehype/core";
 import type { Root } from "hast";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
@@ -11,7 +10,6 @@ import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 import { VFile } from "vfile";
 
-import { getHighlighter } from "./highlight";
 import {
   type Heading,
   rehypeEvergarden,
@@ -22,7 +20,7 @@ import {
 export type { Heading };
 
 /** Part of every cache key for rendered trees: bump it whenever the output changes. */
-export const RENDERER_VERSION = 1;
+export const RENDERER_VERSION = 2;
 
 export type Rendered = {
   tree: Root;
@@ -32,7 +30,7 @@ export type Rendered = {
   /** Plain text of the body, for the search index. */
   text: string;
   /** Client code the page has to load. */
-  features: { math: boolean; mermaid: boolean };
+  features: { math: boolean; diagram: boolean };
 };
 
 const schema: Schema = {
@@ -58,11 +56,6 @@ export async function render(source: string): Promise<Rendered> {
     .use(rehypeSanitize, schema)
     .use(rehypeEvergarden)
     .use(rehypeKatex, { output: "htmlAndMathml" })
-    .use(rehypeShikiFromHighlighter, await getHighlighter(), {
-      theme: "evergarden",
-      defaultLanguage: "text",
-      fallbackLanguage: "text",
-    })
     .use(rehypeStripPositions);
 
   const file = new VFile(source);
@@ -74,6 +67,6 @@ export async function render(source: string): Promise<Rendered> {
     title: data.title ?? null,
     headings: data.headings ?? [],
     text: data.text ?? "",
-    features: data.features ?? { math: false, mermaid: false },
+    features: data.features ?? { math: false, diagram: false },
   };
 }
