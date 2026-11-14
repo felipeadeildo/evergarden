@@ -1,0 +1,191 @@
+@import "tailwindcss";
+@import "@fontsource-variable/literata/opsz.css";
+@import "@fontsource-variable/literata/opsz-italic.css";
+
+@font-face {
+  font-family: "Paper Mono";
+  src: url("/fonts/paper-mono.woff2") format("woff2");
+  font-weight: 100 800;
+  font-display: swap;
+}
+
+/* Tokens are defined in docs/design-language.md; keep both in step. */
+:root {
+  color-scheme: light dark;
+
+  --paper: #f6f5f0;
+  --sheet: #ecebe4;
+  --rule: #d8d6cc;
+  --ink: #1c2230;
+  --ink-soft: #5b6172;
+  --prussian: #23395b;
+  --emerald: #0d7a5a;
+  --alizarin: #a3243b;
+  --mark: color-mix(in oklab, var(--emerald) 14%, transparent);
+
+  --measure: 66ch;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #10151e;
+    --sheet: #171e2a;
+    --rule: #2a3344;
+    --ink: #e7e5dd;
+    --ink-soft: #9aa1b2;
+    --prussian: #93b1df;
+    --emerald: #4cc598;
+    --alizarin: #e07a8b;
+    --mark: color-mix(in oklab, var(--emerald) 20%, transparent);
+  }
+}
+
+@theme inline {
+  /* Michelangelus is used only when installed locally: its licence forbids serving it. */
+  --font-serif: "Michelangelus", "Literata Variable", Georgia, serif;
+  --font-mono: "Paper Mono", ui-monospace, monospace;
+  --color-paper: var(--paper);
+  --color-sheet: var(--sheet);
+  --color-rule: var(--rule);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-prussian: var(--prussian);
+  --color-emerald: var(--emerald);
+  --color-alizarin: var(--alizarin);
+}
+
+@layer base {
+  html {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-serif);
+    font-size: 17.5px;
+    line-height: 1.6;
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+  }
+
+  @media (min-width: 768px) {
+    html {
+      font-size: 19px;
+    }
+  }
+
+  @media (pointer: fine) {
+    html {
+      overscroll-behavior: none;
+    }
+  }
+
+  body {
+    min-height: 100dvh;
+    margin: 0;
+  }
+
+  a,
+  button,
+  input,
+  textarea,
+  select {
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--prussian);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: var(--mark);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 600;
+    line-height: 1.2;
+    text-wrap: balance;
+    scroll-margin-top: 4rem;
+  }
+
+  p,
+  li {
+    text-wrap: pretty;
+  }
+
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+  }
+}
+
+@layer components {
+  .skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -4rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--sheet);
+    color: var(--ink);
+  }
+
+  .skip-link:focus-visible {
+    top: 1rem;
+  }
+
+  /* A page of reading text: one column at a comfortable measure. */
+  .letter {
+    max-width: var(--measure);
+    margin-inline: auto;
+    padding: max(2.5rem, env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right)) 4rem
+      max(1.25rem, env(safe-area-inset-left));
+  }
+
+  .letter h1 {
+    font-size: 1.68rem;
+    margin: 0 0 1rem;
+  }
+
+  .letter h2 {
+    font-size: 1.26rem;
+    margin: 2.2rem 0 0.6rem;
+  }
+
+  .letter h3 {
+    font-size: 1.03rem;
+    margin: 1.8rem 0 0.4rem;
+  }
+
+  .letter p {
+    margin: 0 0 1em;
+  }
+
+  .letter a {
+    color: var(--prussian);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+  }
+
+  .letter :not(pre) > code {
+    padding: 0.05em 0.3em;
+    border-radius: 3px;
+    background: var(--sheet);
+  }
+
+  .letter table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (min-width: 768px) {
+    .letter h1 {
+      font-size: 2rem;
+    }
+  }
+}
