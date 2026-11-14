@@ -2,148 +2,158 @@
 
 This page follows one document from the moment an agent writes it to the moment someone outside reads it, and names every screen and tool call on the way. The architecture behind these flows is in [design.md](design.md); the visual language is in [design-language.md](design-language.md).
 
-The running example is a cost report. You ask your agent to look at last month's AWS bill and explain where the money went. It writes `reports/aws-costs-2026-11.md`, about 1,500 words with two tables and a mermaid diagram.
+The running example is a cost report. You ask your agent to look at last month's AWS bill and explain where the money went. It writes about 1,500 words titled "AWS costs, November", with two tables and a mermaid diagram of where the traffic goes.
 
 ## The agent publishes a document
 
-The agent calls one MCP tool:
+Before its first document, the agent calls `guide()`. It returns what evergarden renders (callouts, mermaid, mockups, figures) and your authoring guide: how you want reports, plans and dossiers written. The guide is itself a document in evergarden, so you improve it by commenting on it.
+
+Then the agent calls one MCP tool:
 
 ```
-publish(path: "reports/aws-costs-2026-11.md", content: "# AWS costs, November\n…", message: "First draft")
-→ { path, rev: 1, url: "https://docs.example.com/d/reports/aws-costs-2026-11.md" }
+publish(content: "# AWS costs, November\n…", folder: "reports/2026")
+→ { id: "k7q2mxa9pt", version: 1, url: "https://docs.example.com/d/k7q2mxa9pt" }
 ```
 
-evergarden hashes the content, stores it in R2 under that hash, and records revision 1. The agent gives you the URL.
+The document is now `k7q2mxa9pt`: ten random characters, lower-case letters and digits. That id is the document's only address. The URL, the MCP tools and share links all use it, so renaming the document or moving it to another folder never breaks a link.
 
-Three rules make publishing safe to repeat:
+The title comes from the frontmatter `title`, or else the first `#` heading. The agent gives you the URL.
 
-- Publishing the same content twice returns the existing revision instead of creating an empty one, so an agent that retries after a timeout does no harm.
-- The agent may pass `base_rev`. If someone else created a revision after `base_rev` (for example, you applied a suggestion in the browser), the call fails with the current revision number, and the agent reads before writing again.
-- The title comes from the frontmatter `title`, or else the first `#` heading, or else the file name.
+## Folders are yours to arrange
 
-Paths are folders. `reports/aws-costs-2026-11.md` creates nothing called `reports`; the folder exists because a document lives under it, and it disappears when the last one moves away.
+A folder is a name in a tree (`reports/2026`, `ranqia/ada`), and it lives only in the library, never in a URL. `publish` creates the folders it names. In the library you rename folders, nest them, drag documents and folders into the order you want, and move a document to another folder; its URL stays the same.
+
+A folder can be linked to a repository. Linking `ranqia/ada` to `github.com/ranqia/ada` lets an agent working inside that repository publish without knowing your folder names:
+
+```
+publish(content: "…", repo: "github.com/ranqia/ada")
+```
+
+The agent reads the repository from its git remote, and evergarden files the document in the linked folder. The same link answers `list(repo: "github.com/ranqia/ada")`: everything written about that repository. A folder is also what you share when a whole project should be visible to a colleague (see [You share it](#you-share-it)).
 
 ## You open the library
 
-`/` is the library. It answers "what needs me?" before "where is everything?", so it has two parts:
+`/` is the library. It answers "what needs me?" before "where is everything?":
 
-1. **Waiting for you**: documents with a revision you haven't read. Each row shows the path, the title, how many revisions are new since you last opened it, and who wrote them. A document you have never opened counts as new.
-2. **All documents**: the folder tree, with the most recently changed folders first.
+1. **New for you**: documents updated since you last opened them, and threads where the agent replied to you. A document you have never opened counts as new.
+2. **The tree**: your folders and documents, in the order you arranged them.
 
-A third, quieter list shows reviews the agent hasn't picked up yet, so you can see when it's behind.
-
-Quick open (`⌘K`, or the search button on mobile) filters documents by path and title. Full-text search comes later.
+Search (`⌘K`, or the search button on a phone) matches titles first, then the full text, and opens the document scrolled to the match.
 
 ## You read the report
 
-`/d/reports/aws-costs-2026-11.md` opens the latest revision. The page is a letter, not a dashboard: a title, a line with the path and revision, the text, and nothing else competing with it.
+`/d/k7q2mxa9pt` opens the current version. The page shows the title, one line saying who updated it and when, the text, and the notes in the margin. Nothing else.
 
-| Area              | Desktop (≥1200 px)                             | Tablet (768 to 1199 px)                             | Phone                                                                   |
-| ----------------- | ---------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------- |
-| Table of contents | Left column, current section marked            | Hidden; opens from the header                       | A pill at the top showing the current section; tapping it opens a sheet |
-| Text              | Centred column, about 66 characters per line   | Same                                                | Full width with side padding                                            |
-| Comments          | Right margin, each note level with its passage | Markers in the margin; a note opens in a side panel | Passage underlined; tapping opens a bottom sheet                        |
-| Revision          | `rev 3 of 3` in the header, opens the history  | Same                                                | Same, inside the header menu                                            |
+| Area              | Desktop (≥1200 px)                             | Tablet (768 to 1199 px)                        | Phone                                     |
+| ----------------- | ---------------------------------------------- | ---------------------------------------------- | ----------------------------------------- |
+| Table of contents | Left column, current section marked            | Hidden; opens from the header                  | Hidden; opens from the header             |
+| Text              | Centred column, about 66 characters per line   | Same                                           | Full width with side padding              |
+| Comments          | Right margin, each note level with its passage | Markers in the margin; a note opens in a panel | Passage underlined; tapping opens a sheet |
 
-Opening a document records that you read that revision, which is what empties "Waiting for you".
+Opening a document records which version you read, which is what empties "New for you".
 
-Older revisions open with `?rev=2`. The page says so above the title and links back to the latest one, because reading an old version by accident is the easiest mistake to make here.
+## You comment on it
 
-## You review it
+Commenting works like Google Docs: a comment is posted the moment you save it, and the agent can read it right away. What you can attach a comment to depends on what you are looking at.
 
-Reviewing works like a pull request review: comments pile up as a draft, and nothing reaches the agent until you submit.
+| You point at                                          | How                                                        | The comment is attached to       |
+| ----------------------------------------------------- | ---------------------------------------------------------- | -------------------------------- |
+| Text in a paragraph, list item, heading or table cell | Select it                                                  | That passage, which stays marked |
+| A whole block: a table, a code block, a callout       | The `+` beside the block, in the margin                    | The block                        |
+| A point in a figure: an image, a diagram, a mockup    | The comment button on the figure, then a click on the spot | A numbered pin at that spot      |
 
-1. You select "Data transfer is the second biggest line item" in the third paragraph.
-2. A bar appears. On desktop it floats above the selection; on a phone it sits at the bottom of the screen, clear of the system's copy and paste menu. It offers **Comment** and **Suggest**.
-3. **Comment** opens a note in the margin (a sheet on the phone). You write "Is this NAT gateway traffic? Say so." and save it. The passage stays highlighted, and the review bar at the bottom says `1 pending`.
-4. **Suggest** opens the same note with the selected markdown already in the box. You edit it into the sentence you want. The note shows the change as a word diff before you save.
-5. When you're done, the review bar's **Submit review** asks for a verdict and an optional summary:
-   - **Request changes**: the agent should revise.
-   - **Comment**: notes for the agent, no revision expected.
-   - **Approve**: the document is done.
+On the AWS report, three comments show all three kinds:
 
-Replies to existing threads post right away; only new threads wait for the review. A pending review survives closing the tab, because it lives on the server.
+1. You select "Data transfer is the second biggest line item" and press **Comment** (or `⌘⌥M`). A note opens in the margin, level with the passage. You write "Is this NAT gateway traffic? Say so." and press **Comment** again. The passage stays marked in emerald.
+2. You press `+` beside the cost table and write "Sort by cost, not by service name."
+3. In the mermaid diagram, you click the arrow that points to EC2 and write "This should go to S3." A pin numbered 3 stays on the arrow.
 
-If your selection crosses into a mermaid diagram or a mockup, the note attaches to the whole block, since the drawn text doesn't exist in the markdown.
+On a phone, selecting text brings a bar to the bottom of the screen, clear of the system's copy and paste menu, with **Comment** and **Suggest**. The note opens in a sheet that covers half the screen, so the passage stays visible above it.
 
-## The agent works through the review
+### Suggesting a rewrite
 
-The agent asks what's waiting:
+**Suggest** opens the same note with the selected text in the box. You edit it into the sentence you want, and the note shows the change word by word. The owner of the document sees **Accept** on the suggestion; accepting it creates a new version with that change and resolves the comment. The agent can accept it too (see below).
 
-```
-pending_reviews()
-→ [{ id: "rv_8f2", path: "reports/aws-costs-2026-11.md", rev: 1, verdict: "request_changes", threads: 4 }]
+### Replies and resolving
 
-get_review(id: "rv_8f2")
-```
+Anyone who can comment can reply in a thread. **Resolve** closes it and takes it out of the margin; "3 resolved" at the end of the margin shows them again. `J` and `K` move to the next and previous comment, and `Esc` closes the open one.
 
-`get_review` returns markdown the agent can act on without parsing anything. For each thread:
+## The agent works through the comments
+
+When you tell the agent "look at my comments", it asks:
 
 ```
-### Thread th_31 (open)
-Quote, lines 14-14:
+open_comments(id: "k7q2mxa9pt")
+```
+
+Without an id, `open_comments()` returns open comments across every document, with the ones the agent hasn't seen yet first. The answer is markdown the agent can act on without parsing anything:
+
+```
+## AWS costs, November (k7q2mxa9pt), version 1
+
+### c_31 on text, open
 > Data transfer is the second biggest line item.
-Context:
-  …EC2 was 41% of the bill, about $3,100.
-  >>> Data transfer is the second biggest line item. <<<
-  Most of it left through the NAT gateway in us-east-1…
-Suggestion:
-  Data transfer through the us-east-1 NAT gateway is the second biggest line item, at $1,240.
-Comments:
-  felipe: Is this NAT gateway traffic? Say so.
+Context: …EC2 was 41% of the bill, about $3,100. >>>Data transfer is the second biggest line item.<<< Most of it left through…
+- felipe: Is this NAT gateway traffic? Say so.
+
+### c_32 on the table "Cost by service", open
+- felipe: Sort by cost, not by service name.
+
+### c_33 on a point in the figure "Traffic flow" (mermaid), open
+Pin at 64% across, 38% down. Nearest label: "EC2".
+- felipe: This should go to S3.
 ```
 
-The same call marks the review as read, so it leaves `pending_reviews`.
+The agent then:
 
-Then the agent revises:
+- calls `reply(comment_id, body)` to answer or push back;
+- calls `accept_suggestion(comment_id)` for a suggestion it agrees with as written;
+- rewrites what needs rewriting and calls `update(id, content)`, then `resolve(comment_id, note)` with one line on what changed.
 
-- `apply_suggestion(thread_id)` for a suggestion it accepts as written. It creates a revision with only that change and resolves the thread.
-- `publish(path, content, message, base_rev)` for anything that needs rewriting, followed by `resolve(thread_id, body)` with a one-line note on what changed, or `reply(thread_id, body)` to push back.
+## The agent updates the document
 
-## Comments follow the text
+`update(id: "k7q2mxa9pt", content: "…")` saves version 2. Publishing the same content twice returns the existing version, so an agent that retries after a timeout does no harm. If someone else saved a version in between (for example, you accepted a suggestion), the agent can pass `base_version` and the call fails instead of overwriting; it then reads and tries again.
 
-When revision 2 arrives, every open thread from revision 1 needs a new position. evergarden tries the diff between the revisions first, then searches for the quoted passage with its surrounding words. If neither finds it, the thread is marked **outdated**: it stays visible on revision 1, and revision 2 lists it at the bottom under "Comments on earlier revisions" so nothing disappears silently.
+evergarden then looks for each open comment's passage in the new text, and finds it even when the paragraph moved. When the agent rewrote the passage beyond recognition, the comment moves to "Comments on text that changed" at the end of the document, quoting the old text, so you still see it.
 
-The full anchoring rules are in [design.md](design.md#anchors).
+## Older versions stay out of the way
 
-## You compare revisions
-
-`/d/reports/aws-costs-2026-11.md?diff=1..2` shows what the agent changed. The default is the rendered document with changes marked inline: removed words struck through in the margin colour, added words underlined. Unchanged sections fold to one line each, and a toggle shows the raw markdown diff instead.
-
-Threads resolved by that revision appear next to the change that resolved them, with the agent's note. That's how you check its work without rereading the whole report.
+The line under the title says "Updated 2 hours ago by pi". Its menu lists the versions; opening one shows it read-only, with a banner above the title that links back to the current version. There is no diff view. Versions exist so that comments keep their context and a share link can point at a fixed version.
 
 ## You share it
 
-**Share** in the header opens a dialog with four choices:
+**Share** opens a dialog:
 
-| Choice        | Options                                              | Default           |
-| ------------- | ---------------------------------------------------- | ----------------- |
-| What          | This document, or its folder (`reports/`)            | This document     |
-| Which version | Always the latest, or pinned to the current revision | Always the latest |
-| Access        | Read, or read and comment                            | Read              |
-| Expires       | Never, 7 days, 30 days                               | Never             |
+| Choice        | Options                                      | Default            |
+| ------------- | -------------------------------------------- | ------------------ |
+| What          | This document, or a folder (`ranqia/ada`)    | This document      |
+| Which version | Always the current one, or this version only | Always the current |
+| Access        | Read, or read and comment                    | Read               |
+| Expires       | Never, 7 days, 30 days                       | Never              |
 
-It creates a link like `https://docs.example.com/s/k3v9…`. The settings page lists every link you've made, how often each was opened, and lets you revoke any of them.
+It creates a link like `https://docs.example.com/s/q9w3…`. The settings page lists every link, how often each was opened, and lets you revoke any of them.
 
 ## Someone opens your link
 
 A colleague opens the link on their phone, from a chat app. The chat app's preview already showed the report's title and first sentence.
 
-- **Read**: they see the document, with no sign-in. They don't see comments, the revision history, or anything else in your library. A folder link shows a small tree of that folder only.
-- **Read and comment**: same, plus a **Sign in to comment** button. They sign in with GitHub or Google and come back to the same place. From then on they can select text, comment, suggest and submit a review, exactly as you do. They see every thread on the document, including yours, because a review only makes sense with the other comments in view.
+- **Read**: they see the document, with no sign-in, and no comments. A folder link shows that folder's tree and nothing else from your library.
+- **Read and comment**: same, plus **Sign in to comment**. They sign in with GitHub or Google and land back on the same passage. From then on they comment, suggest and reply exactly as you do, and see every comment, yours included.
 
-Their reviews reach the agent like yours do, with their name on each comment. Anyone who signs in without a link sees "This library is private" and nothing else.
+Their comments reach the agent like yours, with their name on each. Anyone who signs in without a link sees "This library is private" and nothing else.
 
 ## You manage access
 
-`/settings` has three sections:
+`/settings` has four sections:
 
-- **Agents**: API keys. Creating one shows the key once, with the MCP configuration to paste into pi. Each key has a name (`pi on laptop`) that becomes the author of its revisions.
+- **Agents**: API keys. Creating one shows the key once, with the MCP configuration to paste into pi. Each key has a name ("pi") that appears as the author of its versions and replies.
 - **Links**: every share, with revoke.
-- **People**: everyone who signed in through a link, with the documents they commented on, and a button to remove their access.
+- **People**: everyone who signed in through a link, the documents they commented on, and a button to remove their access.
+- **Authoring guide**: the document that `guide()` hands to agents.
 
 ## What's left out on purpose
 
-- **Editing in the browser.** The agent writes, you review. A suggestion is the way to change words yourself. A full editor would compete with the agent for the same text and bring conflict handling with it.
-- **Live collaboration.** Comments show up on refresh, not in real time. Real-time would need a Durable Object per document and only pays off with several reviewers at once.
-- **Notifications.** The agent asks `pending_reviews`; you look at "Waiting for you". Email or webhooks can come later if the asking turns out to be too slow.
+- **Diffs and review rounds.** Comments post one at a time, as in Google Docs; there is no draft review, verdict or comparison view.
+- **Editing in the browser.** The agent writes; you comment and suggest. A full editor would compete with the agent for the same text.
+- **Live collaboration.** New comments appear when you reload or come back to the tab, not while you watch.
+- **Notifications.** The agent asks `open_comments`; you look at "New for you".

@@ -9,22 +9,22 @@ The name comes from Violet Evergarden, who writes letters on other people's beha
 | Token      | Light     | Dark      | Use                                                         |
 | ---------- | --------- | --------- | ----------------------------------------------------------- |
 | `paper`    | `#F6F5F0` | `#10151E` | Page background                                             |
-| `sheet`    | `#ECEBE4` | `#171E2A` | Margin notes, sheets, the review bar                        |
+| `sheet`    | `#ECEBE4` | `#171E2A` | Open notes, sheets, the selection bar                       |
 | `rule`     | `#D8D6CC` | `#2A3344` | Borders and separators, used sparingly                      |
 | `ink`      | `#1C2230` | `#E7E5DD` | Text. A blue-black, like fountain pen ink, never pure black |
-| `ink-soft` | `#5B6172` | `#9AA1B2` | Secondary text: paths, dates, revision numbers              |
+| `ink-soft` | `#5B6172` | `#9AA1B2` | Secondary text: folders, dates, authors                     |
 | `prussian` | `#23395B` | `#93B1DF` | Links, primary actions, focus rings                         |
-| `emerald`  | `#0D7A5A` | `#4CC598` | Reviewer marks: highlights, threads, suggestion insertions  |
-| `alizarin` | `#A3243B` | `#E07A8B` | Removals in diffs, "Request changes", destructive actions   |
+| `emerald`  | `#0D7A5A` | `#4CC598` | Reviewer marks: highlights, pins, notes, inserted words     |
+| `alizarin` | `#A3243B` | `#E07A8B` | Removed words in a suggestion, destructive actions          |
 
 Emerald appears only where a person has marked the text. The page is otherwise blue-black on paper, so a reviewed document visibly carries its notes.
 
 ## Type
 
-| Face                                    | Role                                                      | Licence                                                                                                                     |
-| --------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `local("Michelangelus")`, then Literata | Everything: body, headings, interface                     | Michelangelus may not be served as a webfont, so readers who have it installed see it and everyone else sees Literata (OFL) |
-| Paper Mono                              | Code, ASCII figures, file paths, revision numbers, hashes | OFL                                                                                                                         |
+| Face                                    | Role                                    | Licence                                                                                                                     |
+| --------------------------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `local("Michelangelus")`, then Literata | Everything: body, headings, interface   | Michelangelus may not be served as a webfont, so readers who have it installed see it and everyone else sees Literata (OFL) |
+| Paper Mono                              | Code, ASCII figures, document ids, keys | OFL                                                                                                                         |
 
 There is no sans-serif. Literata was drawn for long reading on screens and has an optical size axis, so the same family holds a 13 px button label and a 40 px title. Paper Mono appears only where the content really is code or an identifier.
 
@@ -36,19 +36,20 @@ Body text is 19 px on desktop and 17.5 px on phones, line height 1.6, at most 66
 Desktop, 1200 px and wider
 ┌──────────────┬───────────────────────────────┬──────────────────┐
 │ contents     │  AWS costs, November          │                  │
-│              │  reports/aws-costs…    rev 3  │                  │
+│              │  Updated 2 hours ago by pi    │                  │
 │ ▸ Summary    │                               │                  │
 │ ▸ Compute    │  EC2 was 41% of the bill…     │                  │
 │ ▸ Transfer   │  Data transfer is the second ─┼─ Is this NAT     │
 │              │  biggest line item.           │  gateway traffic?│
 │              │                               │  felipe          │
-├──────────────┴───────────────────────────────┴──────────────────┤
-│                     1 pending    [ Submit review ]              │
-└─────────────────────────────────────────────────────────────────┘
+│              │  ┌─ traffic flow ──────────┐  │                  │
+│              │  │            ③            │──┼─ ③ This should   │
+│              │  └─────────────────────────┘  │  go to S3.       │
+└──────────────┴───────────────────────────────┴──────────────────┘
 
 Phone
 ┌─────────────────────────┐
-│ ≡  § Transfer      rev 3│
+│ ‹  AWS costs, Nov…    ⋯ │
 │                         │
 │ AWS costs, November     │
 │                         │
@@ -56,8 +57,8 @@ Phone
 │ second biggest line     │
 │ item.                   │
 │ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ ●   │
-├─────────────────────────┤
-│ 1 pending  Submit review│
+│                         │
+│                    3 ◉  │
 └─────────────────────────┘
 ```
 
@@ -65,7 +66,9 @@ Text is left aligned, never justified: justified text on narrow phone columns op
 
 ## The one memorable thing
 
-The margin notes. On desktop, a thread sits in the right margin at the height of its passage, set in Literata italic in emerald, joined to the highlighted passage by a hairline. It should read like marginalia, not a chat bubble. Everything else stays quiet.
+The margin notes. On desktop, a closed comment is one line in the right margin at the height of its passage, set in Literata italic in emerald. Opening it lays the replies out under it on a `sheet` ground and draws a hairline to the passage, whose highlight deepens. Pins on figures are small emerald numerals in a circle, matching the numeral on their note. Notes have no bubbles, avatars or timestamps in the margin; the author's name follows the note in `ink-soft`. Everything else on the page stays quiet.
+
+On a phone the margin becomes a sheet that rises to half the screen, so the passage stays visible above the note, and `‹ ›` in the sheet walk through the comments while the text scrolls along.
 
 ## Motion
 
@@ -73,7 +76,7 @@ Motion only answers an action: a sheet sliding up, a note appearing beside its p
 
 ## Words
 
-The interface uses plain verbs, sentence case, and the same word for an action from button to confirmation: **Submit review** produces "Review submitted". Errors say what happened and what to do next. Empty states invite the next action ("No documents yet. Publish one from your agent with `publish`.").
+The interface uses plain verbs, sentence case, and the same word for an action from button to confirmation: **Resolve** produces "Resolved". Errors say what happened and what to do next. Empty states invite the next action ("No documents yet. Publish one from your agent with `publish`.").
 
 ## Choices checked against the usual defaults
 
@@ -87,4 +90,4 @@ Generated interfaces tend to land on a cream background, a serif display face, a
 
 ## Quality floor
 
-Every screen meets the [Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines): visible `:focus-visible` rings in `prussian`, labels on every control, `aria-label` on icon buttons, `env(safe-area-inset-*)` on the review bar and sheets, `overscroll-behavior: contain` on sheets, `touch-action: manipulation`, `color-scheme` and `theme-color` matching the page, `Intl` for dates and numbers, and state that matters (revision, diff, open thread) kept in the URL.
+Every screen meets the [Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines): visible `:focus-visible` rings in `prussian`, labels on every control, `aria-label` on icon buttons, `env(safe-area-inset-*)` on the selection bar and sheets, `overscroll-behavior: contain` on sheets, `touch-action: manipulation`, `color-scheme` and `theme-color` matching the page, `Intl` for dates and numbers, and state that matters (the version, the open comment) kept in the URL.
