@@ -5,11 +5,12 @@ import { RelativeTime } from "#/components/ui/relative-time";
 import type { DocumentEntry, FolderSummary } from "#/server/library";
 
 /*
- * Every list in the library uses one row: an icon level with the first line, the name, and a
- * quieter line of details under it. Names and details share one left edge whatever their length.
+ * Every list in the library uses one row: icon, name, where it sits, and when it changed (or, for
+ * a folder, its repository and size). The rows of a list share their columns, so names, places
+ * and times line up whatever their length. See .rows in styles.css.
  */
 
-/** A document: its title, then whether it changed since you read it, where it sits, and when. */
+/** A document; `unread` when it changed since you last read it. */
 export function DocumentRow({
   entry,
   place,
@@ -21,33 +22,35 @@ export function DocumentRow({
 }) {
   return (
     <li>
-      <Link to="/d/$id" params={{ id: entry.id }} className="row">
+      <Link
+        to="/d/$id"
+        params={{ id: entry.id }}
+        className="row"
+        data-unread={unread || undefined}
+        title={entry.title}
+      >
         <DocumentIcon className="row-icon" />
         <span className="row-name">{entry.title}</span>
-        <span className="row-details">
-          {unread ? (
-            <span className="row-unread">
-              <span className="sr-only">Changed since you read it</span>
-            </span>
-          ) : null}
-          {place ? <span className="row-place">{place}</span> : null}
-          <RelativeTime date={entry.updatedAt} />
+        <span className="row-place">{place}</span>
+        <span className="row-end">
+          {unread ? <span className="sr-only">Changed since you read it, </span> : null}
+          <RelativeTime date={entry.updatedAt} short />
         </span>
       </Link>
     </li>
   );
 }
 
-/** A folder: its name, then how many documents it holds and the repository it is linked to. */
+/** A folder, with the repository it is linked to and how many documents it holds. */
 export function FolderRow({ entry }: { entry: FolderSummary }) {
   return (
     <li>
       <Link to="/f/$id" params={{ id: entry.id }} className="row">
         <FolderIcon className="row-icon" />
         <span className="row-name row-folder">{entry.name}</span>
-        <span className="row-details">
-          <span>{entry.documents === 1 ? "1 document" : `${entry.documents} documents`}</span>
-          {entry.repo ? <span className="row-repo">{entry.repo}</span> : null}
+        <span className="row-place row-repo">{entry.repo}</span>
+        <span className="row-end" title={`${entry.documents} documents`}>
+          {entry.documents}
         </span>
       </Link>
     </li>
