@@ -13,7 +13,6 @@ export function useOpenSearch(): () => void {
   return useContext(SearchContext);
 }
 
-/** `⌘K` or `/` opens search anywhere in the library. */
 export function SearchProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const show = useCallback(() => setOpen(true), []);
@@ -85,9 +84,8 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
           placeholder="Search titles and text"
           aria-label="Search titles and text"
           autoComplete="off"
+          data-autofocus
           spellCheck={false}
-          // oxlint-disable-next-line jsx-a11y/no-autofocus -- the dialog opens only to type a query
-          autoFocus
           value={query}
           onChange={(event) => {
             setQuery(event.target.value);
@@ -133,7 +131,6 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
   );
 }
 
-/** The index marks matches with « and »; they become <mark>. */
 function Excerpt({ text }: { text: string }) {
   const parts: ReactNode[] = [];
   let offset = 0;

@@ -21,14 +21,8 @@ const EDGE = 48;
 const KEY_STEP = 80;
 
 /**
- * Shows content of a known natural size in a viewport the person can move around:
- * two-finger scroll or drag to pan, pinch or Ctrl/⌘ + scroll to zoom at the pointer,
- * double-click to zoom in or back out, and + − 0 and the arrow keys once focused.
- * It starts with the whole content in view, and keeps part of it on screen at all times.
- *
- * Zooming resizes the content box instead of scaling it, so vector content is drawn again at
- * each size and stays sharp. The children must fill that box: an SVG with a viewBox and
- * width and height of 100% does.
+ * Zooming resizes the content box instead of scaling it, so vector content is redrawn at each
+ * size and stays sharp. The children must fill the box, as an SVG with width and height 100% does.
  */
 export function PanZoom({
   width,
@@ -49,8 +43,6 @@ export function PanZoom({
       <div
         ref={viewport}
         className="pan-zoom-viewport"
-        // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- it takes keys to pan and zoom
-        tabIndex={0}
         role="application"
         aria-label={label}
         aria-roledescription="zoomable image"
@@ -90,11 +82,9 @@ type Moves = {
   zoomAt: (factor: number, point?: Point) => void;
   panBy: (dx: number, dy: number) => void;
   reset: () => void;
-  /** Zooms in at the point, or back to the whole content when already zoomed in. */
   toggle: (point: Point) => void;
 };
 
-/** The moves available on content of a size, in a viewport of a size. */
 function movesFor(
   setView: Dispatch<SetStateAction<View | null>>,
   room: Size | null,
@@ -121,7 +111,6 @@ function movesFor(
   };
 }
 
-/** Where the content sits in the viewport, and the input that moves it. */
 function useCamera(
   target: RefObject<HTMLDivElement | null>,
   { width, height }: Size,
@@ -236,7 +225,8 @@ function useCamera(
     element.addEventListener("pointerup", onPointerEnd, { signal });
     element.addEventListener("pointercancel", onPointerEnd, { signal });
     element.addEventListener("dblclick", onDoubleClick, { signal });
-    element.addEventListener("keydown", onKeyDown, { signal });
+    // The viewer fills the screen while it is open, so every key press is meant for it.
+    window.addEventListener("keydown", onKeyDown, { signal });
     element.addEventListener("gesturestart", onGestureStart, { signal });
     element.addEventListener("gesturechange", onGestureChange, { signal });
     return () => abort.abort();
@@ -265,7 +255,6 @@ function zoom(view: View, factor: number, point: Point, content: Size, box: Size
   );
 }
 
-/** Centres content smaller than the viewport, and keeps larger content from leaving it. */
 function clamp(view: View, content: Size, box: Size): View {
   return {
     scale: view.scale,

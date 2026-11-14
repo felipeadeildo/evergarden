@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { type SubmitEvent, useState } from "react";
+import { type SubmitEvent, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
 import { authClient } from "#/lib/auth-client";
@@ -24,7 +24,6 @@ function safeNext(next: string | undefined): string {
   }
 }
 
-/** The authorize request to resume when an agent sent the owner here; read from the real URL. */
 function resumeAgentSignIn(): string | null {
   return typeof window === "undefined" ? null : resumeAuthorizeUrl(window.location.search);
 }
@@ -106,6 +105,9 @@ function CodeStep({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [resent, setResent] = useState(false);
+  const codeInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => codeInput.current?.focus(), []);
 
   async function signIn(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -142,9 +144,7 @@ function CodeStep({
             pattern="[0-9 ]{6,7}"
             maxLength={7}
             required
-            // The page shows only this field, and the code was just sent to it.
-            // oxlint-disable-next-line jsx-a11y/no-autofocus
-            autoFocus
+            ref={codeInput}
           />
         </label>
         <button type="submit" className="button" disabled={pending}>

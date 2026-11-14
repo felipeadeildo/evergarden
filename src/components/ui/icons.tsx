@@ -28,25 +28,17 @@ import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 
 type IconProps = { className?: string };
 
-/**
- * Every icon evergarden uses, named by what it means here. They come from Phosphor's server-safe
- * build, sized to the surrounding text and hidden from screen readers: the text next to an icon,
- * or the button's label, carries the meaning.
- */
+/** Hidden from screen readers: the text or label beside an icon carries its meaning. */
 function icon(Glyph: PhosphorIcon) {
-  // oxlint-disable-next-line unicorn/consistent-function-scoping -- it renders Glyph, from this scope
-  function EvergardenIcon({ className }: IconProps) {
-    return (
-      <Glyph
-        size="1.15em"
-        weight="regular"
-        aria-hidden
-        focusable={false}
-        className={className ? `icon ${className}` : "icon"}
-      />
-    );
-  }
-  return EvergardenIcon;
+  return ({ className }: IconProps) => (
+    <Glyph
+      size="1.15em"
+      weight="regular"
+      aria-hidden
+      focusable={false}
+      className={className ? `icon ${className}` : "icon"}
+    />
+  );
 }
 
 export const SearchIcon = icon(MagnifyingGlassIcon);
@@ -72,7 +64,6 @@ export const AddIcon = icon(PlusIcon);
 export const BackIcon = icon(CaretLeftIcon);
 export const ForwardIcon = icon(CaretRightIcon);
 
-/** One icon per GitHub alert kind. */
 export const CalloutIcons = {
   note: icon(InfoIcon),
   tip: icon(LightbulbIcon),

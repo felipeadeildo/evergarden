@@ -2,10 +2,7 @@ import type { ReactNode } from "react";
 
 import { useModal } from "./modal";
 
-/**
- * A modal dialog that rises from the bottom on phones and sits in the middle on larger screens.
- * Built on <dialog>, so focus, Escape and the backdrop behave natively.
- */
+/** Rises from the bottom on phones and sits in the middle on larger screens. */
 export function Sheet({
   open,
   onClose,
@@ -19,19 +16,14 @@ export function Sheet({
   children: ReactNode;
   className?: string;
 }) {
-  const dialog = useModal(open);
+  const dialog = useModal(open, onClose);
 
-  // A click on the backdrop lands on the dialog itself; Escape already closes it natively.
   return (
-    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <dialog
       ref={dialog}
       className={["sheet", className].filter(Boolean).join(" ")}
       aria-label={label}
       onClose={onClose}
-      onClick={(event) => {
-        if (event.target === dialog.current) onClose();
-      }}
     >
       {open ? children : null}
     </dialog>
