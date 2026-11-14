@@ -35,11 +35,11 @@ Use this when the repository is yours and every commit on `main` should go live.
 
 4. In the same Worker, open **Settings > Builds > Connect**, pick the repository, and set:
 
-   | Field             | Value            |
-   | ----------------- | ---------------- |
-   | Production branch | `main`           |
-   | Build command     | (empty)          |
-   | Deploy command    | `bun run deploy` |
+   | Field             | Value                 |
+   | ----------------- | --------------------- |
+   | Production branch | `main`                |
+   | Build command     | `bun run build`       |
+   | Deploy command    | `npx wrangler deploy` |
 
    The Worker name in the dashboard must stay `evergarden`, the `name` in `wrangler.jsonc`, or the build fails.
 
@@ -63,6 +63,10 @@ In `bun run dev` nothing is sent: the terminal prints `[evergarden] sign-in code
 
 A deploy replaces the code and the bindings declared in `wrangler.jsonc`. It does not touch secrets, and because the configuration sets `keep_vars: true`, it does not touch plain variables set in the dashboard either. Anything that differs between instances (the owner, the sender address, the public URL) therefore lives in the dashboard, never in the repository.
 
-## Migrations run after the code
+## Migrations run in the build
 
-`bun run deploy` deploys the Worker first and applies migrations second, because on a first deploy the database does not exist until `wrangler deploy` creates it. For a few seconds after each deploy, the new code runs against the old schema. Write migrations so that this is safe: add tables and columns in one release, and start depending on them, or drop old ones, in a later release.
+On Workers Builds, where `WORKERS_CI` is `1`, `bun run build` applies pending D1 migrations before the deploy command uploads the new code. A local build never touches a database. The Deploy to Cloudflare button copies the build command from `package.json`, so its instances migrate the same way.
+
+The first deploy from your machine (option 2) is the exception: the database exists only after `wrangler deploy` creates it, so `bun run deploy` migrates after deploying.
+
+When a migration fails, the build stops and the old version keeps running. Keep each migration safe for the code before it: add tables and columns in one release, and drop old ones in a later release.
