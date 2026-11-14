@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { HeadContent, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
+import { HeadContent, Link, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import appCss from "#/styles.css?url";
@@ -25,7 +25,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
   }),
   shellComponent: RootDocument,
+  notFoundComponent: NotFound,
 });
+
+function NotFound() {
+  return (
+    <main id="main" className="letter">
+      <h1>Nothing here</h1>
+      <p>
+        This address has no document. It may have been deleted, or the link was copied wrong.{" "}
+        <Link to="/">Open the library</Link>
+      </p>
+    </main>
+  );
+}
 
 function RootDocument({ children }: { children: ReactNode }) {
   return (

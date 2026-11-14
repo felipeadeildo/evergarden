@@ -1,0 +1,113 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { type SubmitEvent, useState } from "react";
+import { z } from "zod";
+
+import { getSignInMethods } from "#/functions/session.functions";
+import { authClient } from "#/lib/auth-client";
+import { textField } from "#/lib/form";
+
+export const Route = createFileRoute("/sign-in")({
+  validateSearch: z.object({ next: z.string().optional() }),
+  loader: () => getSignInMethods(),
+  head: () => ({ meta: [{ title: "Sign in to evergarden" }] }),
+  component: SignIn,
+});
+
+/** Only same-site paths are followed after signing in. */
+function safeNext(next: string | undefined): string {
+  if (!next) return "/";
+  try {
+    const url = new URL(next, "http://local");
+    return url.origin === "http://local" ? url.pathname + url.search + url.hash : "/";
+  } catch {
+    return "/";
+  }
+}
+
+function SignIn() {
+  const methods = Route.useLoaderData();
+  const callbackURL = safeNext(Route.useSearch().next);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  async function social(provider: "github" | "google") {
+    setPending(true);
+    const result = await authClient.signIn.social({ provider, callbackURL });
+    if (result.error) {
+      setError(result.error.message ?? "Sign-in failed. Try again.");
+      setPending(false);
+    }
+  }
+
+  async function withPassword(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setPending(true);
+    const result = await authClient.signIn.email({
+      email: textField(form, "email"),
+      password: textField(form, "password"),
+    });
+    if (result.error) {
+      setError(result.error.message ?? "Sign-in failed. Check the email and password.");
+      setPending(false);
+      return;
+    }
+    window.location.assign(callbackURL);
+  }
+
+  return (
+    <main id="main" className="sign-in">
+      <p className="wordmark wordmark-large">evergarden</p>
+      <h1 className="sign-in-title">Sign in to read and comment on your documents.</h1>
+      <div className="sign-in-methods">
+        {methods.github ? (
+          <button
+            type="button"
+            className="button"
+            disabled={pending}
+            onClick={() => void social("github")}
+          >
+            Continue with GitHub
+          </button>
+        ) : null}
+        {methods.google ? (
+          <button
+            type="button"
+            className="button"
+            disabled={pending}
+            onClick={() => void social("google")}
+          >
+            Continue with Google
+          </button>
+        ) : null}
+        {methods.password ? (
+          <form className="sign-in-form" onSubmit={(event) => void withPassword(event)}>
+            <p className="field-note">Email and password work only in local development.</p>
+            <label className="field">
+              <span>Email</span>
+              <input name="email" type="email" autoComplete="email" required spellCheck={false} />
+            </label>
+            <label className="field">
+              <span>Password</span>
+              <input name="password" type="password" autoComplete="current-password" required />
+            </label>
+            <button type="submit" className="button" disabled={pending}>
+              Sign in
+            </button>
+          </form>
+        ) : null}
+        {!methods.github && !methods.google && !methods.password ? (
+          <p>
+            No sign-in method is configured. Set <code>GITHUB_CLIENT_ID</code> and{" "}
+            <code>GITHUB_CLIENT_SECRET</code> for this deployment.
+          </p>
+        ) : null}
+      </div>
+      {error ? (
+        <p role="alert" className="form-error">
+          {error}
+        </p>
+      ) : null}
+    </main>
+  );
+}
