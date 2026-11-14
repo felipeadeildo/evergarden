@@ -4,35 +4,30 @@ import type { ReactNode } from "react";
 
 // Only the shell grammar, so the browser bundle stays small; documents highlight on the server.
 const highlighter = createHighlighter({ languages: [shell] });
-// The grammar leaves flags as plain text; muting them makes the values between them stand out.
+// The grammar leaves flags as plain text. Splitting on this capture puts every flag at an odd
+// index, so it can be muted and the values between flags stand out.
 const FLAG = /(?<=^|\s)(--?[a-z][\w-]*)/;
-const IS_FLAG = /^--?[a-z]/;
 
 /** One line of shell, coloured with the same `th-*` classes as code in documents. */
 export function ShellLine({ text }: { text: string }) {
-  const { tokens } = highlighter.tokenize(text, { lang: "shell" });
   const parts: ReactNode[] = [];
-  for (const token of tokens) {
-    if (token.className) {
-      parts.push(
-        <span key={parts.length} className={`th-token th-${token.className}`}>
-          {token.value}
-        </span>,
-      );
-      continue;
-    }
-    for (const piece of token.value.split(FLAG)) {
-      if (!piece) continue;
-      parts.push(
-        IS_FLAG.test(piece) ? (
-          <span key={parts.length} className="th-token th-meta">
-            {piece}
-          </span>
-        ) : (
-          piece
-        ),
-      );
-    }
+  function add(value: string, className?: string) {
+    if (!value) return;
+    parts.push(
+      className ? (
+        <span key={parts.length} className={`th-token th-${className}`}>
+          {value}
+        </span>
+      ) : (
+        value
+      ),
+    );
+  }
+
+  for (const token of highlighter.tokenize(text, { lang: "shell" }).tokens) {
+    if (token.className) add(token.value, token.className);
+    else
+      token.value.split(FLAG).forEach((piece, index) => add(piece, index % 2 ? "meta" : undefined));
   }
   return <span>{parts}</span>;
 }

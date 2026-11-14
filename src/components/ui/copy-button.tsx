@@ -35,8 +35,14 @@ export function CopyButton({
     >
       {copied ? <CheckIcon /> : <CopyIcon />}
       <span aria-live="polite" className={iconOnly ? "sr-only" : undefined}>
-        {copied ? "Copied" : iconOnly ? "" : label}
+        {caption(copied, iconOnly, label)}
       </span>
     </button>
   );
+}
+
+/** What the button says: "Copied" for a moment, otherwise its label, which an icon button keeps for its aria-label. */
+function caption(copied: boolean, iconOnly: boolean, label: string): string {
+  if (copied) return "Copied";
+  return iconOnly ? "" : label;
 }
