@@ -25,7 +25,7 @@ const total = 7_560;
 graph LR; ec2 --> nat --> s3
 \`\`\`
 
-Cost per GB is $c = t / g$.[^1]
+Cost per GB is $$c = t / g$$.[^1]
 
 [^1]: From the November invoice.
 `;
@@ -101,6 +101,25 @@ describe("render", () => {
     expect(html).toContain("<svg");
     expect(html).toContain("ec2 --> nat --> s3");
     expect(features).toEqual({ math: true, diagram: true });
+  });
+
+  it("keeps line breaks in diagram source", async () => {
+    const { tree } = await render("```mermaid\nflowchart LR\n  a --> b\n  b --> c\n```");
+    const figure = find(tree, (node) => node.properties.dataKind === "diagram");
+    expect(figure?.properties.dataError).toBeUndefined();
+    expect(toHtml(figure!)).toContain("flowchart LR\n  a --> b");
+  });
+
+  it("leaves display math to KaTeX instead of treating it as code", async () => {
+    const { tree } = await render("$$\nx^2\n$$");
+    expect(find(tree, (node) => node.properties.dataKind === "code")).toBeUndefined();
+    expect(toHtml(tree)).toContain('class="katex-display"');
+  });
+
+  it("does not read dollar amounts as math", async () => {
+    const html = toHtml((await render("At $0.045 per GB that is about $950.")).tree);
+    expect(html).not.toContain("katex");
+    expect(html).toContain("$0.045 per GB");
   });
 
   it("shows the source of a diagram Pele cannot draw", async () => {

@@ -1,6 +1,7 @@
 import GithubSlugger from "github-slugger";
 import type { Element, ElementContent, Root } from "hast";
 import { fromHtml } from "hast-util-from-html";
+import { toString } from "hast-util-to-string";
 import { toText } from "hast-util-to-text";
 import type { Root as MdastRoot } from "mdast";
 import { PeleError, render as renderDiagram } from "pele";
@@ -92,12 +93,13 @@ export function rehypeEvergarden() {
 
       if (node.tagName === "pre" && parent && index !== undefined) {
         const code = node.children.find(isElement);
-        if (code?.tagName === "code") {
+        // Display math is a code block too; KaTeX renders it later.
+        if (code?.tagName === "code" && !hasClass(code, "language-math")) {
           const language = languageOf(code);
           if (language === "mermaid") features.diagram = true;
           parent.children[index] =
             language === "mermaid"
-              ? diagramFigure(toText(code), offsets)
+              ? diagramFigure(toString(code), offsets)
               : codeFigure(node, language, offsets);
           return SKIP;
         }
@@ -176,7 +178,7 @@ function codeFigure(
   offsets: string | undefined,
 ): Element {
   delete pre.properties.dataSourcepos;
-  const html = highlighter.highlightToHtml(toText(pre), { lang: language });
+  const html = highlighter.highlightToHtml(toString(pre), { lang: language });
   const highlighted = fromHtml(html, { fragment: true }).children.find(isElementLike);
   return {
     type: "element",

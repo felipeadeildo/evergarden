@@ -20,7 +20,7 @@ import {
 export type { Heading };
 
 /** Part of every cache key for rendered trees: bump it whenever the output changes. */
-export const RENDERER_VERSION = 2;
+export const RENDERER_VERSION = 3;
 
 export type Rendered = {
   tree: Root;
@@ -50,7 +50,8 @@ export async function render(source: string): Promise<Rendered> {
     .use(remarkFrontmatter, ["yaml"])
     .use(remarkFrontmatterTitle)
     .use(remarkGfm)
-    .use(remarkMath)
+    // Reports are full of prices, so inline math needs $$…$$; a single $ stays a dollar sign.
+    .use(remarkMath, { singleDollarTextMath: false })
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
     .use(rehypeSanitize, schema)
