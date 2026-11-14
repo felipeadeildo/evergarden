@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  type AnySQLiteColumn,
   index,
   integer,
   primaryKey,
@@ -18,39 +19,56 @@ const createdAt = () =>
     .notNull();
 
 export type AuthorKind = "agent" | "user";
-export type ThreadStatus = "open" | "resolved" | "outdated";
-export type Verdict = "approve" | "comment" | "request_changes";
+export type CommentStatus = "open" | "resolved" | "detached";
 export type SharePermission = "read" | "comment";
 export type ShareTargetKind = "document" | "folder";
 
-/** Where a thread points in the markdown source of its revision. */
-export type Anchor = {
-  start: number;
-  end: number;
-  exact: string;
-  prefix: string;
-  suffix: string;
-};
+type Quote = { start: number; end: number; exact: string; prefix: string; suffix: string };
+
+/** Where a comment points in the markdown source of its version. */
+export type Anchor =
+  | ({ kind: "text" } & Quote)
+  | ({ kind: "block" } & Quote)
+  | ({ kind: "point"; x: number; y: number } & Quote);
+
+export const folder = sqliteTable(
+  "folder",
+  {
+    id: text("id").primaryKey(),
+    parentId: text("parent_id").references((): AnySQLiteColumn => folder.id, {
+      onDelete: "cascade",
+    }),
+    name: text("name").notNull(),
+    position: text("position").notNull(),
+    repo: text("repo"),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    index("folder_parent_idx").on(table.parentId, table.position),
+    uniqueIndex("folder_repo_idx").on(table.repo),
+  ],
+);
 
 export const document = sqliteTable(
   "document",
   {
     id: text("id").primaryKey(),
-    path: text("path").notNull(),
+    folderId: text("folder_id").references(() => folder.id, { onDelete: "set null" }),
+    position: text("position").notNull(),
     title: text("title").notNull(),
-    headRevision: integer("head_revision").notNull(),
+    currentVersion: integer("current_version").notNull(),
     createdAt: createdAt(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
     deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
   },
   (table) => [
-    uniqueIndex("document_path_idx").on(table.path),
+    index("document_folder_idx").on(table.folderId, table.position),
     index("document_updated_idx").on(table.updatedAt),
   ],
 );
 
-export const revision = sqliteTable(
-  "revision",
+export const version = sqliteTable(
+  "version",
   {
     id: text("id").primaryKey(),
     documentId: text("document_id")
@@ -58,74 +76,50 @@ export const revision = sqliteTable(
       .references(() => document.id, { onDelete: "cascade" }),
     number: integer("number").notNull(),
     sha256: text("sha256").notNull(),
-    message: text("message").notNull(),
     authorKind: text("author_kind").$type<AuthorKind>().notNull(),
     authorId: text("author_id").notNull(),
     createdAt: createdAt(),
   },
-  (table) => [uniqueIndex("revision_document_number_idx").on(table.documentId, table.number)],
-);
-
-export const review = sqliteTable(
-  "review",
-  {
-    id: text("id").primaryKey(),
-    documentId: text("document_id")
-      .notNull()
-      .references(() => document.id, { onDelete: "cascade" }),
-    revisionId: text("revision_id")
-      .notNull()
-      .references(() => revision.id, { onDelete: "cascade" }),
-    authorId: text("author_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    verdict: text("verdict").$type<Verdict>(),
-    body: text("body"),
-    submittedAt: integer("submitted_at", { mode: "timestamp_ms" }),
-    consumedAt: integer("consumed_at", { mode: "timestamp_ms" }),
-    createdAt: createdAt(),
-  },
-  (table) => [
-    index("review_document_idx").on(table.documentId),
-    index("review_pending_idx").on(table.submittedAt, table.consumedAt),
-  ],
-);
-
-export const thread = sqliteTable(
-  "thread",
-  {
-    id: text("id").primaryKey(),
-    documentId: text("document_id")
-      .notNull()
-      .references(() => document.id, { onDelete: "cascade" }),
-    revisionId: text("revision_id")
-      .notNull()
-      .references(() => revision.id, { onDelete: "cascade" }),
-    reviewId: text("review_id").references(() => review.id, { onDelete: "set null" }),
-    anchor: text("anchor", { mode: "json" }).$type<Anchor>().notNull(),
-    status: text("status").$type<ThreadStatus>().notNull().default("open"),
-    suggestion: text("suggestion"),
-    createdBy: text("created_by").notNull(),
-    createdAt: createdAt(),
-    resolvedAt: integer("resolved_at", { mode: "timestamp_ms" }),
-  },
-  (table) => [index("thread_document_idx").on(table.documentId, table.status)],
+  (table) => [uniqueIndex("version_document_number_idx").on(table.documentId, table.number)],
 );
 
 export const comment = sqliteTable(
   "comment",
   {
     id: text("id").primaryKey(),
-    threadId: text("thread_id")
+    documentId: text("document_id")
       .notNull()
-      .references(() => thread.id, { onDelete: "cascade" }),
+      .references(() => document.id, { onDelete: "cascade" }),
+    versionId: text("version_id")
+      .notNull()
+      .references(() => version.id, { onDelete: "cascade" }),
+    anchor: text("anchor", { mode: "json" }).$type<Anchor>().notNull(),
+    body: text("body").notNull(),
+    suggestion: text("suggestion"),
+    status: text("status").$type<CommentStatus>().notNull().default("open"),
     authorKind: text("author_kind").$type<AuthorKind>().notNull(),
     authorId: text("author_id").notNull(),
+    agentSeenAt: integer("agent_seen_at", { mode: "timestamp_ms" }),
+    createdAt: createdAt(),
+    resolvedAt: integer("resolved_at", { mode: "timestamp_ms" }),
+  },
+  (table) => [index("comment_document_idx").on(table.documentId, table.status)],
+);
+
+export const reply = sqliteTable(
+  "reply",
+  {
+    id: text("id").primaryKey(),
+    commentId: text("comment_id")
+      .notNull()
+      .references(() => comment.id, { onDelete: "cascade" }),
     body: text("body").notNull(),
+    authorKind: text("author_kind").$type<AuthorKind>().notNull(),
+    authorId: text("author_id").notNull(),
     createdAt: createdAt(),
     editedAt: integer("edited_at", { mode: "timestamp_ms" }),
   },
-  (table) => [index("comment_thread_idx").on(table.threadId)],
+  (table) => [index("reply_comment_idx").on(table.commentId)],
 );
 
 export const share = sqliteTable(
@@ -134,8 +128,8 @@ export const share = sqliteTable(
     id: text("id").primaryKey(),
     tokenHash: text("token_hash").notNull(),
     targetKind: text("target_kind").$type<ShareTargetKind>().notNull(),
-    target: text("target").notNull(),
-    revisionId: text("revision_id").references(() => revision.id, { onDelete: "cascade" }),
+    targetId: text("target_id").notNull(),
+    versionId: text("version_id").references(() => version.id, { onDelete: "cascade" }),
     permission: text("permission").$type<SharePermission>().notNull(),
     openCount: integer("open_count").notNull().default(0),
     createdAt: createdAt(),
@@ -168,7 +162,7 @@ export const readMark = sqliteTable(
     documentId: text("document_id")
       .notNull()
       .references(() => document.id, { onDelete: "cascade" }),
-    revisionNumber: integer("revision_number").notNull(),
+    versionNumber: integer("version_number").notNull(),
     readAt: integer("read_at", { mode: "timestamp_ms" }).notNull(),
   },
   (table) => [primaryKey({ columns: [table.userId, table.documentId] })],

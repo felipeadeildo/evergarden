@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "e0174843-5b34-4880-bb2c-3500c93e0ed1",
+  "id": "4f06d824-522c-430a-8a9c-bbf40e3eade6",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "comment": {
@@ -14,12 +14,48 @@
           "notNull": true,
           "autoincrement": false
         },
-        "thread_id": {
-          "name": "thread_id",
+        "document_id": {
+          "name": "document_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "version_id": {
+          "name": "version_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "anchor": {
+          "name": "anchor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "suggestion": {
+          "name": "suggestion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'open'"
         },
         "author_kind": {
           "name": "author_kind",
@@ -35,11 +71,11 @@
           "notNull": true,
           "autoincrement": false
         },
-        "body": {
-          "name": "body",
-          "type": "text",
+        "agent_seen_at": {
+          "name": "agent_seen_at",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "autoincrement": false
         },
         "created_at": {
@@ -50,8 +86,8 @@
           "autoincrement": false,
           "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
         },
-        "edited_at": {
-          "name": "edited_at",
+        "resolved_at": {
+          "name": "resolved_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": false,
@@ -59,21 +95,35 @@
         }
       },
       "indexes": {
-        "comment_thread_idx": {
-          "name": "comment_thread_idx",
+        "comment_document_idx": {
+          "name": "comment_document_idx",
           "columns": [
-            "thread_id"
+            "document_id",
+            "status"
           ],
           "isUnique": false
         }
       },
       "foreignKeys": {
-        "comment_thread_id_thread_id_fk": {
-          "name": "comment_thread_id_thread_id_fk",
+        "comment_document_id_document_id_fk": {
+          "name": "comment_document_id_document_id_fk",
           "tableFrom": "comment",
-          "tableTo": "thread",
+          "tableTo": "document",
           "columnsFrom": [
-            "thread_id"
+            "document_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "comment_version_id_version_id_fk": {
+          "name": "comment_version_id_version_id_fk",
+          "tableFrom": "comment",
+          "tableTo": "version",
+          "columnsFrom": [
+            "version_id"
           ],
           "columnsTo": [
             "id"
@@ -96,8 +146,15 @@
           "notNull": true,
           "autoincrement": false
         },
-        "path": {
-          "name": "path",
+        "folder_id": {
+          "name": "folder_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "position": {
+          "name": "position",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -110,8 +167,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "head_revision": {
-          "name": "head_revision",
+        "current_version": {
+          "name": "current_version",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -141,12 +198,13 @@
         }
       },
       "indexes": {
-        "document_path_idx": {
-          "name": "document_path_idx",
+        "document_folder_idx": {
+          "name": "document_folder_idx",
           "columns": [
-            "path"
+            "folder_id",
+            "position"
           ],
-          "isUnique": true
+          "isUnique": false
         },
         "document_updated_idx": {
           "name": "document_updated_idx",
@@ -156,7 +214,104 @@
           "isUnique": false
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "document_folder_id_folder_id_fk": {
+          "name": "document_folder_id_folder_id_fk",
+          "tableFrom": "document",
+          "tableTo": "folder",
+          "columnsFrom": [
+            "folder_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "folder": {
+      "name": "folder",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "position": {
+          "name": "position",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "repo": {
+          "name": "repo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+        }
+      },
+      "indexes": {
+        "folder_parent_idx": {
+          "name": "folder_parent_idx",
+          "columns": [
+            "parent_id",
+            "position"
+          ],
+          "isUnique": false
+        },
+        "folder_repo_idx": {
+          "name": "folder_repo_idx",
+          "columns": [
+            "repo"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "folder_parent_id_folder_id_fk": {
+          "name": "folder_parent_id_folder_id_fk",
+          "tableFrom": "folder",
+          "tableTo": "folder",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -178,8 +333,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "revision_number": {
-          "name": "revision_number",
+        "version_number": {
+          "name": "version_number",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -234,8 +389,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "review": {
-      "name": "review",
+    "reply": {
+      "name": "reply",
       "columns": {
         "id": {
           "name": "id",
@@ -244,159 +399,15 @@
           "notNull": true,
           "autoincrement": false
         },
-        "document_id": {
-          "name": "document_id",
+        "comment_id": {
+          "name": "comment_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
-        },
-        "revision_id": {
-          "name": "revision_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "author_id": {
-          "name": "author_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "verdict": {
-          "name": "verdict",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
           "autoincrement": false
         },
         "body": {
           "name": "body",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "submitted_at": {
-          "name": "submitted_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "consumed_at": {
-          "name": "consumed_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
-        }
-      },
-      "indexes": {
-        "review_document_idx": {
-          "name": "review_document_idx",
-          "columns": [
-            "document_id"
-          ],
-          "isUnique": false
-        },
-        "review_pending_idx": {
-          "name": "review_pending_idx",
-          "columns": [
-            "submitted_at",
-            "consumed_at"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "review_document_id_document_id_fk": {
-          "name": "review_document_id_document_id_fk",
-          "tableFrom": "review",
-          "tableTo": "document",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "review_revision_id_revision_id_fk": {
-          "name": "review_revision_id_revision_id_fk",
-          "tableFrom": "review",
-          "tableTo": "revision",
-          "columnsFrom": [
-            "revision_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "review_author_id_user_id_fk": {
-          "name": "review_author_id_user_id_fk",
-          "tableFrom": "review",
-          "tableTo": "user",
-          "columnsFrom": [
-            "author_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "revision": {
-      "name": "revision",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "document_id": {
-          "name": "document_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "number": {
-          "name": "number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "sha256": {
-          "name": "sha256",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "message": {
-          "name": "message",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -423,25 +434,31 @@
           "notNull": true,
           "autoincrement": false,
           "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+        },
+        "edited_at": {
+          "name": "edited_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
-        "revision_document_number_idx": {
-          "name": "revision_document_number_idx",
+        "reply_comment_idx": {
+          "name": "reply_comment_idx",
           "columns": [
-            "document_id",
-            "number"
+            "comment_id"
           ],
-          "isUnique": true
+          "isUnique": false
         }
       },
       "foreignKeys": {
-        "revision_document_id_document_id_fk": {
-          "name": "revision_document_id_document_id_fk",
-          "tableFrom": "revision",
-          "tableTo": "document",
+        "reply_comment_id_comment_id_fk": {
+          "name": "reply_comment_id_comment_id_fk",
+          "tableFrom": "reply",
+          "tableTo": "comment",
           "columnsFrom": [
-            "document_id"
+            "comment_id"
           ],
           "columnsTo": [
             "id"
@@ -478,15 +495,15 @@
           "notNull": true,
           "autoincrement": false
         },
-        "target": {
-          "name": "target",
+        "target_id": {
+          "name": "target_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "revision_id": {
-          "name": "revision_id",
+        "version_id": {
+          "name": "version_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -540,12 +557,12 @@
         }
       },
       "foreignKeys": {
-        "share_revision_id_revision_id_fk": {
-          "name": "share_revision_id_revision_id_fk",
+        "share_version_id_version_id_fk": {
+          "name": "share_version_id_version_id_fk",
           "tableFrom": "share",
-          "tableTo": "revision",
+          "tableTo": "version",
           "columnsFrom": [
-            "revision_id"
+            "version_id"
           ],
           "columnsTo": [
             "id"
@@ -625,8 +642,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "thread": {
-      "name": "thread",
+    "version": {
+      "name": "version",
       "columns": {
         "id": {
           "name": "id",
@@ -642,44 +659,29 @@
           "notNull": true,
           "autoincrement": false
         },
-        "revision_id": {
-          "name": "revision_id",
+        "number": {
+          "name": "number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sha256": {
+          "name": "sha256",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "review_id": {
-          "name": "review_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "anchor": {
-          "name": "anchor",
+        "author_kind": {
+          "name": "author_kind",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'open'"
-        },
-        "suggestion": {
-          "name": "suggestion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_by": {
-          "name": "created_by",
+        "author_id": {
+          "name": "author_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -692,29 +694,22 @@
           "notNull": true,
           "autoincrement": false,
           "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
-        },
-        "resolved_at": {
-          "name": "resolved_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
         }
       },
       "indexes": {
-        "thread_document_idx": {
-          "name": "thread_document_idx",
+        "version_document_number_idx": {
+          "name": "version_document_number_idx",
           "columns": [
             "document_id",
-            "status"
+            "number"
           ],
-          "isUnique": false
+          "isUnique": true
         }
       },
       "foreignKeys": {
-        "thread_document_id_document_id_fk": {
-          "name": "thread_document_id_document_id_fk",
-          "tableFrom": "thread",
+        "version_document_id_document_id_fk": {
+          "name": "version_document_id_document_id_fk",
+          "tableFrom": "version",
           "tableTo": "document",
           "columnsFrom": [
             "document_id"
@@ -723,32 +718,6 @@
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "thread_revision_id_revision_id_fk": {
-          "name": "thread_revision_id_revision_id_fk",
-          "tableFrom": "thread",
-          "tableTo": "revision",
-          "columnsFrom": [
-            "revision_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "thread_review_id_review_id_fk": {
-          "name": "thread_review_id_review_id_fk",
-          "tableFrom": "thread",
-          "tableTo": "review",
-          "columnsFrom": [
-            "review_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },

@@ -1,79 +1,81 @@
 CREATE TABLE `comment` (
 	`id` text PRIMARY KEY NOT NULL,
-	`thread_id` text NOT NULL,
+	`document_id` text NOT NULL,
+	`version_id` text NOT NULL,
+	`anchor` text NOT NULL,
+	`body` text NOT NULL,
+	`suggestion` text,
+	`status` text DEFAULT 'open' NOT NULL,
 	`author_kind` text NOT NULL,
 	`author_id` text NOT NULL,
-	`body` text NOT NULL,
+	`agent_seen_at` integer,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
-	`edited_at` integer,
-	FOREIGN KEY (`thread_id`) REFERENCES `thread`(`id`) ON UPDATE no action ON DELETE cascade
+	`resolved_at` integer,
+	FOREIGN KEY (`document_id`) REFERENCES `document`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`version_id`) REFERENCES `version`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `comment_thread_idx` ON `comment` (`thread_id`);--> statement-breakpoint
+CREATE INDEX `comment_document_idx` ON `comment` (`document_id`,`status`);--> statement-breakpoint
 CREATE TABLE `document` (
 	`id` text PRIMARY KEY NOT NULL,
-	`path` text NOT NULL,
+	`folder_id` text,
+	`position` text NOT NULL,
 	`title` text NOT NULL,
-	`head_revision` integer NOT NULL,
+	`current_version` integer NOT NULL,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
 	`updated_at` integer NOT NULL,
-	`deleted_at` integer
+	`deleted_at` integer,
+	FOREIGN KEY (`folder_id`) REFERENCES `folder`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `document_path_idx` ON `document` (`path`);--> statement-breakpoint
+CREATE INDEX `document_folder_idx` ON `document` (`folder_id`,`position`);--> statement-breakpoint
 CREATE INDEX `document_updated_idx` ON `document` (`updated_at`);--> statement-breakpoint
+CREATE TABLE `folder` (
+	`id` text PRIMARY KEY NOT NULL,
+	`parent_id` text,
+	`name` text NOT NULL,
+	`position` text NOT NULL,
+	`repo` text,
+	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
+	FOREIGN KEY (`parent_id`) REFERENCES `folder`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `folder_parent_idx` ON `folder` (`parent_id`,`position`);--> statement-breakpoint
+CREATE UNIQUE INDEX `folder_repo_idx` ON `folder` (`repo`);--> statement-breakpoint
 CREATE TABLE `read_mark` (
 	`user_id` text NOT NULL,
 	`document_id` text NOT NULL,
-	`revision_number` integer NOT NULL,
+	`version_number` integer NOT NULL,
 	`read_at` integer NOT NULL,
 	PRIMARY KEY(`user_id`, `document_id`),
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`document_id`) REFERENCES `document`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `review` (
+CREATE TABLE `reply` (
 	`id` text PRIMARY KEY NOT NULL,
-	`document_id` text NOT NULL,
-	`revision_id` text NOT NULL,
-	`author_id` text NOT NULL,
-	`verdict` text,
-	`body` text,
-	`submitted_at` integer,
-	`consumed_at` integer,
-	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
-	FOREIGN KEY (`document_id`) REFERENCES `document`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`revision_id`) REFERENCES `revision`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`author_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
-);
---> statement-breakpoint
-CREATE INDEX `review_document_idx` ON `review` (`document_id`);--> statement-breakpoint
-CREATE INDEX `review_pending_idx` ON `review` (`submitted_at`,`consumed_at`);--> statement-breakpoint
-CREATE TABLE `revision` (
-	`id` text PRIMARY KEY NOT NULL,
-	`document_id` text NOT NULL,
-	`number` integer NOT NULL,
-	`sha256` text NOT NULL,
-	`message` text NOT NULL,
+	`comment_id` text NOT NULL,
+	`body` text NOT NULL,
 	`author_kind` text NOT NULL,
 	`author_id` text NOT NULL,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
-	FOREIGN KEY (`document_id`) REFERENCES `document`(`id`) ON UPDATE no action ON DELETE cascade
+	`edited_at` integer,
+	FOREIGN KEY (`comment_id`) REFERENCES `comment`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `revision_document_number_idx` ON `revision` (`document_id`,`number`);--> statement-breakpoint
+CREATE INDEX `reply_comment_idx` ON `reply` (`comment_id`);--> statement-breakpoint
 CREATE TABLE `share` (
 	`id` text PRIMARY KEY NOT NULL,
 	`token_hash` text NOT NULL,
 	`target_kind` text NOT NULL,
-	`target` text NOT NULL,
-	`revision_id` text,
+	`target_id` text NOT NULL,
+	`version_id` text,
 	`permission` text NOT NULL,
 	`open_count` integer DEFAULT 0 NOT NULL,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
 	`expires_at` integer,
 	`revoked_at` integer,
-	FOREIGN KEY (`revision_id`) REFERENCES `revision`(`id`) ON UPDATE no action ON DELETE cascade
+	FOREIGN KEY (`version_id`) REFERENCES `version`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `share_token_idx` ON `share` (`token_hash`);--> statement-breakpoint
@@ -86,23 +88,18 @@ CREATE TABLE `share_member` (
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `thread` (
+CREATE TABLE `version` (
 	`id` text PRIMARY KEY NOT NULL,
 	`document_id` text NOT NULL,
-	`revision_id` text NOT NULL,
-	`review_id` text,
-	`anchor` text NOT NULL,
-	`status` text DEFAULT 'open' NOT NULL,
-	`suggestion` text,
-	`created_by` text NOT NULL,
+	`number` integer NOT NULL,
+	`sha256` text NOT NULL,
+	`author_kind` text NOT NULL,
+	`author_id` text NOT NULL,
 	`created_at` integer DEFAULT (cast(unixepoch('subsecond') * 1000 as integer)) NOT NULL,
-	`resolved_at` integer,
-	FOREIGN KEY (`document_id`) REFERENCES `document`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`revision_id`) REFERENCES `revision`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`review_id`) REFERENCES `review`(`id`) ON UPDATE no action ON DELETE set null
+	FOREIGN KEY (`document_id`) REFERENCES `document`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `thread_document_idx` ON `thread` (`document_id`,`status`);--> statement-breakpoint
+CREATE UNIQUE INDEX `version_document_number_idx` ON `version` (`document_id`,`number`);--> statement-breakpoint
 CREATE TABLE `account` (
 	`id` text PRIMARY KEY NOT NULL,
 	`account_id` text NOT NULL,
