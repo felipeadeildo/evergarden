@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face {
+        font-family: "Literata";
+        font-style: normal;
+        font-weight: 200 900;
+        src: url("../node_modules/@fontsource-variable/literata/files/literata-latin-opsz-normal.woff2");
+      }
+      @font-face {
+        font-family: "Literata";
+        font-style: italic;
+        font-weight: 200 900;
+        src: url("../node_modules/@fontsource-variable/literata/files/literata-latin-opsz-italic.woff2");
+      }
+      :root {
+        --paper: #f6f5f0;
+        --rule: #d8d6cc;
+        --ink: #1c2230;
+        --ink-soft: #5b6172;
+        --prussian: #23395b;
+        --emerald: #0d7a5a;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        padding: 56px 72px 52px;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: "Literata", serif;
+        font-optical-sizing: auto;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        color: var(--prussian);
+        font-size: 30px;
+        font-style: italic;
+        letter-spacing: -0.01em;
+      }
+      .brand img {
+        width: 52px;
+      }
+      .spread {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 64px;
+        align-items: start;
+        padding-top: 44px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 44px;
+        font-weight: 600;
+        line-height: 1.1;
+        letter-spacing: -0.015em;
+      }
+      .byline {
+        margin: 12px 0 26px;
+        font-size: 17px;
+        font-style: italic;
+        color: var(--ink-soft);
+      }
+      .byline b {
+        font-style: normal;
+        font-weight: 600;
+        color: var(--ink);
+      }
+      p {
+        margin: 0;
+        font-size: 23px;
+        line-height: 1.62;
+        max-width: 34em;
+      }
+      mark {
+        position: relative;
+        padding: 0 2px;
+        background: color-mix(in srgb, var(--emerald) 13%, transparent);
+        color: inherit;
+        box-shadow: inset 0 -2px 0 var(--emerald);
+      }
+      .note {
+        position: relative;
+        margin-top: 116px;
+        padding-left: 18px;
+        border-left: 2px solid var(--emerald);
+        font-size: 19px;
+        line-height: 1.5;
+      }
+      .note::before {
+        content: "";
+        position: absolute;
+        top: 16px;
+        left: -66px;
+        width: 64px;
+        border-top: 1px solid var(--emerald);
+      }
+      .note p {
+        font-size: 19px;
+        line-height: 1.5;
+      }
+      .who {
+        margin: 4px 0 14px;
+        font-size: 15px;
+        color: var(--ink-soft);
+      }
+      .reply {
+        color: var(--ink);
+      }
+      .agent {
+        font-weight: 600;
+        color: var(--ink);
+      }
+      .tagline {
+        margin: 0;
+        font-size: 22px;
+        color: var(--ink-soft);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="brand"><img src="mark.svg" alt="" />evergarden</div>
+    <div class="spread">
+      <article>
+        <h1>AWS costs, November</h1>
+        <div class="byline">Updated 2 hours ago by <b>pi</b></div>
+        <p>
+          EC2 was 41% of the bill, about $3,100.
+          <mark>Data transfer is the second biggest line item</mark>, and most of it leaves through
+          a single NAT gateway in us-east-1.
+        </p>
+      </article>
+      <aside class="note">
+        <p>Is this NAT gateway traffic? Say so in the summary.</p>
+        <div class="who">felipe</div>
+        <p class="reply">Yes, 91% of it. Updated the summary.</p>
+        <div class="who"><span class="agent">pi</span>, version 3</div>
+      </aside>
+    </div>
+    <p class="tagline">Publish what your agents write, and comment on it like a Google Doc.</p>
+  </body>
+</html>
