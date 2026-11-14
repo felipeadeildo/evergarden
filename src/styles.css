@@ -1273,15 +1273,27 @@
     color: var(--ink-soft);
   }
 
-  .sign-in-methods {
-    display: grid;
-    gap: 0.65rem;
-  }
-
   .sign-in-form {
     display: grid;
     gap: 0.8rem;
-    margin-top: 0.6rem;
+  }
+
+  .sign-in-title strong {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .code-input {
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    letter-spacing: 0.35em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sign-in-help {
+    margin: 1.4rem 0 0;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
   }
 
   .connect-actions {

@@ -2,8 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { type SubmitEvent, useState } from "react";
 import { z } from "zod";
 
-import { GithubIcon, GoogleIcon } from "#/components/ui/icons";
-import { getSignInMethods } from "#/functions/session.functions";
 import { authClient } from "#/lib/auth-client";
 import { textField } from "#/lib/form";
 import { resumeAuthorizeUrl } from "#/lib/oauth-flow";
@@ -11,7 +9,6 @@ import { resumeAuthorizeUrl } from "#/lib/oauth-flow";
 export const Route = createFileRoute("/sign-in")({
   // .loose() keeps the signed OAuth parameters an agent's sign-in arrives with.
   validateSearch: z.object({ next: z.string().optional() }).loose(),
-  loader: () => getSignInMethods(),
   head: () => ({ meta: [{ title: "Sign in to evergarden" }] }),
   component: SignIn,
 });
@@ -33,92 +30,143 @@ function resumeAgentSignIn(): string | null {
 }
 
 function SignIn() {
-  const methods = Route.useLoaderData();
   const search = Route.useSearch();
-  const callbackURL = resumeAgentSignIn() ?? safeNext(search.next);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
-
-  async function social(provider: "github" | "google") {
-    setPending(true);
-    const result = await authClient.signIn.social({ provider, callbackURL });
-    if (result.error) {
-      setError(result.error.message ?? "Sign-in failed. Try again.");
-      setPending(false);
-    }
-  }
-
-  async function withPassword(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    setPending(true);
-    const result = await authClient.signIn.email({
-      email: textField(form, "email"),
-      password: textField(form, "password"),
-    });
-    if (result.error) {
-      setError(result.error.message ?? "Sign-in failed. Check the email and password.");
-      setPending(false);
-      return;
-    }
-    window.location.assign(callbackURL);
-  }
+  const [email, setEmail] = useState<string | null>(null);
 
   return (
     <main id="main" className="sign-in">
       <p className="wordmark wordmark-large">evergarden</p>
+      {email === null ? (
+        <EmailStep onSent={setEmail} />
+      ) : (
+        <CodeStep
+          email={email}
+          next={resumeAgentSignIn() ?? safeNext(search.next)}
+          onChangeEmail={() => setEmail(null)}
+        />
+      )}
+    </main>
+  );
+}
+
+function EmailStep({ onSent }: { onSent: (email: string) => void }) {
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  async function send(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const email = textField(new FormData(event.currentTarget), "email").trim();
+    setPending(true);
+    const result = await authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in" });
+    setPending(false);
+    if (result.error) {
+      setError(result.error.message ?? "The code could not be sent. Try again.");
+      return;
+    }
+    onSent(email);
+  }
+
+  return (
+    <>
       <h1 className="sign-in-title">Sign in to read and comment on your documents.</h1>
-      <div className="sign-in-methods">
-        {methods.github ? (
-          <button
-            type="button"
-            className="button"
-            disabled={pending}
-            onClick={() => void social("github")}
-          >
-            <GithubIcon />
-            Continue with GitHub
-          </button>
-        ) : null}
-        {methods.google ? (
-          <button
-            type="button"
-            className="button"
-            disabled={pending}
-            onClick={() => void social("google")}
-          >
-            <GoogleIcon />
-            Continue with Google
-          </button>
-        ) : null}
-        {methods.password ? (
-          <form className="sign-in-form" onSubmit={(event) => void withPassword(event)}>
-            <p className="field-note">Email and password work only in local development.</p>
-            <label className="field">
-              <span>Email</span>
-              <input name="email" type="email" autoComplete="email" required spellCheck={false} />
-            </label>
-            <label className="field">
-              <span>Password</span>
-              <input name="password" type="password" autoComplete="current-password" required />
-            </label>
-            <button type="submit" className="button" disabled={pending}>
-              Sign in
-            </button>
-          </form>
-        ) : null}
-        {!methods.github && !methods.google && !methods.password ? (
-          <p>
-            No sign-in method is configured. Set <code>GITHUB_CLIENT_ID</code> and{" "}
-            <code>GITHUB_CLIENT_SECRET</code> for this deployment.
+      <form className="sign-in-form" onSubmit={(event) => void send(event)}>
+        <label className="field">
+          <span>Email</span>
+          <input
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            spellCheck={false}
+            placeholder="you@example.com"
+          />
+        </label>
+        <button type="submit" className="button" disabled={pending}>
+          {pending ? "Sending…" : "Send code"}
+        </button>
+        {error ? (
+          <p role="alert" className="form-error">
+            {error}
           </p>
         ) : null}
-      </div>
-      {error ? (
-        <p role="alert" className="form-error">
-          {error}
-        </p>
-      ) : null}
-    </main>
+      </form>
+    </>
+  );
+}
+
+function CodeStep({
+  email,
+  next,
+  onChangeEmail,
+}: {
+  email: string;
+  next: string;
+  onChangeEmail: () => void;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [resent, setResent] = useState(false);
+
+  async function signIn(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const otp = textField(new FormData(event.currentTarget), "code").replace(/\s/g, "");
+    setPending(true);
+    const result = await authClient.signIn.emailOtp({ email, otp });
+    if (result.error) {
+      setError("That code did not work. Check it, or send a new one.");
+      setPending(false);
+      return;
+    }
+    window.location.assign(next);
+  }
+
+  async function resend() {
+    setError(null);
+    await authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in" });
+    setResent(true);
+  }
+
+  return (
+    <>
+      <h1 className="sign-in-title">
+        If <strong>{email}</strong> can sign in here, a code is on its way.
+      </h1>
+      <form className="sign-in-form" onSubmit={(event) => void signIn(event)}>
+        <label className="field">
+          <span>Code</span>
+          <input
+            name="code"
+            className="code-input"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            pattern="[0-9 ]{6,7}"
+            maxLength={7}
+            required
+            // The page shows only this field, and the code was just sent to it.
+            // oxlint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus
+          />
+        </label>
+        <button type="submit" className="button" disabled={pending}>
+          {pending ? "Signing in…" : "Sign in"}
+        </button>
+        {error ? (
+          <p role="alert" className="form-error">
+            {error}
+          </p>
+        ) : null}
+      </form>
+      <p className="sign-in-help">
+        {resent ? "Sent another code. " : null}
+        <button type="button" className="link-button" onClick={() => void resend()}>
+          Send another code
+        </button>{" "}
+        or{" "}
+        <button type="button" className="link-button" onClick={onChangeEmail}>
+          use another email
+        </button>
+        .
+      </p>
+    </>
   );
 }
