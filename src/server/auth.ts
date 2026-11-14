@@ -24,9 +24,6 @@ export const auth = betterAuth({
   // The JWT plugin's /token would hand the browser a session JWT signed like an access token.
   disabledPaths: ["/token"],
   database: drizzleAdapter(db, { provider: "sqlite", schema }),
-  // People sign in with a code sent to their email (emailOTP below). Password sign-in exists only
-  // in `bun run dev`, with no form, for the screenshot script and local test runs.
-  emailAndPassword: { enabled: import.meta.env?.DEV },
   databaseHooks: {
     user: {
       create: {
@@ -56,11 +53,8 @@ export const auth = betterAuth({
     }),
     // Keys belong to the owner's agents, so the plugin's default limit of 10 requests a day is off.
     apiKey({ defaultPrefix: "eg_", apiKeyHeaders: "x-api-key", rateLimit: { enabled: false } }),
-    // Signs agent access tokens; /mcp checks them against its keys without a network call.
     jwt({ disableSettingJwtHeader: true }),
-    // Agents sign in over OAuth: an MCP client that gets a 401 from /mcp opens /sign-in, then
-    // /connect, where the owner names the agent. Clients register themselves (RFC 7591); only the
-    // owner can approve one, so an anonymous registration grants nothing.
+    // Clients register themselves (RFC 7591); only the owner's approval on /connect grants access.
     mcp({
       loginPage: "/sign-in",
       consentPage: "/connect",
@@ -70,7 +64,6 @@ export const auth = betterAuth({
       clientRegistrationDefaultApplicationType: "infer",
       scopes: ["openid", "profile", "offline_access"],
       clientRegistrationDefaultScopes: ["openid", "profile", "offline_access"],
-      // A rotated refresh token is never accepted twice.
       refreshTokenReuseInterval: 0,
     }),
     // Must stay last.
