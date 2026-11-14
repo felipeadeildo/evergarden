@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 
 import { DocumentBody } from "#/components/document/body";
@@ -10,7 +10,7 @@ import { TopBar } from "#/components/navigation/top-bar";
 import { ContentsIcon } from "#/components/ui/icons";
 import { Page, PageHeader } from "#/components/ui/page";
 import { Sheet } from "#/components/ui/sheet";
-import { getDocumentPage } from "#/functions/library.functions";
+import { getDocumentPage, markDocumentRead } from "#/functions/library.functions";
 
 import katexCss from "katex/dist/katex.min.css?url";
 
@@ -30,6 +30,10 @@ function DocumentPage() {
   const [contentsOpen, setContentsOpen] = useState(false);
   const isOld = version.number !== document.version;
   const hasContents = body.headings.length > 1;
+
+  useEffect(() => {
+    void markDocumentRead({ data: { id: document.id, version: version.number } });
+  }, [document.id, version.number]);
 
   return (
     <>

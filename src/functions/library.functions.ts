@@ -57,7 +57,7 @@ export const getFolder = createServerFn({ method: "GET" })
 export const getDocumentPage = createServerFn({ method: "GET", strict: { output: false } })
   .middleware([libraryAccess])
   .validator(z.object({ id: z.string(), version: z.int().positive().optional() }))
-  .handler(async ({ data, context: { principal } }) => {
+  .handler(async ({ data }) => {
     setResponseHeader("cache-control", "private, no-store");
     try {
       const page = await read(data.id, data.version);
@@ -66,14 +66,22 @@ export const getDocumentPage = createServerFn({ method: "GET", strict: { output:
         rendered(page.version.sha256),
         folderPath(page.document.folderId),
       ]);
-      if (principal.kind === "owner") {
-        await markRead(principal.userId, data.id, page.version.number);
-      }
       return { document: page.document, version: page.version, versions: history, body, folder };
     } catch (error) {
       if (error instanceof EvergardenError && error.code === "not_found") throw notFound();
       throw error;
     }
+  });
+
+/**
+ * Records that the owner opened this version. The document page calls it once it renders: the
+ * page's loader also runs when a link is merely hovered, so it must not write.
+ */
+export const markDocumentRead = createServerFn({ method: "POST" })
+  .middleware([libraryAccess])
+  .validator(z.object({ id: z.string(), version: z.int().positive() }))
+  .handler(async ({ data, context: { principal } }) => {
+    if (principal.kind === "owner") await markRead(principal.userId, data.id, data.version);
   });
 
 export const searchDocuments = createServerFn({ method: "GET" })
