@@ -8,7 +8,11 @@ export default defineConfig({
     projects: [
       {
         extends: true,
-        test: { name: "unit", include: ["src/{lib,render}/**/*.test.ts"], environment: "node" },
+        test: {
+          name: "unit",
+          include: ["src/{lib,render,components}/**/*.test.ts"],
+          environment: "node",
+        },
       },
       {
         extends: true,

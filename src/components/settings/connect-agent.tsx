@@ -1,19 +1,20 @@
-import { type SubmitEvent, useState } from "react";
+import { type SubmitEvent, useId, useState } from "react";
 
 import { CopyButton } from "#/components/ui/copy-button";
 import { textField } from "#/lib/form";
 
+import { agentCommands } from "./agent-commands";
 import { useAgentKeys } from "./use-agent-keys";
 
-type Connected = { name: string; config: string };
+type Created = { name: string; key: string };
 
 /**
- * Names a new agent and hands back what to paste into it: an MCP configuration with this
- * deployment's address and the agent's key already inside. The key is shown only this once.
+ * Names a new agent and hands back its key, shown only this once, with the one command that adds
+ * evergarden to each common agent CLI.
  */
 export function ConnectAgent({ server }: { server: string }) {
   const { create } = useAgentKeys();
-  const [connected, setConnected] = useState<Connected | null>(null);
+  const [created, setCreated] = useState<Created | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -23,7 +24,7 @@ export function ConnectAgent({ server }: { server: string }) {
     setBusy(true);
     setError(null);
     try {
-      setConnected({ name, config: mcpConfig(server, await create(name)) });
+      setCreated({ name, key: await create(name) });
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "The key was not created.");
     } finally {
@@ -31,26 +32,8 @@ export function ConnectAgent({ server }: { server: string }) {
     }
   }
 
-  if (connected) {
-    return (
-      <div className="connect connect-ready">
-        <p className="connect-title">
-          <strong>{connected.name}</strong> is ready
-        </p>
-        <div className="snippet">
-          <pre>
-            <code>{connected.config}</code>
-          </pre>
-          <CopyButton text={connected.config} label="Copy configuration" iconOnly />
-        </div>
-        <p className="connect-note">
-          Paste this into the agent&rsquo;s MCP settings. evergarden shows the key only this once.{" "}
-          <button type="button" className="link-button" onClick={() => setConnected(null)}>
-            Connect another agent
-          </button>
-        </p>
-      </div>
-    );
+  if (created) {
+    return <NewKey created={created} server={server} onDone={() => setCreated(null)} />;
   }
 
   return (
@@ -77,10 +60,61 @@ export function ConnectAgent({ server }: { server: string }) {
   );
 }
 
-function mcpConfig(server: string, key: string): string {
-  return JSON.stringify(
-    { mcpServers: { evergarden: { url: server, headers: { Authorization: `Bearer ${key}` } } } },
-    null,
-    2,
+function NewKey({
+  created,
+  server,
+  onDone,
+}: {
+  created: Created;
+  server: string;
+  onDone: () => void;
+}) {
+  const commands = agentCommands(server, created.key);
+  const [chosen, setChosen] = useState(0);
+  const command = commands[chosen]!;
+  const tabsId = useId();
+
+  return (
+    <div className="new-key">
+      <p className="new-key-label">
+        Key for <strong>{created.name}</strong>, shown only this once
+      </p>
+      <div className="line">
+        <code>{created.key}</code>
+        <CopyButton text={created.key} label="Copy key" iconOnly />
+      </div>
+
+      <p className="new-key-label">Or add it from a terminal</p>
+      <div role="tablist" aria-label="Agent" className="segmented">
+        {commands.map((entry, index) => (
+          <button
+            key={entry.client}
+            type="button"
+            role="tab"
+            id={`${tabsId}-${index}`}
+            aria-selected={index === chosen}
+            aria-controls={`${tabsId}-panel`}
+            onClick={() => setChosen(index)}
+          >
+            {entry.client}
+          </button>
+        ))}
+      </div>
+      <div role="tabpanel" id={`${tabsId}-panel`} aria-labelledby={`${tabsId}-${chosen}`}>
+        <div className="line line-command">
+          <code>
+            {command.lines.map((text) => (
+              <span key={text}>{text}</span>
+            ))}
+          </code>
+          <CopyButton text={command.lines.join("\n")} label="Copy command" iconOnly />
+        </div>
+        {command.note ? <p className="connect-note">{command.note}</p> : null}
+      </div>
+
+      <button type="button" className="link-button new-key-done" onClick={onDone}>
+        Done
+      </button>
+    </div>
   );
 }
