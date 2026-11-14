@@ -25,8 +25,7 @@ function Settings() {
         <section aria-labelledby="connect-heading" className="page-section">
           <h2 id="connect-heading">Connect an agent</h2>
           <p className="page-note">
-            Agents publish here over MCP, each with its own key. The name you give it signs what it
-            writes.
+            Agents publish here over MCP. Each one signs what it writes with the name you give it.
           </p>
           <ConnectAgent server={mcpAddress} />
         </section>

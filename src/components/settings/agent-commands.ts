@@ -9,11 +9,36 @@ export type AgentCommand = {
 const NAME = "evergarden";
 
 /**
- * The command each supported agent CLI takes to add this server with `key`. Syntax checked
- * against each CLI's docs: pi `--header KEY=VALUE`, Claude Code and Gemini CLI
- * `--header "Name: value"`, Codex only reads the token from an environment variable.
+ * The commands each agent CLI takes to add this server. Without `key` the agent signs in over
+ * OAuth, in the browser, the first time it connects; with `key` it sends the key on every call.
+ * Syntax checked against each CLI: pi `--header KEY=VALUE`, Claude Code and Gemini CLI
+ * `--header "Name: value"`, Codex reads a token only from an environment variable.
  */
-export function agentCommands(server: string, key: string): AgentCommand[] {
+export function agentCommands(server: string, key?: string): AgentCommand[] {
+  return key ? withKey(server, key) : withOAuth(server);
+}
+
+function withOAuth(server: string): AgentCommand[] {
+  return [
+    { client: "pi", lines: [`pi mcp add ${NAME} --url ${server}`, `pi mcp login ${NAME}`] },
+    {
+      client: "Claude Code",
+      lines: [`claude mcp add --transport http ${NAME} ${server}`],
+      note: "Then run /mcp inside Claude Code and choose Authenticate.",
+    },
+    {
+      client: "Codex",
+      lines: [`codex mcp add ${NAME} --url ${server}`, `codex mcp login ${NAME}`],
+    },
+    {
+      client: "Gemini CLI",
+      lines: [`gemini mcp add --transport http ${NAME} ${server}`],
+      note: `Then run /mcp auth ${NAME} inside Gemini CLI.`,
+    },
+  ];
+}
+
+function withKey(server: string, key: string): AgentCommand[] {
   return [
     {
       client: "pi",

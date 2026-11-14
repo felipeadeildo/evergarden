@@ -1,46 +1,41 @@
 import { useState } from "react";
 
-import { KeyIcon } from "#/components/ui/icons";
+import { KeyIcon, ServerIcon } from "#/components/ui/icons";
 import { RelativeTime } from "#/components/ui/relative-time";
+import type { AgentEntry } from "#/server/agents";
 
-import { type AgentKey, useAgentKeys } from "./use-agent-keys";
+import { useAgents } from "./use-agents";
 
-/** The agents with a key: when each last reached the library, and a way to lock it out. */
+/** Every agent with access, however it connected, and a way to lock each one out. */
 export function ConnectedAgents() {
-  const { keys, revoke } = useAgentKeys();
+  const { agents, revoke } = useAgents();
 
-  if (keys.isError) return <p className="form-error">{keys.error.message}</p>;
-  if (!keys.data) return null;
-  if (keys.data.length === 0) return <p className="page-note">No agents connected yet.</p>;
+  if (agents.isError) return <p className="form-error">{agents.error.message}</p>;
+  if (!agents.data) return null;
+  if (agents.data.length === 0) return <p className="page-note">No agents connected yet.</p>;
 
   return (
     <ul className="rows">
-      {keys.data.map((entry) => (
+      {agents.data.map((entry) => (
         <AgentRow key={entry.id} entry={entry} onRevoke={() => revoke(entry.id)} />
       ))}
     </ul>
   );
 }
 
-function AgentRow({ entry, onRevoke }: { entry: AgentKey; onRevoke: () => Promise<void> }) {
+function AgentRow({ entry, onRevoke }: { entry: AgentEntry; onRevoke: () => Promise<void> }) {
   const [confirming, setConfirming] = useState(false);
-  const name = entry.name ?? "Unnamed agent";
+  const Icon = entry.method === "oauth" ? ServerIcon : KeyIcon;
+  const how = entry.method === "oauth" ? `${entry.client ?? "OAuth"}, signed in` : "API key";
 
   return (
     <li>
-      <div className="row row-static" title={`Key ${entry.start ?? ""}…`}>
-        <KeyIcon className="row-icon" />
-        <span className="row-name row-signature">{name}</span>
-        <span className="row-place">
-          {entry.lastRequest ? (
-            <>
-              used <RelativeTime date={new Date(entry.lastRequest)} short />
-            </>
-          ) : (
-            "never used"
-          )}
-        </span>
+      <div className="row row-static">
+        <Icon className="row-icon" />
+        <span className="row-name row-signature">{entry.name}</span>
+        <span className="row-place">{how}</span>
         <span className="row-end">
+          {entry.lastUsedAt ? <RelativeTime date={new Date(entry.lastUsedAt)} short /> : "never"}
           <button
             type="button"
             className="row-action danger"
@@ -52,9 +47,9 @@ function AgentRow({ entry, onRevoke }: { entry: AgentKey; onRevoke: () => Promis
         </span>
         {confirming ? (
           <p className="row-confirm" role="alert">
-            {name} stops working at once.
+            {entry.name} stops working at once.
             <button type="button" className="row-action danger" onClick={() => void onRevoke()}>
-              Revoke key
+              Revoke access
             </button>
             <button type="button" className="row-action" onClick={() => setConfirming(false)}>
               Keep it

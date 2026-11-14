@@ -2,20 +2,27 @@ import { describe, expect, it } from "vitest";
 
 import { agentCommands } from "./agent-commands";
 
-describe("agentCommands", () => {
-  const commands = agentCommands("https://evergarden.example.com/mcp", "eg_abc");
+const SERVER = "https://evergarden.example.com/mcp";
 
-  it("puts the address and the key in every client's command", () => {
-    for (const { lines } of commands) {
+describe("agentCommands", () => {
+  it("adds the server without a secret when agents sign in over OAuth", () => {
+    for (const { lines } of agentCommands(SERVER)) {
       const all = lines.join("\n");
-      expect(all).toContain("https://evergarden.example.com/mcp");
-      expect(all).toContain("eg_abc");
+      expect(all).toContain(SERVER);
+      expect(all).not.toContain("Bearer");
     }
+    expect(agentCommands(SERVER)[0]!.lines).toEqual([
+      `pi mcp add evergarden --url ${SERVER}`,
+      "pi mcp login evergarden",
+    ]);
   });
 
-  it("uses pi's KEY=VALUE header syntax", () => {
-    expect(commands[0]!.lines[0]).toBe(
-      'pi mcp add evergarden --url https://evergarden.example.com/mcp --header "Authorization=Bearer eg_abc"',
+  it("puts the key in every client's command when there is one", () => {
+    for (const { lines } of agentCommands(SERVER, "eg_abc")) {
+      expect(lines.join("\n")).toContain("eg_abc");
+    }
+    expect(agentCommands(SERVER, "eg_abc")[0]!.lines[0]).toBe(
+      `pi mcp add evergarden --url ${SERVER} --header "Authorization=Bearer eg_abc"`,
     );
   });
 });

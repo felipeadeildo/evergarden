@@ -996,6 +996,9 @@
   }
 
   .row-end {
+    display: flex;
+    gap: 1rem;
+    align-items: baseline;
     justify-self: end;
     font-size: 0.8rem;
     font-variant-numeric: tabular-nums;
@@ -1276,6 +1279,16 @@
     display: grid;
     gap: 0.8rem;
     margin-top: 0.6rem;
+  }
+
+  .connect-actions {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  .connect-actions .button {
+    flex: 1;
   }
 
   /* A page of plain text: not-found and private notices */
