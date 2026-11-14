@@ -338,29 +338,29 @@
     gap: 0.15rem;
   }
 
-  /* Reading a document */
+  /* The page frame: see components/ui/page.tsx */
 
-  .reading {
+  .page {
     display: grid;
     grid-template-columns: minmax(0, var(--measure));
     justify-content: center;
     padding: 0 max(1.25rem, env(safe-area-inset-right)) 6rem max(1.25rem, env(safe-area-inset-left));
   }
 
-  .reading-contents,
-  .reading-margin {
+  .page-aside,
+  .page-margin {
     display: none;
   }
 
   @media (min-width: 1200px) {
-    .reading {
+    .page {
       grid-template-columns: minmax(11rem, 1fr) minmax(0, var(--measure)) minmax(15rem, 1fr);
       column-gap: 3.5rem;
       justify-content: stretch;
     }
 
-    .reading-contents,
-    .reading-margin {
+    .page-aside,
+    .page-margin {
       display: block;
     }
 
@@ -369,7 +369,7 @@
     }
   }
 
-  .reading-contents .toc {
+  .page-aside .toc {
     position: sticky;
     top: calc(var(--bar) + 2rem);
     max-width: 13rem;
@@ -383,13 +383,13 @@
   }
 
   /* The list follows the reader, so it needs no bar; a fade shows which end has more. */
-  .reading-contents .toc[data-more="top"] {
+  .page-aside .toc[data-more="top"] {
     mask-image: linear-gradient(to bottom, transparent, black var(--fade));
   }
-  .reading-contents .toc[data-more="bottom"] {
+  .page-aside .toc[data-more="bottom"] {
     mask-image: linear-gradient(to top, transparent, black var(--fade));
   }
-  .reading-contents .toc[data-more="top bottom"] {
+  .page-aside .toc[data-more="top bottom"] {
     mask-image: linear-gradient(
       to bottom,
       transparent,
@@ -436,11 +436,11 @@
     background: var(--prussian);
   }
 
-  .document-header {
-    padding: 3rem 0 1.4rem;
+  .page-header {
+    padding: 2.5rem 0 1.6rem;
   }
 
-  .document-header h1 {
+  .page-header h1 {
     margin: 0;
     font-size: 2rem;
     font-weight: 560;
@@ -449,13 +449,45 @@
   }
 
   @media (min-width: 768px) {
-    .document-header {
-      padding-top: 4.5rem;
+    .page-header {
+      padding-top: 3.5rem;
     }
 
-    .document-header h1 {
+    .page-header h1 {
       font-size: 2.3rem;
     }
+  }
+
+  /* One quiet line under a page title: a count, a repository, who wrote it. */
+  .page-details {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem 1rem;
+    margin: 0.7rem 0 0;
+    font-size: 0.88rem;
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  .page-section + .page-section {
+    margin-top: 2.6rem;
+  }
+
+  .page-section h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+
+  .page-note {
+    margin: 0 0 1rem;
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+  }
+
+  .page-note a {
+    color: var(--prussian);
   }
 
   .byline {
@@ -875,24 +907,6 @@
 
   /* The library */
 
-  .library,
-  .settings {
-    max-width: 44rem;
-    margin: 0 auto;
-    padding: 2.5rem max(1.25rem, env(safe-area-inset-right)) 5rem
-      max(1.25rem, env(safe-area-inset-left));
-  }
-
-  .library-section + .library-section {
-    margin-top: 3rem;
-  }
-
-  .library-heading {
-    margin: 0 0 0.6rem;
-    font-size: 1.05rem;
-    font-weight: 600;
-  }
-
   .link-button {
     padding: 0;
     border: 0;
@@ -911,19 +925,30 @@
 
   /* Lists of documents and folders: see components/library/rows.tsx */
 
+  /* The list owns the columns; every row takes them through subgrid, so they line up. */
   .rows {
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr) minmax(0, auto) auto;
+    column-gap: 0.75rem;
     margin: 0;
     padding: 0;
     list-style: none;
   }
 
+  .rows > li {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+  }
+
   .row {
     display: grid;
-    grid-template-columns: 1.25rem minmax(0, 1fr);
-    column-gap: 0.75rem;
-    margin: 0 -0.7rem;
-    padding: 0.6rem 0.7rem;
-    border-radius: 7px;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: baseline;
+    margin: 0 -0.6rem;
+    padding: 0.42rem 0.6rem;
+    border-radius: 6px;
     color: inherit;
     text-decoration: none;
     transition: background-color 120ms var(--ease);
@@ -934,56 +959,81 @@
     background: var(--sheet);
   }
 
-  /* Centred on the first line of the name: half its line height, less half the icon. */
   .row-icon {
-    grid-row: 1;
-    margin-top: calc((1lh - 1.15em) / 2);
+    align-self: center;
     color: var(--ink-soft);
   }
 
   .row-name {
-    display: -webkit-box;
     overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .row:hover .row-name {
     color: var(--prussian);
   }
 
-  .row-folder {
+  .row-folder,
+  .row[data-unread] .row-name {
     font-weight: 600;
   }
 
-  .row-details {
-    grid-column: 2;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.1rem 0.9rem;
-    margin-top: 0.1rem;
-    font-size: 0.8rem;
-    font-variant-numeric: tabular-nums;
-    color: var(--ink-soft);
-  }
-
   .row-place {
+    max-width: 13rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.8rem;
     font-style: italic;
+    color: var(--ink-soft);
   }
 
   .row-repo {
     font-family: var(--mono);
     font-size: 0.72rem;
+    font-style: normal;
   }
 
-  .row-unread {
-    align-self: center;
+  .row-end {
+    justify-self: end;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-soft);
+  }
+
+  /* A document changed since you read it: a dot before its time. */
+  .row[data-unread] .row-end::before {
+    content: "";
+    display: inline-block;
     width: 6px;
     height: 6px;
-    margin-right: -0.4rem;
+    margin-right: 0.45rem;
     border-radius: 50%;
     background: var(--emerald);
+    vertical-align: 0.1em;
+  }
+
+  /* Phones: the name takes the first line, where it sits and when go under it. */
+  @media (max-width: 639px) {
+    .rows {
+      grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+      row-gap: 0.15rem;
+    }
+
+    .row-name {
+      grid-column: 2 / -1;
+      white-space: normal;
+    }
+
+    .row-place {
+      grid-column: 2;
+      max-width: none;
+    }
+
+    .row-end {
+      grid-column: 3;
+    }
   }
 
   .rows-more {
@@ -1008,133 +1058,141 @@
     text-decoration: underline;
   }
 
-  /* A folder's page */
+  /* Settings: see components/settings */
 
-  .folder-header h1 {
-    margin: 0;
-    font-size: 2rem;
-    line-height: 1.15;
+  .row-static:hover {
+    background: none;
   }
 
-  .folder-meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.4rem 1rem;
-    margin: 0.5rem 0 1.8rem;
-    font-size: 0.85rem;
-    font-style: italic;
-    color: var(--ink-soft);
+  .row-static:hover .row-name {
+    color: inherit;
   }
 
-  .folder-empty {
-    font-style: italic;
-    color: var(--ink-soft);
-  }
-
-  .empty h1 {
-    margin: 2rem 0 0.6rem;
-    font-size: 1.6rem;
+  .row-signature {
     font-weight: 560;
   }
 
-  .empty p {
-    max-width: 34rem;
-    color: var(--ink-soft);
-  }
-
-  .empty a {
-    color: var(--prussian);
-  }
-
-  /* Settings */
-
-  .settings h1 {
-    margin: 0 0 2rem;
-    font-size: 1.8rem;
-    font-weight: 560;
-  }
-
-  .settings-section + .settings-section {
-    margin-top: 3rem;
-  }
-
-  .settings h2 {
-    margin: 0 0 0.4rem;
-    font-size: 1.15rem;
-    font-weight: 600;
-  }
-
-  .settings p {
-    margin: 0 0 1rem;
-    color: var(--ink-soft);
-  }
-
-  .inline-form {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: end;
-    gap: 0.7rem;
-    margin: 1.2rem 0;
-  }
-
-  .inline-form .field {
-    flex: 1 1 14rem;
-  }
-
-  .key-list {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .key-list li {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.4rem 0.9rem;
-    padding: 0.6rem 0;
-    border-bottom: 1px solid color-mix(in oklab, var(--rule) 65%, transparent);
-  }
-
-  .key-name {
+  /* Text buttons inside a row: the negative margin puts their text, not their padding, on the
+     row's right edge, where times and counts end in other lists. */
+  .row-action {
     display: inline-flex;
-    align-items: baseline;
-    gap: 0.4rem;
-    font-weight: 560;
-  }
-
-  .key-name .icon {
+    align-items: center;
+    gap: 0.35rem;
+    margin-right: -0.4rem;
+    padding: 0.1rem 0.4rem;
+    border: 0;
+    border-radius: 5px;
+    background: none;
     color: var(--ink-soft);
-  }
-
-  .key-start {
-    font-size: 0.78rem;
-    color: var(--ink-soft);
-  }
-
-  .key-meta {
-    flex: 1;
+    font: inherit;
     font-size: 0.8rem;
-    color: var(--ink-soft);
+    cursor: pointer;
   }
 
-  .new-key {
-    margin: 1.2rem 0;
-    padding: 1rem 1.1rem;
-    border-radius: 9px;
+  .row-action:hover {
     background: var(--sheet);
-  }
-
-  .new-key p {
     color: var(--ink);
   }
 
-  .new-key pre {
-    margin: 0 0 1rem;
+  .row-action.danger:hover,
+  .row-confirm .row-action.danger {
+    color: var(--alizarin);
+  }
+
+  .row-confirm {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem 0.6rem;
+    grid-column: 2 / -1;
+    margin: 0.35rem 0 0.2rem;
+    font-size: 0.85rem;
+    color: var(--ink);
+  }
+
+  /* An icon button keeps one size whatever it shows, so swapping its icon moves nothing. */
+  .icon-button {
+    justify-content: center;
+    width: 2rem;
+    min-width: 2rem;
+    height: 2rem;
+    min-height: 2rem;
+    padding: 0;
+  }
+
+  .connect {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.6rem;
+  }
+
+  .connect-field input {
+    width: 100%;
+    min-height: 2.6rem;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--rule);
+    border-radius: 7px;
+    background: var(--paper);
+    font: inherit;
+    font-size: 0.95rem;
+  }
+
+  .connect-field input:focus-visible {
+    border-color: var(--prussian);
+    outline-offset: 0;
+  }
+
+  .connect-error {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+
+  .connect-ready {
+    display: block;
+  }
+
+  .connect-title {
+    margin: 0 0 0.6rem;
+    font-size: 0.95rem;
+  }
+
+  .connect-title strong {
+    font-weight: 600;
+  }
+
+  /* The configuration to paste, with its copy button pinned to the corner. */
+  .snippet {
+    position: relative;
+    border-radius: 8px;
+    background: var(--sheet);
+  }
+
+  .snippet pre {
+    margin: 0;
+    padding: 0.85rem 3rem 0.85rem 1rem;
     overflow-x: auto;
-    font-size: 0.76rem;
-    line-height: 1.5;
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    line-height: 1.55;
+  }
+
+  .snippet .icon-button {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.45rem;
+  }
+
+  .connect-note {
+    margin: 0.6rem 0 0;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+
+  .signed-in {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.85rem;
   }
 
   /* Sign-in */
