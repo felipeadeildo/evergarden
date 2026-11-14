@@ -36,7 +36,7 @@ The agent reads the repository from its git remote, and evergarden files the doc
 `/` is the library. It answers "what needs me?" before "where is everything?":
 
 1. **New for you**: documents updated since you last opened them, and threads where the agent replied to you. A document you have never opened counts as new.
-2. **The tree**: your folders and documents, in the order you arranged them.
+2. **The tree**: your folders and documents, in the order you arranged them. Folders start closed and load what they hold when you open one, so a library of thousands of documents opens as fast as an empty one. A folder with more than 50 documents shows them 50 at a time. The browser remembers which folders you left open.
 
 Search (`⌘K`, or the search button on a phone) matches titles first, then the full text, and opens the document scrolled to the match.
 
@@ -49,6 +49,10 @@ Search (`⌘K`, or the search button on a phone) matches titles first, then the 
 | Table of contents | Left column, current section marked            | Hidden; opens from the header                  | Hidden; opens from the header             |
 | Text              | Centred column, about 66 characters per line   | Same                                           | Full width with side padding              |
 | Comments          | Right margin, each note level with its passage | Markers in the margin; a note opens in a panel | Passage underlined; tapping opens a sheet |
+
+The top bar shows the folder the document sits in, such as `ranqia / plans`. Each folder in it opens a menu of what that folder holds: you can go into other folders from there and open another document without going back to the library. A phone shows only the last folder.
+
+Diagrams take the width of the text, like everything else on the page; the right margin stays free for comments. A wide diagram drawn small opens full screen with a click, where you move around it by scrolling or dragging and zoom by pinching or holding ⌘ while scrolling.
 
 Opening a document records which version you read, which is what empties "New for you".
 

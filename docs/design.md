@@ -97,7 +97,7 @@ Sanitising runs before the evergarden step, so what that step adds (highlighted 
 
 Reports are full of prices, so `$x$` follows the Pandoc rule instead of remark-math's: the opening `$` needs a non-space character after it, and the closing `$` needs a non-space character before it and no digit after it. `$c = 0.045 \times 21{,}000$` is math; in `$0.045 per GB … $950` the second `$` follows a space, so both stay prices.
 
-A diagram is drawn twice. The server draws it so the page shows it before any script runs; in the browser, Pele draws it again from the hidden source at the real column width and with the real fonts, which turns a wide flowchart vertical on a phone and adds pinch zoom.
+A diagram is drawn twice. The server draws it so the page shows it before any script runs; in the browser, Pele draws it again from the hidden source at the real column width and with the real fonts, which turns a wide flowchart vertical on a phone. The full-screen view draws it a third time, laid out for the screen, and zooms by resizing the SVG rather than scaling it with a CSS transform, so text stays sharp at every size.
 
 | Syntax                                                            | Renders as                                                                                                                        |
 | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
