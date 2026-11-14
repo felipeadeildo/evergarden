@@ -11,12 +11,12 @@
     "dev": "vite dev --port 3000",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "bun run build && wrangler deploy",
+    "deploy": "bun run build && wrangler deploy && bun run db:migrate:remote",
     "typegen": "wrangler types",
     "auth:schema": "auth generate --config src/server/auth.ts --adapter drizzle --dialect sqlite --output src/server/db/auth-schema.ts --yes && oxfmt src/server/db/auth-schema.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply evergarden --local",
-    "db:migrate:remote": "wrangler d1 migrations apply evergarden --remote",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "format": "oxfmt",
     "lint": "oxlint",
     "test": "vitest run",
@@ -58,5 +58,30 @@
     "vitest": "^5.1.0",
     "wrangler": "^4.162.0"
   },
-  "packageManager": "bun@1.4.4"
+  "packageManager": "bun@1.4.4",
+  "cloudflare": {
+    "bindings": {
+      "BETTER_AUTH_SECRET": {
+        "description": "Signs sessions. Generate one with `openssl rand -base64 32`."
+      },
+      "OWNER_EMAIL": {
+        "description": "The email you sign in with. That account becomes the **owner** of this instance; everyone else is a guest."
+      },
+      "GITHUB_CLIENT_ID": {
+        "description": "From a [GitHub OAuth app](https://github.com/settings/developers). Callback URL: `https://<your-worker>/api/auth/callback/github`."
+      },
+      "GITHUB_CLIENT_SECRET": {
+        "description": "The secret of the same GitHub OAuth app."
+      },
+      "GOOGLE_CLIENT_ID": {
+        "description": "Optional. Lets guests sign in with Google. Leave empty to offer GitHub only."
+      },
+      "GOOGLE_CLIENT_SECRET": {
+        "description": "Optional. The secret of the same Google OAuth client."
+      },
+      "BETTER_AUTH_URL": {
+        "description": "Optional. The public URL, such as `https://evergarden.example.com`. Leave empty to use the URL of each request."
+      }
+    }
+  }
 }

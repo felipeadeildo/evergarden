@@ -10,11 +10,13 @@ import * as schema from "#/server/db/schema";
 // The Better Auth CLI loads this file too (`bun run auth:schema`), with `cloudflare:workers` stubbed.
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
-  baseURL: env.BETTER_AUTH_URL,
+  baseURL: env.BETTER_AUTH_URL || undefined,
   database: drizzleAdapter(db, { provider: "sqlite", schema }),
   socialProviders: {
     github: { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET },
-    google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
+    ...(env.GOOGLE_CLIENT_ID && {
+      google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
+    }),
   },
   advanced: {
     // Workers do not set X-Forwarded-For; without this every visitor shares one rate-limit bucket.
