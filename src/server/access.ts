@@ -1,14 +1,20 @@
+import { eq } from "drizzle-orm";
+import type { JWTPayload } from "jose";
+
+import { agentForClient, agentForKey, touchAgent } from "#/server/agents";
 import { auth, isOwner } from "#/server/auth";
+import { db } from "#/server/db";
+import { user } from "#/server/db/schema";
 import { EvergardenError } from "#/server/errors";
 import type { Author } from "#/server/library";
 
 /** Who is making a request. Guests can sign in but have no access until share links exist. */
 export type Principal =
   | { kind: "owner"; userId: string; name: string; email: string }
-  | { kind: "agent"; keyId: string; name: string }
+  | { kind: "agent"; agentId: string; name: string }
   | { kind: "guest"; userId: string; name: string; email: string };
 
-/** An API key from `Authorization: Bearer` or `x-api-key`, otherwise the session cookie. */
+/** An API key from `Authorization: Bearer eg_…` or `x-api-key`, otherwise the session cookie. */
 export async function principalFrom(headers: Headers): Promise<Principal | null> {
   const key = apiKeyFrom(headers);
   if (key) {
@@ -16,15 +22,39 @@ export async function principalFrom(headers: Headers): Promise<Principal | null>
     if (!result.valid || !result.key) {
       throw new EvergardenError("unauthorized", "The API key is invalid, expired or revoked.");
     }
-    return { kind: "agent", keyId: result.key.id, name: result.key.name ?? "agent" };
+    const found = await agentForKey(result.key.id, result.key.referenceId, result.key.name);
+    await touchAgent(found.id);
+    return { kind: "agent", agentId: found.id, name: found.name };
   }
 
   const session = await auth.api.getSession({ headers });
   if (!session) return null;
-  const { user } = session;
-  return isOwner(user.email)
-    ? { kind: "owner", userId: user.id, name: user.name, email: user.email }
-    : { kind: "guest", userId: user.id, name: user.name, email: user.email };
+  const { user: viewer } = session;
+  return isOwner(viewer.email)
+    ? { kind: "owner", userId: viewer.id, name: viewer.name, email: viewer.email }
+    : { kind: "guest", userId: viewer.id, name: viewer.name, email: viewer.email };
+}
+
+/**
+ * The agent behind a verified OAuth access token. The token alone is not enough: the owner may
+ * have revoked the agent since it was issued, and only the owner's agents get in.
+ */
+export async function principalFromToken(claims: JWTPayload): Promise<Principal> {
+  const userId = claims.sub;
+  const clientId = typeof claims.azp === "string" ? claims.azp : claims.client_id;
+  if (!userId || typeof clientId !== "string") {
+    throw new EvergardenError("unauthorized", "The access token names no user or client.");
+  }
+  const owner = await db.select({ email: user.email }).from(user).where(eq(user.id, userId)).get();
+  if (!owner || !isOwner(owner.email)) {
+    throw new EvergardenError("forbidden", "This library is private.");
+  }
+  const found = await agentForClient(userId, clientId);
+  if (!found) {
+    throw new EvergardenError("unauthorized", "This agent was disconnected. Sign in again.");
+  }
+  await touchAgent(found.id);
+  return { kind: "agent", agentId: found.id, name: found.name };
 }
 
 /** Throws unless the principal may read and write the library. */
@@ -39,11 +69,12 @@ export function authorize(principal: Principal | null): asserts principal is Pri
 
 export function authorOf(principal: Principal): Author {
   return principal.kind === "agent"
-    ? { kind: "agent", id: principal.keyId, name: principal.name }
+    ? { kind: "agent", id: principal.agentId, name: principal.name }
     : { kind: "user", id: principal.userId, name: principal.name };
 }
 
-function apiKeyFrom(headers: Headers): string | null {
-  const bearer = /^Bearer\s+(\S+)$/i.exec(headers.get("authorization") ?? "")?.[1];
+/** An evergarden API key, as opposed to an OAuth access token in the same header. */
+export function apiKeyFrom(headers: Headers): string | null {
+  const bearer = /^Bearer\s+(eg_\S+)$/i.exec(headers.get("authorization") ?? "")?.[1];
   return bearer ?? headers.get("x-api-key");
 }

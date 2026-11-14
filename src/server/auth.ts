@@ -1,17 +1,27 @@
 import { apiKey } from "@better-auth/api-key";
+import { mcp } from "@better-auth/mcp";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
+import { jwt } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { env } from "cloudflare:workers";
 
 import { db } from "#/server/db";
 import * as schema from "#/server/db/schema";
 
+/** This deployment's public URL. OAuth for agents needs a fixed one, so it is required outside dev. */
+export const PUBLIC_URL = publicUrl(env.BETTER_AUTH_URL);
+
+/** The MCP endpoint, and the resource every agent access token is bound to. */
+export const MCP_RESOURCE = `${PUBLIC_URL}/mcp`;
+
 // The Better Auth CLI loads this file too (`bun run auth:schema`), with `cloudflare:workers` stubbed.
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
-  baseURL: env.BETTER_AUTH_URL || undefined,
+  baseURL: PUBLIC_URL,
+  // The JWT plugin's /token would hand the browser a session JWT signed like an access token.
+  disabledPaths: ["/token"],
   database: drizzleAdapter(db, { provider: "sqlite", schema }),
   // Password sign-in exists only in `bun run dev`, where there is no OAuth app to sign in with.
   emailAndPassword: { enabled: import.meta.env?.DEV },
@@ -41,6 +51,23 @@ export const auth = betterAuth({
   plugins: [
     // Keys belong to the owner's agents, so the plugin's default limit of 10 requests a day is off.
     apiKey({ defaultPrefix: "eg_", apiKeyHeaders: "x-api-key", rateLimit: { enabled: false } }),
+    // Signs agent access tokens; /mcp checks them against its keys without a network call.
+    jwt({ disableSettingJwtHeader: true }),
+    // Agents sign in over OAuth: an MCP client that gets a 401 from /mcp opens /sign-in, then
+    // /connect, where the owner names the agent. Clients register themselves (RFC 7591); only the
+    // owner can approve one, so an anonymous registration grants nothing.
+    mcp({
+      loginPage: "/sign-in",
+      consentPage: "/connect",
+      resource: MCP_RESOURCE,
+      allowDynamicClientRegistration: true,
+      allowUnauthenticatedClientRegistration: true,
+      clientRegistrationDefaultApplicationType: "infer",
+      scopes: ["openid", "profile", "offline_access"],
+      clientRegistrationDefaultScopes: ["openid", "profile", "offline_access"],
+      // A rotated refresh token is never accepted twice.
+      refreshTokenReuseInterval: 0,
+    }),
     // Must stay last.
     tanstackStartCookies(),
   ],
@@ -48,4 +75,10 @@ export const auth = betterAuth({
 
 export function isOwner(email: string | null | undefined) {
   return Boolean(email) && email?.toLowerCase() === env.OWNER_EMAIL.toLowerCase();
+}
+
+function publicUrl(configured: unknown): string {
+  // The Better Auth CLI stubs `env`, so the value is not always a string.
+  const url = typeof configured === "string" && configured ? configured : "http://localhost:3000";
+  return url.replace(/\/$/, "");
 }
