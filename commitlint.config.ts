@@ -10,7 +10,7 @@ const config: UserConfig = {
         "render",
         "anchor",
         "library",
-        "reviews",
+        "comments",
         "access",
         "mcp",
         "api",
