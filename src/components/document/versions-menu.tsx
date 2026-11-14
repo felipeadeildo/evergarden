@@ -5,7 +5,10 @@ import { CheckIcon, HistoryIcon, OpenMenuIcon } from "#/components/ui/icons";
 import { RelativeTime } from "#/components/ui/relative-time";
 import type { VersionEntry } from "#/server/library";
 
-/** "Updated 2 hours ago by pi", opening the list of versions to read an older one. */
+/**
+ * "Updated 2 hours ago by pi". With more than one version it opens the list, newest first,
+ * to read an older one; with a single version there is nothing to choose, so it is plain text.
+ */
 export function VersionsMenu({
   documentId,
   versions,
@@ -20,22 +23,25 @@ export function VersionsMenu({
   const latest = versions[0];
   if (!latest) return null;
 
+  const byline = (
+    <>
+      <HistoryIcon />
+      <span>
+        {latest.number === 1 ? "Written" : "Updated"} <RelativeTime date={latest.createdAt} /> by{" "}
+        <span className="byline-author">{latest.authorName}</span>
+      </span>
+    </>
+  );
+
+  if (versions.length === 1) return <p className="byline byline-text">{byline}</p>;
+
   return (
     <div className="byline">
       <button type="button" className="byline-button" popoverTarget={menuId}>
-        <HistoryIcon />
-        <span>
-          {latest.number === 1 ? "Written" : "Updated"} <RelativeTime date={latest.createdAt} /> by{" "}
-          {latest.authorName}
-        </span>
+        {byline}
         <OpenMenuIcon className="byline-caret" />
       </button>
-      <div id={menuId} ref={menu} popover="auto" className="popover menu">
-        <div className="menu-header">
-          <p className="menu-title">
-            {versions.length === 1 ? "One version" : `${versions.length} versions`}
-          </p>
-        </div>
+      <div id={menuId} ref={menu} popover="auto" className="popover menu" aria-label="Versions">
         <ol className="menu-list">
           {versions.map((entry) => (
             <li key={entry.number}>
@@ -48,22 +54,14 @@ export function VersionsMenu({
                 onClick={() => menu.current?.hidePopover()}
               >
                 <span className="menu-icon">{entry.number === shown ? <CheckIcon /> : null}</span>
-                <span className="menu-label">
-                  Version {entry.number}
-                  {entry.number === latest.number ? (
-                    <span className="menu-tag">current</span>
-                  ) : null}
-                </span>
-                <span className="menu-detail menu-detail-below">
-                  <RelativeTime date={entry.createdAt} /> by {entry.authorName}
+                <span className="menu-label">Version {entry.number}</span>
+                <span className="menu-detail">
+                  {entry.authorName}, <RelativeTime date={entry.createdAt} />
                 </span>
               </Link>
             </li>
           ))}
         </ol>
-        {versions.length === 1 ? (
-          <p className="menu-note">Each update an agent publishes adds a version here.</p>
-        ) : null}
       </div>
     </div>
   );
