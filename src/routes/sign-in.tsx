@@ -6,9 +6,11 @@ import { GithubIcon, GoogleIcon } from "#/components/ui/icons";
 import { getSignInMethods } from "#/functions/session.functions";
 import { authClient } from "#/lib/auth-client";
 import { textField } from "#/lib/form";
+import { resumeAuthorizeUrl } from "#/lib/oauth-flow";
 
 export const Route = createFileRoute("/sign-in")({
-  validateSearch: z.object({ next: z.string().optional() }),
+  // .loose() keeps the signed OAuth parameters an agent's sign-in arrives with.
+  validateSearch: z.object({ next: z.string().optional() }).loose(),
   loader: () => getSignInMethods(),
   head: () => ({ meta: [{ title: "Sign in to evergarden" }] }),
   component: SignIn,
@@ -25,9 +27,15 @@ function safeNext(next: string | undefined): string {
   }
 }
 
+/** The authorize request to resume when an agent sent the owner here; read from the real URL. */
+function resumeAgentSignIn(): string | null {
+  return typeof window === "undefined" ? null : resumeAuthorizeUrl(window.location.search);
+}
+
 function SignIn() {
   const methods = Route.useLoaderData();
-  const callbackURL = safeNext(Route.useSearch().next);
+  const search = Route.useSearch();
+  const callbackURL = resumeAgentSignIn() ?? safeNext(search.next);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
