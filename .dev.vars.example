@@ -1,0 +1,8 @@
+# Local secrets for `bun run dev`. Copy to .dev.vars.
+BETTER_AUTH_SECRET=replace-with-output-of-openssl-rand-base64-32
+BETTER_AUTH_URL=http://localhost:3000
+OWNER_EMAIL=you@example.com
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
