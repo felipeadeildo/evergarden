@@ -23,7 +23,7 @@ export const getLibrary = createServerFn({ method: "GET" })
     setResponseHeader("cache-control", "private, no-store");
     const [library, unread] = await Promise.all([
       list(),
-      principal.kind === "owner" ? newFor(principal.userId) : [],
+      principal.kind === "owner" ? newFor(principal.userId, 8) : [],
     ]);
     return { ...library, unread };
   });

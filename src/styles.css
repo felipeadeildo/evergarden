@@ -159,6 +159,13 @@
     top: 1rem;
   }
 
+  /* Icons sit on the text baseline and take the colour of their text. */
+
+  .icon {
+    flex: none;
+    vertical-align: -0.16em;
+  }
+
   /* Controls */
 
   .button {
@@ -230,6 +237,24 @@
   @media (pointer: fine) {
     .shortcut {
       display: inline;
+    }
+  }
+
+  /* On phones, bar buttons show only their icon; the label stays for screen readers. */
+  @media (max-width: 640px) {
+    .top-bar .label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .top-bar .quiet-button {
+      min-width: 2.5rem;
+      justify-content: center;
+      font-size: 1rem;
     }
   }
 
@@ -413,6 +438,9 @@
 
   .byline-button {
     anchor-name: --versions;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35rem;
     padding: 0.1rem 0;
     border: 0;
     background: none;
@@ -592,18 +620,31 @@
     padding-top: 0.4rem;
   }
 
+  .search-field {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink-soft);
+    font-size: 1.15rem;
+  }
+
+  .search-field:focus-within {
+    border-bottom-color: var(--prussian);
+    color: var(--prussian);
+  }
+
   .search-input {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     padding: 0.6rem 0.2rem 0.7rem;
     border: 0;
-    border-bottom: 1px solid var(--rule);
     background: transparent;
-    font-size: 1.15rem;
+    color: var(--ink);
   }
 
   .search-input:focus-visible {
     outline: none;
-    border-bottom-color: var(--prussian);
   }
 
   .search-results {
@@ -628,7 +669,14 @@
   }
 
   .search-title {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
     font-weight: 560;
+  }
+
+  .search-title .icon {
+    color: var(--ink-soft);
   }
 
   .search-excerpt {
@@ -693,20 +741,15 @@
     display: none;
   }
 
-  .folder summary::before {
-    content: "";
-    flex: none;
-    width: 0.38rem;
-    height: 0.38rem;
-    margin-right: 0.1rem;
-    border-right: 1.5px solid var(--ink-soft);
-    border-bottom: 1.5px solid var(--ink-soft);
-    transform: translateY(-0.12rem) rotate(-45deg);
-    transition: transform 150ms var(--ease);
+  .folder-icon {
+    align-self: center;
+    color: var(--ink-soft);
+    transition: color 150ms var(--ease);
   }
 
-  .folder details[open] > summary::before {
-    transform: translateY(-0.2rem) rotate(45deg);
+  .folder summary:hover .folder-icon,
+  .folder details[open] > summary .folder-icon {
+    color: var(--prussian);
   }
 
   .folder-name {
@@ -714,6 +757,9 @@
   }
 
   .folder-repo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -735,6 +781,9 @@
   }
 
   .document-title {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.55rem;
     min-width: 0;
     font-weight: 480;
     transition: color 150ms var(--ease);
@@ -742,6 +791,11 @@
 
   .document-link:hover .document-title {
     color: var(--prussian);
+  }
+
+  .document-icon {
+    color: var(--ink-soft);
+    transform: translateY(0.05em);
   }
 
   .document-meta {
@@ -830,7 +884,14 @@
   }
 
   .key-name {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
     font-weight: 560;
+  }
+
+  .key-name .icon {
+    color: var(--ink-soft);
   }
 
   .key-start {
@@ -1113,6 +1174,9 @@
   }
 
   .callout-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
     margin: 0 0 0.2em;
     font-style: italic;
     font-weight: 600;
@@ -1193,6 +1257,9 @@
   }
 
   .code-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
     margin-left: auto;
     padding: 0.15rem 0.45rem;
     border: 0;

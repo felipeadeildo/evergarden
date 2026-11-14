@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { type SubmitEvent, useState } from "react";
 import { z } from "zod";
 
+import { GithubIcon, GoogleIcon } from "#/components/ui/icons";
 import { getSignInMethods } from "#/functions/session.functions";
 import { authClient } from "#/lib/auth-client";
 import { textField } from "#/lib/form";
@@ -67,6 +68,7 @@ function SignIn() {
             disabled={pending}
             onClick={() => void social("github")}
           >
+            <GithubIcon />
             Continue with GitHub
           </button>
         ) : null}
@@ -77,6 +79,7 @@ function SignIn() {
             disabled={pending}
             onClick={() => void social("google")}
           >
+            <GoogleIcon />
             Continue with Google
           </button>
         ) : null}

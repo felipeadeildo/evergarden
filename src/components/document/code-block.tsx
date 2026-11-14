@@ -2,6 +2,7 @@ import type { Element } from "hast";
 import { toString } from "hast-util-to-string";
 import { type ReactNode, useState } from "react";
 
+import { CheckIcon, CopyIcon } from "#/components/ui/icons";
 import { stringProperty } from "#/lib/hast";
 
 export function CodeBlock({ node, children }: { node: Element; children: ReactNode }) {
@@ -19,6 +20,7 @@ export function CodeBlock({ node, children }: { node: Element; children: ReactNo
       <div className="code-bar">
         {language && language !== "text" ? <span className="code-language">{language}</span> : null}
         <button type="button" className="code-copy" onClick={() => void copy()}>
+          {copied ? <CheckIcon /> : <CopyIcon />}
           <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
         </button>
       </div>

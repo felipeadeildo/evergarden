@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
+import { DocumentIcon, SearchIcon } from "#/components/ui/icons";
 import { Sheet } from "#/components/ui/sheet";
 import { searchDocuments } from "#/functions/library.functions";
 
@@ -76,32 +77,35 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="search">
-      <input
-        type="search"
-        className="search-input"
-        placeholder="Search titles and text"
-        aria-label="Search titles and text"
-        autoComplete="off"
-        spellCheck={false}
-        // oxlint-disable-next-line jsx-a11y/no-autofocus -- the dialog opens only to type a query
-        autoFocus
-        value={query}
-        onChange={(event) => {
-          setQuery(event.target.value);
-          setActive(0);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "ArrowDown") {
-            event.preventDefault();
-            setActive(Math.min(current + 1, hits.length - 1));
-          } else if (event.key === "ArrowUp") {
-            event.preventDefault();
-            setActive(Math.max(current - 1, 0));
-          } else if (event.key === "Enter") {
-            openHit(current);
-          }
-        }}
-      />
+      <div className="search-field">
+        <SearchIcon />
+        <input
+          type="search"
+          className="search-input"
+          placeholder="Search titles and text"
+          aria-label="Search titles and text"
+          autoComplete="off"
+          spellCheck={false}
+          // oxlint-disable-next-line jsx-a11y/no-autofocus -- the dialog opens only to type a query
+          autoFocus
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setActive(0);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              setActive(Math.min(current + 1, hits.length - 1));
+            } else if (event.key === "ArrowUp") {
+              event.preventDefault();
+              setActive(Math.max(current - 1, 0));
+            } else if (event.key === "Enter") {
+              openHit(current);
+            }
+          }}
+        />
+      </div>
       {hits.length > 0 ? (
         <ul className="search-results" aria-label="Results">
           {hits.map((hit, index) => (
@@ -112,7 +116,10 @@ function SearchPanel({ onDone }: { onDone: () => void }) {
                 onClick={onDone}
                 onPointerEnter={() => setActive(index)}
               >
-                <span className="search-title">{hit.title}</span>
+                <span className="search-title">
+                  <DocumentIcon />
+                  {hit.title}
+                </span>
                 <Excerpt text={hit.excerpt} />
               </Link>
             </li>

@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { SearchIcon, SettingsIcon } from "#/components/ui/icons";
+
 import { useOpenSearch } from "./search";
 
 /** The quiet bar above every library page: the name, where you are, search and settings. */
@@ -20,11 +22,13 @@ export function TopBar({ children, actions }: { children?: ReactNode; actions?: 
           onClick={openSearch}
           aria-keyshortcuts="Meta+K"
         >
-          Search
+          <SearchIcon />
+          <span className="label">Search</span>
           <kbd className="shortcut">⌘K</kbd>
         </button>
         <Link to="/settings" className="quiet-button">
-          Settings
+          <SettingsIcon />
+          <span className="label">Settings</span>
         </Link>
       </div>
     </header>

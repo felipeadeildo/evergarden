@@ -6,6 +6,7 @@ import { DocumentBody } from "#/components/document/body";
 import { Contents } from "#/components/document/contents";
 import { VersionsMenu } from "#/components/document/versions-menu";
 import { TopBar } from "#/components/navigation/top-bar";
+import { ContentsIcon } from "#/components/ui/icons";
 import { Sheet } from "#/components/ui/sheet";
 import { getDocumentPage } from "#/functions/library.functions";
 
@@ -38,7 +39,8 @@ function DocumentPage() {
               className="quiet-button contents-toggle"
               onClick={() => setContentsOpen(true)}
             >
-              Contents
+              <ContentsIcon />
+              <span className="label">Contents</span>
             </button>
           ) : null
         }

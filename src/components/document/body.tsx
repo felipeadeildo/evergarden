@@ -1,7 +1,10 @@
 import type { Element, Root } from "hast";
 import { toJsxRuntime } from "hast-util-to-jsx-runtime";
-import { type ComponentProps, useMemo } from "react";
+import { Children, type ComponentProps, isValidElement, useMemo } from "react";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
+
+import { CalloutIcons } from "#/components/ui/icons";
+import { stringProperty } from "#/lib/hast";
 
 import { CodeBlock } from "./code-block";
 import { Diagram } from "./diagram";
@@ -12,6 +15,32 @@ function Figure({ node, children, ...props }: WithNode<"figure">) {
   if (node?.properties.dataKind === "diagram") return <Diagram node={node} />;
   if (node?.properties.dataKind === "code") return <CodeBlock node={node}>{children}</CodeBlock>;
   return <figure {...props}>{children}</figure>;
+}
+
+function isCalloutKind(kind: string): kind is keyof typeof CalloutIcons {
+  return kind in CalloutIcons;
+}
+
+/** A callout keeps the title the renderer wrote and gains the icon of its kind. */
+function Aside({ node, children, ...props }: WithNode<"aside">) {
+  const kind = node && stringProperty(node, "dataCallout");
+  const Icon = kind && isCalloutKind(kind) ? CalloutIcons[kind] : null;
+  if (!Icon) return <aside {...props}>{children}</aside>;
+  return (
+    <aside {...props}>
+      {Children.map(children, (child) =>
+        isValidElement<{ className?: string; children?: React.ReactNode }>(child) &&
+        child.props.className === "callout-title" ? (
+          <p className="callout-title">
+            <Icon />
+            {child.props.children}
+          </p>
+        ) : (
+          child
+        ),
+      )}
+    </aside>
+  );
 }
 
 function Table({ node: _node, ...props }: WithNode<"table">) {
@@ -39,6 +68,7 @@ function sectionHeading(Tag: "h2" | "h3" | "h4") {
 }
 
 const components = {
+  aside: Aside,
   figure: Figure,
   table: Table,
   h2: sectionHeading("h2"),

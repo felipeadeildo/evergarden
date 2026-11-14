@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { type SubmitEvent, useState } from "react";
 
 import { TopBar } from "#/components/navigation/top-bar";
+import { KeyIcon, SignOutIcon } from "#/components/ui/icons";
 import { RelativeTime } from "#/components/ui/relative-time";
 import { authClient } from "#/lib/auth-client";
 import { textField } from "#/lib/form";
@@ -88,7 +89,10 @@ function Settings() {
             <ul className="key-list">
               {keys.map((key) => (
                 <li key={key.id}>
-                  <span className="key-name">{key.name ?? "Unnamed"}</span>
+                  <span className="key-name">
+                    <KeyIcon />
+                    {key.name ?? "Unnamed"}
+                  </span>
                   <code className="key-start">{key.start}…</code>
                   <span className="key-meta">
                     {key.lastRequest ? (
@@ -120,6 +124,7 @@ function Settings() {
             className="quiet-button"
             onClick={() => void authClient.signOut().then(() => window.location.assign("/sign-in"))}
           >
+            <SignOutIcon />
             Sign out
           </button>
         </section>

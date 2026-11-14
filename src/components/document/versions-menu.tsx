@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
+import { HistoryIcon } from "#/components/ui/icons";
 import { RelativeTime } from "#/components/ui/relative-time";
 import type { VersionEntry } from "#/server/library";
 
@@ -20,11 +21,14 @@ export function VersionsMenu({
   return (
     <div className="byline">
       <button type="button" className="byline-button" popoverTarget={menuId}>
-        {latest.number === 1 ? "Written" : "Updated"} <RelativeTime date={latest.createdAt} /> by{" "}
-        {latest.authorName}
-        {versions.length > 1 ? (
-          <span className="byline-count">, version {latest.number}</span>
-        ) : null}
+        <HistoryIcon />
+        <span>
+          {latest.number === 1 ? "Written" : "Updated"} <RelativeTime date={latest.createdAt} /> by{" "}
+          {latest.authorName}
+          {versions.length > 1 ? (
+            <span className="byline-count">, version {latest.number}</span>
+          ) : null}
+        </span>
       </button>
       <div id={menuId} popover="auto" className="popover versions">
         <p className="popover-title">Versions</p>

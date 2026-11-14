@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
+import { DocumentIcon, FolderIcon, RepositoryIcon } from "#/components/ui/icons";
 import { RelativeTime } from "#/components/ui/relative-time";
 import type { DocumentEntry, FolderEntry } from "#/server/library";
 
@@ -11,7 +12,10 @@ export function DocumentRow({ entry, place }: { entry: DocumentEntry; place?: st
   return (
     <li className="document-row">
       <Link to="/d/$id" params={{ id: entry.id }} className="document-link">
-        <span className="document-title">{entry.title}</span>
+        <span className="document-title">
+          <DocumentIcon className="document-icon" />
+          {entry.title}
+        </span>
         <span className="document-meta">
           {place ? <span className="document-place">{place}</span> : null}
           <RelativeTime date={entry.updatedAt} />
@@ -42,8 +46,14 @@ export function LibraryTree({
           <li key={entry.id} className="folder">
             <details open>
               <summary>
+                <FolderIcon className="folder-icon" />
                 <span className="folder-name">{entry.name}</span>
-                {entry.repo ? <span className="folder-repo">{entry.repo}</span> : null}
+                {entry.repo ? (
+                  <span className="folder-repo">
+                    <RepositoryIcon />
+                    {entry.repo}
+                  </span>
+                ) : null}
               </summary>
               {children(entry.id)}
             </details>
