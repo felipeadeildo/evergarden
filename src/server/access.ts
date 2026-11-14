@@ -4,9 +4,9 @@ import type { Author } from "#/server/library";
 
 /** Who is making a request. Guests can sign in but have no access until share links exist. */
 export type Principal =
-  | { kind: "owner"; userId: string; name: string }
+  | { kind: "owner"; userId: string; name: string; email: string }
   | { kind: "agent"; keyId: string; name: string }
-  | { kind: "guest"; userId: string; name: string };
+  | { kind: "guest"; userId: string; name: string; email: string };
 
 /** An API key from `Authorization: Bearer` or `x-api-key`, otherwise the session cookie. */
 export async function principalFrom(headers: Headers): Promise<Principal | null> {
@@ -23,8 +23,8 @@ export async function principalFrom(headers: Headers): Promise<Principal | null>
   if (!session) return null;
   const { user } = session;
   return isOwner(user.email)
-    ? { kind: "owner", userId: user.id, name: user.name }
-    : { kind: "guest", userId: user.id, name: user.name };
+    ? { kind: "owner", userId: user.id, name: user.name, email: user.email }
+    : { kind: "guest", userId: user.id, name: user.name, email: user.email };
 }
 
 /** Throws unless the principal may read and write the library. */
