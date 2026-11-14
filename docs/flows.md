@@ -42,7 +42,7 @@ Search (`⌘K`, or the search button on a phone) matches titles first, then the 
 
 ## You read the report
 
-`/d/k7q2mxa9pt` opens the current version. The page shows the title, one line saying who updated it and when, the text, and the notes in the margin. Nothing else.
+`/d/k7q2mxa9pt` opens the current version. The page shows the title, one line saying who updated it and when, the text, and the notes in the margin. Nothing else. When the document has more than one version, that line opens the list of versions.
 
 | Area              | Desktop (≥1200 px)                             | Tablet (768 to 1199 px)                        | Phone                                     |
 | ----------------- | ---------------------------------------------- | ---------------------------------------------- | ----------------------------------------- |
@@ -50,7 +50,7 @@ Search (`⌘K`, or the search button on a phone) matches titles first, then the 
 | Text              | Centred column, about 66 characters per line   | Same                                           | Full width with side padding              |
 | Comments          | Right margin, each note level with its passage | Markers in the margin; a note opens in a panel | Passage underlined; tapping opens a sheet |
 
-The top bar shows the folder the document sits in, such as `ranqia / plans`. Each folder in it opens a menu of what that folder holds: you can go into other folders from there and open another document without going back to the library. A phone shows only the last folder.
+The top bar shows the folder the document sits in, such as `ranqia / plans`. Clicking it opens a menu of what `plans` holds; its back button climbs to `ranqia` and then to the top of the library, with the way back to the document marked, so you can open any other document without going back to the library. A phone shows only the last folder.
 
 Diagrams take the width of the text, like everything else on the page; the right margin stays free for comments. A wide diagram drawn small opens full screen with a click, where you move around it by scrolling or dragging and zoom by pinching or holding ⌘ while scrolling.
 
