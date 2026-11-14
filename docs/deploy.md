@@ -10,7 +10,7 @@ There are two ways to get an instance. Pick the first if you want to run evergar
 
 The button copies this repository into your GitHub account, creates the database, asks for the secrets (with the descriptions in `package.json` under `cloudflare.bindings`), and deploys. Your copy is connected to Workers Builds, so pushing to it deploys again.
 
-Before you click, create a GitHub OAuth app at <https://github.com/settings/developers>. Its callback URL is `https://<worker-name>.<your-subdomain>.workers.dev/api/auth/callback/github`; you can change it later if you add a custom domain.
+Before you click, set up email, because evergarden signs you in with a code sent by Cloudflare Email Service (see [Sign-in codes by email](#sign-in-codes-by-email)).
 
 ## Option 2: connect your own repository with Workers Builds
 
@@ -25,13 +25,15 @@ Use this when the repository is yours and every commit on `main` should go live.
 
    `wrangler deploy` creates the `evergarden` database, then `db:migrate:remote` creates the tables.
 
-2. Set the secrets listed in [`.dev.vars.example`](../.dev.vars.example), in the dashboard under **Workers & Pages > evergarden > Settings > Variables and Secrets**, or one by one:
+2. Set up email as described in [Sign-in codes by email](#sign-in-codes-by-email).
+
+3. Set the secrets listed in [`.dev.vars.example`](../.dev.vars.example), in the dashboard under **Workers & Pages > evergarden > Settings > Variables and Secrets**, or one by one:
 
    ```sh
    bunx wrangler secret put BETTER_AUTH_SECRET
    ```
 
-3. In the same Worker, open **Settings > Builds > Connect**, pick the repository, and set:
+4. In the same Worker, open **Settings > Builds > Connect**, pick the repository, and set:
 
    | Field             | Value            |
    | ----------------- | ---------------- |
@@ -43,9 +45,23 @@ Use this when the repository is yours and every commit on `main` should go live.
 
 From then on, a push to `main` builds and deploys, and pushes to other branches produce preview URLs.
 
+## Sign-in codes by email
+
+There are no passwords and no GitHub or Google sign-in. You type your email on `/sign-in`, the Worker sends a six-digit code through the `send_email` binding in `wrangler.jsonc`, and you type the code. Codes go only to `OWNER_EMAIL`; any other address sees the same screen and receives nothing.
+
+1. Your domain must use Cloudflare DNS. In the dashboard, open **Compute > Email Service > Email Sending**, onboard the domain, and let Cloudflare add the DNS records it asks for.
+2. Set `EMAIL_FROM` to an address on that domain, such as `evergarden@example.com`.
+3. Choose how the codes are paid for:
+   - **Workers Free.** Email Sending can deliver only to verified destination addresses. Under **Email Service > Email Routing > Destination addresses**, add `OWNER_EMAIL` and click the link Cloudflare sends. Codes to a verified address are free and do not count toward any quota.
+   - **Workers Paid.** Codes can go to any address, which guests will need once share links exist. The plan includes 3,000 emails a month; more cost $0.35 per thousand.
+
+Email Sending has been in public beta since April 2026, and new accounts start with a low daily quota that grows over time. If a code does not arrive, check the spam folder first; the Worker logs a failed send as `Sign-in code not sent:` with Cloudflare's error code.
+
+In `bun run dev` nothing is sent: the terminal prints `[evergarden] sign-in code for …`, and the simulated email is saved under `.wrangler/tmp/email/`.
+
 ## What a deploy changes, and what it leaves alone
 
-A deploy replaces the code and the bindings declared in `wrangler.jsonc`. It does not touch secrets, and because the configuration sets `keep_vars: true`, it does not touch plain variables set in the dashboard either. Anything that differs between instances (the owner, OAuth credentials, the public URL) therefore lives in the dashboard, never in the repository.
+A deploy replaces the code and the bindings declared in `wrangler.jsonc`. It does not touch secrets, and because the configuration sets `keep_vars: true`, it does not touch plain variables set in the dashboard either. Anything that differs between instances (the owner, the sender address, the public URL) therefore lives in the dashboard, never in the repository.
 
 ## Migrations run after the code
 

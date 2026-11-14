@@ -142,7 +142,7 @@ It creates a link like `https://docs.example.com/s/q9w3…`. The settings page l
 A colleague opens the link on their phone, from a chat app. The chat app's preview already showed the report's title and first sentence.
 
 - **Read**: they see the document, with no sign-in, and no comments. A folder link shows that folder's tree and nothing else from your library.
-- **Read and comment**: same, plus **Sign in to comment**. They sign in with GitHub or Google and land back on the same passage. From then on they comment, suggest and reply exactly as you do, and see every comment, yours included.
+- **Read and comment**: same, plus **Sign in to comment**. They sign in with a code sent to their email and land back on the same passage. From then on they comment, suggest and reply exactly as you do, and see every comment, yours included.
 
 Their comments reach the agent like yours, with their name on each. Anyone who signs in without a link sees "This library is private" and nothing else.
 
