@@ -1,6 +1,7 @@
 import { and, asc, count, desc, eq, isNull, type SQL, sql } from "drizzle-orm";
 
 import { newId } from "#/lib/id";
+import { FOLDER_PAGE_SIZE } from "#/lib/text";
 import { render } from "#/render";
 import { db } from "#/server/db";
 import { type AuthorKind, document, folder, readMark, version } from "#/server/db/schema";
@@ -247,18 +248,20 @@ export async function list(filter: { folder?: string; repo?: string } = {}): Pro
   };
 }
 
-const PAGE_SIZE = 50;
-
 /**
  * The folders and documents directly inside a folder, or at the top of the library for `null`.
- * Documents come `PAGE_SIZE` at a time from `offset`; `more` counts the ones left after this page.
+ * Documents come `FOLDER_PAGE_SIZE` at a time from `offset`; `more` counts the ones left after this page.
  * Folders come with the first page only.
  */
 export async function folderContents(folderId: string | null, offset = 0): Promise<FolderPage> {
   const inFolder = folderId ? eq(document.folderId, folderId) : isNull(document.folderId);
   const [folders, documents, total] = await Promise.all([
     offset > 0 ? [] : childFolders(folderId),
-    liveDocuments(inFolder).orderBy(asc(document.position)).limit(PAGE_SIZE).offset(offset).all(),
+    liveDocuments(inFolder)
+      .orderBy(asc(document.position))
+      .limit(FOLDER_PAGE_SIZE)
+      .offset(offset)
+      .all(),
     db
       .select({ count: count() })
       .from(document)

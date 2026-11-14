@@ -4,6 +4,7 @@ import { DocumentRow, FolderRow } from "#/components/library/rows";
 import { TopBar } from "#/components/navigation/top-bar";
 import { Page, PageHeader } from "#/components/ui/page";
 import { getLibrary } from "#/functions/library.functions";
+import { plural } from "#/lib/text";
 
 export const Route = createFileRoute("/_authenticated/")({
   loader: () => getLibrary(),
@@ -21,14 +22,12 @@ function Library() {
       <TopBar />
       <Page>
         <PageHeader title="Library">
-          <p className="page-details">
-            {documents === 1 ? "1 document" : `${documents} documents`}
-          </p>
+          <p className="page-details">{plural(documents, "document")}</p>
         </PageHeader>
         {documents === 0 ? (
           <p className="page-note">
-            Your agents publish here. Create an API key in <Link to="/settings">settings</Link>, add
-            the MCP server it shows you to your agent, and ask it to publish its next report.
+            Your agents publish here. <Link to="/settings">Connect an agent</Link>, then ask it to
+            publish its next report.
           </p>
         ) : (
           <>

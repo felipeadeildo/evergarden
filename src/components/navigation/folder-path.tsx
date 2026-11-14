@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { type ToggleEvent, useId, useRef, useState } from "react";
 
+import { LoadMore } from "#/components/library/rows";
 import { useFolder } from "#/components/library/use-folder";
 import {
   BackIcon,
@@ -51,7 +52,7 @@ export function FolderPath({ path, documentId }: { path: FolderStep[]; documentI
         {open ? (
           <FolderMenu
             trail={trail}
-            onPath={(id) => path.some((step) => step.id === id)}
+            isOnPath={(id) => path.some((step) => step.id === id)}
             documentId={documentId}
             onEnter={(stop) => setTrail([...trail, stop])}
             onBack={() => setTrail(trail.slice(0, -1))}
@@ -65,7 +66,7 @@ export function FolderPath({ path, documentId }: { path: FolderStep[]; documentI
 
 function FolderMenu({
   trail,
-  onPath,
+  isOnPath,
   documentId,
   onEnter,
   onBack,
@@ -73,7 +74,7 @@ function FolderMenu({
 }: {
   trail: Stop[];
   /** Whether a folder holds the document, so the menu can mark the way back to it. */
-  onPath: (id: string) => boolean;
+  isOnPath: (id: string) => boolean;
   documentId?: string;
   onEnter: (stop: Stop) => void;
   onBack: () => void;
@@ -123,7 +124,7 @@ function FolderMenu({
               <button
                 type="button"
                 className="menu-item"
-                aria-current={onPath(entry.id) ? "true" : undefined}
+                aria-current={isOnPath(entry.id) ? "true" : undefined}
                 onClick={() => onEnter({ id: entry.id, name: entry.name })}
               >
                 <FolderIcon className="menu-icon" />
@@ -148,14 +149,7 @@ function FolderMenu({
           ))}
           {folder.more > 0 ? (
             <li className="menu-note">
-              <button
-                type="button"
-                className="link-button"
-                disabled={folder.loadingMore}
-                onClick={folder.loadMore}
-              >
-                {folder.loadingMore ? "Loading…" : `Show ${Math.min(folder.more, 50)} more`}
-              </button>
+              <LoadMore folder={folder} />
             </li>
           ) : null}
         </ul>

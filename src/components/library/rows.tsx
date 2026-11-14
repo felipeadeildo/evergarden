@@ -2,7 +2,10 @@ import { Link } from "@tanstack/react-router";
 
 import { DocumentIcon, FolderIcon, RepositoryIcon } from "#/components/ui/icons";
 import { RelativeTime } from "#/components/ui/relative-time";
+import { FOLDER_PAGE_SIZE, plural } from "#/lib/text";
 import type { DocumentEntry, FolderSummary } from "#/server/library";
+
+import type { ReadyFolder } from "./use-folder";
 
 /*
  * Every list in the library uses one row: icon, name, where it sits, and when it changed (or, for
@@ -49,7 +52,7 @@ export function FolderRow({ entry }: { entry: FolderSummary }) {
         <FolderIcon className="row-icon" />
         <span className="row-name row-folder">{entry.name}</span>
         <span className="row-place row-repo">{entry.repo}</span>
-        <span className="row-end" title={`${entry.documents} documents`}>
+        <span className="row-end" title={plural(entry.documents, "document")}>
           {entry.documents}
         </span>
       </Link>
@@ -64,5 +67,20 @@ export function RepositoryLink({ repo }: { repo: string }) {
       <RepositoryIcon />
       {repo}
     </a>
+  );
+}
+
+/** Loads the next page of a folder's documents, saying how many come next. */
+export function LoadMore({ folder }: { folder: ReadyFolder }) {
+  if (folder.more === 0) return null;
+  return (
+    <button
+      type="button"
+      className="link-button"
+      disabled={folder.loadingMore}
+      onClick={folder.loadMore}
+    >
+      {folder.loadingMore ? "Loading…" : `Show ${Math.min(folder.more, FOLDER_PAGE_SIZE)} more`}
+    </button>
   );
 }

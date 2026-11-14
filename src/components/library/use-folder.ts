@@ -3,18 +3,20 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { getFolder } from "#/functions/library.functions";
 import type { DocumentEntry, FolderPage, FolderSummary } from "#/server/library";
 
+export type ReadyFolder = {
+  state: "ready";
+  folders: FolderSummary[];
+  documents: DocumentEntry[];
+  /** Documents not loaded yet. */
+  more: number;
+  loadingMore: boolean;
+  loadMore: () => void;
+};
+
 export type FolderView =
   | { state: "loading" }
   | { state: "failed"; retry: () => void }
-  | {
-      state: "ready";
-      folders: FolderSummary[];
-      documents: DocumentEntry[];
-      /** Documents not loaded yet. */
-      more: number;
-      loadingMore: boolean;
-      loadMore: () => void;
-    };
+  | ReadyFolder;
 
 /**
  * What a folder holds, `null` being the top of the library. Loaded once per folder and shared:

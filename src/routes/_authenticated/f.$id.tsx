@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { DocumentRow, FolderRow, RepositoryLink } from "#/components/library/rows";
+import { DocumentRow, FolderRow, LoadMore, RepositoryLink } from "#/components/library/rows";
 import { type FolderView, useFolder } from "#/components/library/use-folder";
 import { FolderPath } from "#/components/navigation/folder-path";
 import { TopBar } from "#/components/navigation/top-bar";
 import { Page, PageHeader } from "#/components/ui/page";
 import { getFolderPage } from "#/functions/library.functions";
+import { plural } from "#/lib/text";
 
 export const Route = createFileRoute("/_authenticated/f/$id")({
   loader: ({ params }) => getFolderPage({ data: { id: params.id } }),
@@ -27,7 +28,7 @@ function FolderPage() {
       <Page>
         <PageHeader title={folder.name}>
           <p className="page-details">
-            {folder.documents === 1 ? "1 document" : `${folder.documents} documents`}
+            {plural(folder.documents, "document")}
             {folder.repo ? <RepositoryLink repo={folder.repo} /> : null}
           </p>
         </PageHeader>
@@ -57,16 +58,7 @@ function FolderListing({ listing, path }: { listing: FolderView; path: string })
       ))}
       {listing.more > 0 ? (
         <li className="rows-more">
-          <button
-            type="button"
-            className="link-button"
-            disabled={listing.loadingMore}
-            onClick={listing.loadMore}
-          >
-            {listing.loadingMore
-              ? "Loading…"
-              : `Show ${Math.min(listing.more, 50)} more of ${listing.more}`}
-          </button>
+          <LoadMore folder={listing} />
         </li>
       ) : null}
     </ul>
