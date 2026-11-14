@@ -1147,39 +1147,87 @@
     margin: 0;
   }
 
-  .connect-ready {
-    display: block;
+  .new-key-label {
+    margin: 0 0 0.4rem;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
   }
 
-  .connect-title {
-    margin: 0 0 0.6rem;
-    font-size: 0.95rem;
-  }
-
-  .connect-title strong {
+  .new-key-label strong {
     font-weight: 600;
+    color: var(--ink);
   }
 
-  /* The configuration to paste, with its copy button pinned to the corner. */
-  .snippet {
-    position: relative;
-    border-radius: 8px;
+  .new-key-label:not(:first-child) {
+    margin-top: 1.4rem;
+  }
+
+  /* One line of code with its copy button at the end; long values fade out and scroll without a bar. */
+  .line {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    min-height: 2.6rem;
+    padding: 0.3rem 0.3rem 0.3rem 0.85rem;
+    border-radius: 7px;
     background: var(--sheet);
   }
 
-  .snippet pre {
-    margin: 0;
-    padding: 0.85rem 3rem 0.85rem 1rem;
+  .line > code {
+    display: grid;
+    flex: 1;
+    min-width: 0;
     overflow-x: auto;
+    scrollbar-width: none;
     font-family: var(--mono);
     font-size: 0.74rem;
-    line-height: 1.55;
+    line-height: 1.6;
+    white-space: nowrap;
+    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
   }
 
-  .snippet .icon-button {
-    position: absolute;
-    top: 0.45rem;
-    right: 0.45rem;
+  .line-command > code {
+    padding: 0.3rem 0;
+  }
+
+  .segmented {
+    display: flex;
+    gap: 0.15rem;
+    width: max-content;
+    max-width: 100%;
+    margin-bottom: 0.5rem;
+    padding: 0.15rem;
+    overflow-x: auto;
+    border-radius: 8px;
+    background: var(--sheet);
+    scrollbar-width: none;
+  }
+
+  .segmented button {
+    padding: 0.25rem 0.7rem;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .segmented button:hover {
+    color: var(--ink);
+  }
+
+  .segmented button[aria-selected="true"] {
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: 0 0 0 1px var(--rule);
+  }
+
+  .new-key-done {
+    margin-top: 1rem;
+    font-size: 0.9rem;
   }
 
   .connect-note {
