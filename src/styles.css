@@ -487,6 +487,22 @@
     color: var(--ink);
   }
 
+  .byline-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.88rem;
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+
+  /* The author reads like a signature: upright and in ink, against the italic line. */
+  .byline-author {
+    font-style: normal;
+    font-weight: 560;
+    color: var(--ink);
+  }
+
   .byline-caret {
     font-size: 0.8em;
   }
@@ -642,18 +658,6 @@
     color: var(--ink-soft);
   }
 
-  .menu-detail-below {
-    grid-column: 2 / -1;
-  }
-
-  .menu-tag {
-    margin-left: 0.5rem;
-    font-size: 0.75rem;
-    font-style: italic;
-    font-weight: 400;
-    color: var(--emerald);
-  }
-
   .menu-note {
     margin: 0.35rem 0.55rem 0.4rem;
     font-size: 0.82rem;
@@ -664,33 +668,17 @@
 
   /* The folder path in the top bar */
 
-  .folder-path > ol {
+  .folder-path {
     display: flex;
-    align-items: center;
     min-width: 0;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .folder-path > ol > li {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-  }
-
-  .folder-path > ol > li + li::before {
-    content: "/";
-    padding: 0 0.1rem;
-    color: color-mix(in oklab, var(--ink-soft) 55%, transparent);
   }
 
   .folder-path-button {
     display: inline-flex;
     align-items: center;
-    gap: 0.25rem;
     min-width: 0;
-    padding: 0.2rem 0.35rem;
+    max-width: 100%;
+    padding: 0.2rem 0.4rem;
     border: 0;
     border-radius: 6px;
     background: none;
@@ -711,26 +699,28 @@
     color: var(--ink);
   }
 
+  .folder-path-step {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .folder-path-slash {
+    padding: 0 0.3rem;
+    color: color-mix(in oklab, var(--ink-soft) 55%, transparent);
+  }
+
   .folder-path-caret {
+    flex: none;
+    margin-left: 0.3rem;
     font-size: 0.75em;
-    opacity: 0;
-    transition: opacity 120ms var(--ease);
-  }
-
-  .folder-path-button:hover .folder-path-caret,
-  .folder-path-button:focus-visible .folder-path-caret,
-  .folder-path-button:has(+ .menu:popover-open) .folder-path-caret {
-    opacity: 1;
-  }
-
-  @media (hover: none) {
-    .folder-path-caret {
-      opacity: 1;
-    }
   }
 
   @media (max-width: 599px) {
-    .folder-path > ol > li:not(:last-child) {
+    .folder-path-step:not(:last-of-type) {
+      display: none;
+    }
+
+    .folder-path-step .folder-path-slash {
       display: none;
     }
   }
