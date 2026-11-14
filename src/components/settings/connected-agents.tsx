@@ -35,7 +35,11 @@ function AgentRow({ entry, onRevoke }: { entry: AgentEntry; onRevoke: () => Prom
         <span className="row-name row-signature">{entry.name}</span>
         <span className="row-place">{how}</span>
         <span className="row-end">
-          {entry.lastUsedAt ? <RelativeTime date={new Date(entry.lastUsedAt)} short /> : "never"}
+          {entry.lastUsedAt ? (
+            <RelativeTime date={new Date(entry.lastUsedAt)} short />
+          ) : (
+            <span>never</span>
+          )}
           <button
             type="button"
             className="row-action danger"

@@ -996,9 +996,6 @@
   }
 
   .row-end {
-    display: flex;
-    gap: 1rem;
-    align-items: baseline;
     justify-self: end;
     font-size: 0.8rem;
     font-variant-numeric: tabular-nums;
@@ -1077,6 +1074,12 @@
 
   /* Text buttons inside a row: the negative margin puts their text, not their padding, on the
      row's right edge, where times and counts end in other lists. */
+  /* A time and then an action, as in Connected agents. */
+  .row-end time + .row-action,
+  .row-end span + .row-action {
+    margin-left: 0.6rem;
+  }
+
   .row-action {
     display: inline-flex;
     align-items: center;
