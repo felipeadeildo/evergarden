@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   type AnySQLiteColumn,
+  blob,
   index,
   integer,
   primaryKey,
@@ -30,6 +31,17 @@ export type Anchor =
   | ({ kind: "text" } & Quote)
   | ({ kind: "block" } & Quote)
   | ({ kind: "point"; x: number; y: number } & Quote);
+
+/**
+ * Document text by SHA-256, shared by every version with the same text. `rendered` caches the
+ * gzipped tree from renderer `rendererVersion`; a newer renderer ignores it and writes its own.
+ */
+export const content = sqliteTable("content", {
+  sha256: text("sha256").primaryKey(),
+  markdown: text("markdown").notNull(),
+  rendered: blob("rendered", { mode: "buffer" }),
+  rendererVersion: integer("renderer_version"),
+});
 
 export const folder = sqliteTable(
   "folder",

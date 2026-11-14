@@ -10,6 +10,7 @@ import {
   publish,
   read,
   recent,
+  rendered,
   search,
   update,
   versions,
@@ -186,5 +187,31 @@ describe("folderInfo", () => {
 
   it("fails for an unknown folder", async () => {
     await expect(folderInfo("nope")).rejects.toThrow("no folder");
+  });
+});
+
+describe("rendered", () => {
+  it("reads the tree back from the cache", async () => {
+    const { id } = await publish(
+      { content: "# Cached\n\n## Compute\n\nEC2 was **41%** of the bill." },
+      pi,
+    );
+    const { version } = await read(id);
+    const tree = await rendered(version.sha256);
+    expect(tree.headings).toEqual([{ depth: 2, id: "compute", text: "Compute" }]);
+    expect(JSON.stringify(tree.tree)).toContain("41%");
+  });
+
+  it("renders again when the cache comes from another renderer version", async () => {
+    const { id } = await publish({ content: "# Stale\n\n## Section\n\nText." }, pi);
+    const { version } = await read(id);
+    await env.DB.prepare("update content set renderer_version = 0 where sha256 = ?")
+      .bind(version.sha256)
+      .run();
+    expect((await rendered(version.sha256)).headings[0]?.text).toBe("Section");
+    const row = await env.DB.prepare("select renderer_version from content where sha256 = ?")
+      .bind(version.sha256)
+      .first<{ renderer_version: number }>();
+    expect(row?.renderer_version).toBeGreaterThan(0);
   });
 });
