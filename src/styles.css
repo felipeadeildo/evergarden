@@ -884,70 +884,13 @@
   }
 
   .library-section + .library-section {
-    margin-top: 2.8rem;
+    margin-top: 3rem;
   }
 
   .library-heading {
-    margin: 0 0 0.5rem;
+    margin: 0 0 0.6rem;
     font-size: 1.05rem;
     font-weight: 600;
-  }
-
-  .tree {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .tree .tree {
-    margin-left: 0.35rem;
-    padding-left: 0.95rem;
-    border-left: 1px solid var(--rule);
-  }
-
-  .folder summary {
-    display: flex;
-    align-items: baseline;
-    gap: 0.6rem;
-    padding: 0.55rem 0 0.35rem;
-    list-style: none;
-    cursor: pointer;
-  }
-
-  .folder summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .folder-icon {
-    align-self: center;
-    color: var(--ink-soft);
-    transition: color 150ms var(--ease);
-  }
-
-  .folder summary:hover .folder-icon,
-  .folder details[open] > summary .folder-icon {
-    color: var(--prussian);
-  }
-
-  .folder-name {
-    font-weight: 600;
-  }
-
-  .folder-count {
-    margin-left: auto;
-    font-size: 0.78rem;
-    font-variant-numeric: tabular-nums;
-    color: var(--ink-soft);
-  }
-
-  .tree-note,
-  .tree-more {
-    margin: 0;
-    padding: 0.45rem 0 0.45rem 1.6rem;
-    font-size: 0.9rem;
-    font-style: italic;
-    color: var(--ink-soft);
-    list-style: none;
   }
 
   .link-button {
@@ -966,66 +909,127 @@
     cursor: default;
   }
 
-  .folder-repo {
+  /* Lists of documents and folders: see components/library/rows.tsx */
+
+  .rows {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+    column-gap: 0.75rem;
+    margin: 0 -0.7rem;
+    padding: 0.6rem 0.7rem;
+    border-radius: 7px;
+    color: inherit;
+    text-decoration: none;
+    transition: background-color 120ms var(--ease);
+  }
+
+  .row:hover,
+  .row:focus-visible {
+    background: var(--sheet);
+  }
+
+  /* Centred on the first line of the name: half its line height, less half the icon. */
+  .row-icon {
+    grid-row: 1;
+    margin-top: calc((1lh - 1.15em) / 2);
+    color: var(--ink-soft);
+  }
+
+  .row-name {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .row:hover .row-name {
+    color: var(--prussian);
+  }
+
+  .row-folder {
+    font-weight: 600;
+  }
+
+  .row-details {
+    grid-column: 2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.1rem 0.9rem;
+    margin-top: 0.1rem;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-soft);
+  }
+
+  .row-place {
+    font-style: italic;
+  }
+
+  .row-repo {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+  }
+
+  .row-unread {
+    align-self: center;
+    width: 6px;
+    height: 6px;
+    margin-right: -0.4rem;
+    border-radius: 50%;
+    background: var(--emerald);
+  }
+
+  .rows-more {
+    padding: 0.7rem 0;
+    font-size: 0.9rem;
+  }
+
+  .repository {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
     font-family: var(--mono);
-    font-size: 0.7rem;
+    font-size: 0.72rem;
+    font-style: normal;
     color: var(--ink-soft);
-  }
-
-  .document-link {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.55rem 0;
-    border-bottom: 1px solid color-mix(in oklab, var(--rule) 65%, transparent);
-    color: inherit;
     text-decoration: none;
   }
 
-  .document-title {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.55rem;
-    min-width: 0;
-    font-weight: 480;
-    transition: color 150ms var(--ease);
-  }
-
-  .document-link:hover .document-title {
+  .repository:hover {
     color: var(--prussian);
+    text-decoration: underline;
   }
 
-  .document-icon {
-    color: var(--ink-soft);
-    transform: translateY(0.05em);
+  /* A folder's page */
+
+  .folder-header h1 {
+    margin: 0;
+    font-size: 2rem;
+    line-height: 1.15;
   }
 
-  .document-meta {
+  .folder-meta {
     display: flex;
-    flex: none;
-    gap: 0.75rem;
-    font-size: 0.8rem;
-    color: var(--ink-soft);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .document-place {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 1rem;
+    margin: 0.5rem 0 1.8rem;
+    font-size: 0.85rem;
     font-style: italic;
+    color: var(--ink-soft);
   }
 
-  @media (max-width: 520px) {
-    .document-link {
-      flex-direction: column;
-      gap: 0.1rem;
-    }
+  .folder-empty {
+    font-style: italic;
+    color: var(--ink-soft);
   }
 
   .empty h1 {
