@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import { SearchIcon, SettingsIcon } from "#/components/ui/icons";
+import { Wordmark } from "#/components/ui/wordmark";
 
 import { useOpenSearch } from "./search";
 
@@ -9,8 +10,8 @@ export function TopBar({ children, actions }: { children?: ReactNode; actions?: 
   const openSearch = useOpenSearch();
   return (
     <header className="top-bar">
-      <Link to="/" className="wordmark">
-        evergarden
+      <Link to="/" className="wordmark-link">
+        <Wordmark />
       </Link>
       <div className="top-bar-place">{children}</div>
       <div className="top-bar-actions">

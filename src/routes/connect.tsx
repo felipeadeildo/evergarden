@@ -1,6 +1,7 @@
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { type SubmitEvent, useState } from "react";
 
+import { Wordmark } from "#/components/ui/wordmark";
 import { getConnectRequest, nameConnectingAgent } from "#/functions/agents.functions";
 import { authClient } from "#/lib/auth-client";
 import { textField } from "#/lib/form";
@@ -43,7 +44,9 @@ function Connect() {
 
   return (
     <main id="main" className="sign-in">
-      <p className="wordmark wordmark-large">evergarden</p>
+      <p className="sign-in-brand">
+        <Wordmark large />
+      </p>
       <h1 className="sign-in-title">
         {software} wants to read, publish and update the documents in your library.
       </h1>

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { type SubmitEvent, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 
+import { Wordmark } from "#/components/ui/wordmark";
 import { authClient } from "#/lib/auth-client";
 import { textField } from "#/lib/form";
 import { resumeAuthorizeUrl } from "#/lib/oauth-flow";
@@ -34,7 +35,9 @@ function SignIn() {
 
   return (
     <main id="main" className="sign-in">
-      <p className="wordmark wordmark-large">evergarden</p>
+      <p className="sign-in-brand">
+        <Wordmark large />
+      </p>
       {email === null ? (
         <EmailStep onSent={setEmail} />
       ) : (
