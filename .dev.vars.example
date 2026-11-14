@@ -7,5 +7,5 @@ GITHUB_CLIENT_SECRET=
 # Optional: Google sign-in for guests.
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-# Optional: the public URL. Without it, the URL is taken from each request.
+# The public URL. Agents sign in over OAuth against it, so it must match the address you open.
 BETTER_AUTH_URL=http://localhost:3000

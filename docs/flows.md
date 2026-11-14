@@ -148,11 +148,13 @@ Their comments reach the agent like yours, with their name on each. Anyone who s
 
 ## You manage access
 
-`/settings` opens on what you come to do there: connect an agent. You type a name, such as "pi", and evergarden creates a key and shows it this once, with a copy button. Under the key, one tab per agent CLI (pi, Claude Code, Codex, Gemini CLI) gives the single command that adds the server with the key already in it, such as `pi mcp add evergarden --url https://…/mcp --header "Authorization=Bearer eg_…"`. Any other client takes the address and the key in its own settings. The name appears as the author of everything the agent publishes and replies.
+Agents sign in over OAuth, the way MCP clients expect. You give pi only the address, `pi mcp add evergarden --url https://evergarden.adeildo.dev/mcp`. The first time it connects, `/mcp` answers 401 and points pi at evergarden's OAuth endpoints. pi registers itself and opens your browser. You sign in if you are not already, and land on `/connect`: "pi wants to read, publish and update the documents in your library", with a name field filled with "pi". You rename it if you like ("pi on laptop"), allow it, and the browser hands pi its tokens. From then on the agent signs what it writes with that name.
+
+`/settings` shows the server address and, in one tab per agent CLI (pi, Claude Code, Codex, Gemini CLI), the command that adds it. For a client without OAuth, "Use an API key instead" creates a named key, shown once, with the same commands carrying the key.
 
 Under it:
 
-- **Connected agents**: each key, when its agent last reached the library, and a revoke button that asks once and then locks the agent out.
+- **Connected agents**: every agent, however it connected, with how (signed in, or API key), when it last reached the library, and a revoke button that asks once. Revoking deletes the key, or the OAuth consent and tokens, and the agent's row, which `/mcp` checks on every request, so even an unexpired access token stops working at once.
 - **Links**: every share, with revoke.
 - **People**: everyone who signed in through a link, the documents they commented on, and a button to remove their access.
 - **Authoring guide**: the document that `guide()` hands to agents.

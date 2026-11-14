@@ -113,7 +113,7 @@
         "description": "Optional. The secret of the same Google OAuth client."
       },
       "BETTER_AUTH_URL": {
-        "description": "Optional. The public URL, such as `https://evergarden.example.com`. Leave empty to use the URL of each request."
+        "description": "The public URL, such as `https://evergarden.example.com`, without a trailing slash. Agents sign in over OAuth against it, so it must match the address you open."
       }
     }
   }
