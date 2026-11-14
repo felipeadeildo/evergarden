@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "jsx-a11y", "unicorn", "oxc", "import", "vitest"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "options": {
+    "typeAware": true,
+    "typeCheck": true
+  },
+  "env": { "browser": true, "es2024": true },
+  "rules": {
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/consistent-type-imports": "error",
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "warn",
+    "react/react-in-jsx-scope": "off",
+    "import/no-cycle": "error",
+    "unicorn/filename-case": ["error", { "cases": { "kebabCase": true } }]
+  },
+  "ignorePatterns": ["src/routeTree.gen.ts", "worker-configuration.d.ts", "migrations/**"],
+  "overrides": [
+    {
+      "files": ["src/routes/**"],
+      "rules": { "unicorn/filename-case": "off" }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "sortImports": { "internalPattern": ["#/"] },
+  "sortTailwindcss": { "stylesheet": "./src/styles.css", "functions": ["cn", "cva"] },
+  "ignorePatterns": [
+    "src/routeTree.gen.ts",
+    "worker-configuration.d.ts",
+    "migrations/meta/**",
+    "bun.lock"
+  ]
+}
