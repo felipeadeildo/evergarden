@@ -14,7 +14,7 @@ export default defineConfig({
         extends: true,
         plugins: [
           cloudflareTest(async () => ({
-            main: "./src/server/test-worker.ts",
+            main: "./test/worker.ts",
             wrangler: { configPath: "./wrangler.jsonc" },
             miniflare: { bindings: { TEST_MIGRATIONS: await readD1Migrations("migrations") } },
           })),
@@ -22,7 +22,7 @@ export default defineConfig({
         test: {
           name: "workers",
           include: ["src/server/**/*.test.ts"],
-          setupFiles: ["./src/server/test-setup.ts"],
+          setupFiles: ["./test/setup.ts"],
         },
       },
     ],
