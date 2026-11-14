@@ -46,7 +46,7 @@ function DocumentPage() {
           ) : null
         }
       >
-        <FolderPath path={folder} documentId={document.id} />
+        <FolderPath key={document.id} path={folder} documentId={document.id} />
       </TopBar>
       <div className="reading">
         {hasContents ? (

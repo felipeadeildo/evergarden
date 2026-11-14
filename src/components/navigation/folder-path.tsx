@@ -11,89 +11,77 @@ import {
 } from "#/components/ui/icons";
 import type { FolderStep } from "#/server/library";
 
+/** A folder in the menu's trail; `id: null` is the top of the library. */
+type Stop = { id: string | null; name: string };
+
+const LIBRARY: Stop = { id: null, name: "Library" };
+
 /**
- * Where a document sits, as a path in the top bar. Each folder opens a menu of what it holds,
- * where you can go into other folders and open another document. Phones show the last folder.
+ * Where a document sits, as one control in the top bar. It opens on the document's folder;
+ * the back button climbs one folder at a time up to the library, and any folder or document
+ * in between is one click away. Phones show only the last folder of the path.
  */
 export function FolderPath({ path, documentId }: { path: FolderStep[]; documentId: string }) {
-  if (path.length === 0) return null;
-  return (
-    <nav aria-label="Folder" className="folder-path">
-      <ol>
-        {path.map((step, index) => (
-          <li key={step.id}>
-            <FolderMenu path={path} trail={path.slice(0, index + 1)} documentId={documentId} />
-          </li>
-        ))}
-      </ol>
-    </nav>
-  );
-}
-
-/** One folder of the path and its menu. `trail` runs from the top folder down to this one. */
-function FolderMenu({
-  path,
-  trail,
-  documentId,
-}: {
-  path: FolderStep[];
-  trail: FolderStep[];
-  documentId: string;
-}) {
   const menuId = useId();
   const menu = useRef<HTMLDivElement>(null);
+  const start = [LIBRARY, ...path];
+  const [trail, setTrail] = useState<Stop[]>(start);
   const [open, setOpen] = useState(false);
-  const [shown, setShown] = useState(trail);
-  const folder = trail.at(-1);
-  if (!folder) return null;
+
+  if (path.length === 0) return null;
 
   function onToggle(event: ToggleEvent<HTMLDivElement>) {
     const isOpen = event.newState === "open";
     setOpen(isOpen);
-    if (!isOpen) setShown(trail);
+    if (!isOpen) setTrail(start);
   }
 
   return (
-    <>
+    <nav aria-label="Folder" className="folder-path">
       <button type="button" className="folder-path-button" popoverTarget={menuId}>
-        {folder.name}
+        {path.map((step, index) => (
+          <span key={step.id} className="folder-path-step">
+            {index > 0 ? <span className="folder-path-slash">/</span> : null}
+            {step.name}
+          </span>
+        ))}
         <OpenMenuIcon className="folder-path-caret" />
       </button>
       <div id={menuId} ref={menu} popover="auto" className="popover menu" onToggle={onToggle}>
         {open ? (
-          <FolderMenuContents
-            shown={shown}
-            path={path}
+          <FolderMenu
+            trail={trail}
+            onPath={(id) => path.some((step) => step.id === id)}
             documentId={documentId}
-            onEnter={(step) => setShown([...shown, step])}
-            onBack={() => setShown(shown.slice(0, -1))}
+            onEnter={(stop) => setTrail([...trail, stop])}
+            onBack={() => setTrail(trail.slice(0, -1))}
             onOpenDocument={() => menu.current?.hidePopover()}
           />
         ) : null}
       </div>
-    </>
+    </nav>
   );
 }
 
-function FolderMenuContents({
-  shown,
-  path,
+function FolderMenu({
+  trail,
+  onPath,
   documentId,
   onEnter,
   onBack,
   onOpenDocument,
 }: {
-  shown: FolderStep[];
-  /** The folders the document sits in, marked in the menu. */
-  path: FolderStep[];
+  trail: Stop[];
+  /** Whether a folder holds the document, so the menu can mark the way back to it. */
+  onPath: (id: string) => boolean;
   documentId: string;
-  onEnter: (step: FolderStep) => void;
+  onEnter: (stop: Stop) => void;
   onBack: () => void;
   onOpenDocument: () => void;
 }) {
-  const current = shown.at(-1);
-  const parent = shown.at(-2);
-  const folder = useFolder(current?.id ?? null);
+  const current = trail.at(-1) ?? LIBRARY;
+  const parent = trail.at(-2);
+  const folder = useFolder(current.id);
 
   return (
     <>
@@ -108,7 +96,7 @@ function FolderMenuContents({
             <BackIcon />
           </button>
         ) : null}
-        <p className="menu-title">{current?.name}</p>
+        <p className="menu-title">{current.name}</p>
       </div>
       {folder.state === "loading" ? <p className="menu-note">Opening…</p> : null}
       {folder.state === "failed" ? (
@@ -126,12 +114,11 @@ function FolderMenuContents({
               <button
                 type="button"
                 className="menu-item"
-                aria-current={path.some((step) => step.id === entry.id) ? "true" : undefined}
+                aria-current={onPath(entry.id) ? "true" : undefined}
                 onClick={() => onEnter({ id: entry.id, name: entry.name })}
               >
                 <FolderIcon className="menu-icon" />
                 <span className="menu-label">{entry.name}</span>
-                <span className="menu-detail">{entry.items}</span>
                 <ForwardIcon className="menu-icon" />
               </button>
             </li>
