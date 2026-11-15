@@ -33,14 +33,14 @@ export type Thread = {
   replies: Reply[];
 };
 
+/** A point is a spot in a figure, as fractions of its width (`x`) and height (`y`). */
 export type NewComment = {
   version: number;
-  kind: "text" | "block";
   start: number;
   end: number;
   body: string;
   suggestion?: string;
-};
+} & ({ kind: "text" | "block" } | { kind: "point"; x: number; y: number });
 
 /** Every thread of a document, open ones first in the order they appear in the text. */
 export async function threads(documentId: string): Promise<Thread[]> {
@@ -106,8 +106,12 @@ export async function addComment(
   if (input.start < 0 || input.end <= input.start || input.end > current.source.length) {
     throw new EvergardenError("invalid", "The comment points outside the document.");
   }
+  const quoted = quote(current.source, input.start, input.end);
   return insert(documentId, current.version.id, {
-    anchor: { kind: input.kind, ...quote(current.source, input.start, input.end) },
+    anchor:
+      input.kind === "point"
+        ? { kind: "point", x: unit(input.x), y: unit(input.y), ...quoted }
+        : { kind: input.kind, ...quoted },
     body: input.body,
     suggestion: input.suggestion,
     author,
@@ -275,12 +279,31 @@ function describe(row: typeof comment.$inferSelect, replies: Reply[], unseen: bo
 
 function place(anchor: Anchor): string {
   if (anchor.kind === "text") return "text";
+  if (anchor.kind === "point") {
+    const across = Math.round(anchor.x * 100);
+    const down = Math.round(anchor.y * 100);
+    return `a point ${across}% across and ${down}% down ${figure(anchor)}`;
+  }
+  return figure(anchor);
+}
+
+function figure(anchor: Anchor): string {
   const head = anchor.exact.trimStart();
   if (head.startsWith("|")) return "a table";
   if (head.startsWith("```mermaid")) return "a diagram";
   if (head.startsWith("```")) return "a code block";
   if (head.startsWith("> [!")) return "a callout";
   return "a block";
+}
+
+function unit(value: number): number {
+  if (!(value >= 0 && value <= 1)) {
+    throw new EvergardenError(
+      "invalid",
+      "A point lies inside its figure, from 0 to 1 on each axis.",
+    );
+  }
+  return Math.round(value * 1000) / 1000;
 }
 
 function oneLine(text: string): string {

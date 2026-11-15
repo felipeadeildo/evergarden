@@ -145,3 +145,31 @@ describe("openComments", () => {
     expect(await openComments(id)).toContain("open, new");
   });
 });
+
+describe("comments on blocks and figures", () => {
+  const FIGURE = "# Flow\n\n```mermaid\ngraph LR\n  ec2 --> nat --> s3\n```\n";
+  const diagram = { start: FIGURE.indexOf("```mermaid"), end: FIGURE.length - 1 };
+
+  it("keeps the spot of a point and tells the agent where it is", async () => {
+    const { id } = await publish({ content: FIGURE }, pi);
+    await addComment(
+      id,
+      { version: 1, kind: "point", ...diagram, x: 0.4123, y: 0.2, body: "This arrow goes to S3." },
+      felipe,
+    );
+    const [thread] = await threads(id);
+    expect(thread?.anchor).toMatchObject({ kind: "point", x: 0.412, y: 0.2 });
+    expect(await openComments(id)).toContain("on a point 41% across and 20% down a diagram");
+  });
+
+  it("refuses a point outside its figure", async () => {
+    const { id } = await publish({ content: `${FIGURE}\nAgain.` }, pi);
+    await expect(
+      addComment(
+        id,
+        { version: 1, kind: "point", ...diagram, x: 1.5, y: 0.2, body: "Here" },
+        felipe,
+      ),
+    ).rejects.toThrow(/inside its figure/);
+  });
+});

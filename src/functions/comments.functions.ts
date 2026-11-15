@@ -25,15 +25,24 @@ export const getThreads = createServerFn({ method: "GET" })
 export const postComment = createServerFn({ method: "POST" })
   .middleware([libraryAccess])
   .validator(
-    z.object({
-      documentId: z.string(),
-      version: z.int().positive(),
-      kind: z.enum(["text", "block"]),
-      start: z.int().nonnegative(),
-      end: z.int().positive(),
-      body: z.string().max(10_000),
-      suggestion: z.string().max(100_000).optional(),
-    }),
+    z.intersection(
+      z.object({
+        documentId: z.string(),
+        version: z.int().positive(),
+        start: z.int().nonnegative(),
+        end: z.int().positive(),
+        body: z.string().max(10_000),
+        suggestion: z.string().max(100_000).optional(),
+      }),
+      z.discriminatedUnion("kind", [
+        z.object({ kind: z.enum(["text", "block"]) }),
+        z.object({
+          kind: z.literal("point"),
+          x: z.number().min(0).max(1),
+          y: z.number().min(0).max(1),
+        }),
+      ]),
+    ),
   )
   .handler(({ data: { documentId, ...input }, context: { principal } }) =>
     addComment(documentId, input, authorOf(principal)),
