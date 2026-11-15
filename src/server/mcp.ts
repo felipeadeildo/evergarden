@@ -12,7 +12,7 @@ import {
   resolve,
 } from "#/server/comments";
 import { EvergardenError } from "#/server/errors";
-import guide from "#/server/guide.md?raw";
+import { GUIDE_TOPICS, guide } from "#/server/guide";
 import {
   type DocumentEntry,
   type FolderEntry,
@@ -51,10 +51,13 @@ function mcpServer(principal: Principal, origin: string): McpServer {
     "guide",
     {
       description:
-        "Returns the markdown evergarden renders and how your user wants documents written.",
+        "How to write for evergarden: the essentials, or one topic in detail with examples.",
+      inputSchema: {
+        topic: z.enum(GUIDE_TOPICS).optional().describe("Leave out for the essentials."),
+      },
       annotations: { readOnlyHint: true },
     },
-    () => text(guide),
+    ({ topic }) => text(guide(topic)),
   );
 
   server.registerTool(
