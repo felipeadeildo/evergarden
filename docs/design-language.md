@@ -69,7 +69,15 @@ Text is left aligned, never justified: justified text on narrow phone columns op
 
 ## The one memorable thing
 
-The margin notes. On desktop, a closed comment is one line in the right margin at the height of its passage, set in Literata italic in emerald. Opening it lays the replies out under it on a `sheet` ground and draws a hairline to the passage, whose highlight deepens. Pins on figures are small emerald numerals in a circle, matching the numeral on their note. Notes have no bubbles, avatars or timestamps in the margin; the author's name follows the note in `ink-soft`. Everything else on the page stays quiet.
+The margin notes. Everything about a comment happens in the margin; nothing floats over the text.
+
+- A closed comment is one line in the right margin at the height of its passage, in Literata italic and emerald, with the author's name under it in `ink-soft` and a hairline rule on its left. Notes on the same line of text touch, so their rules join and read as one group.
+- Hovering a closed note deepens its passage's highlight. Opening it lays the thread out on a `sheet` ground with an emerald rule, and an emerald leader runs from the end of the passage's first line, across the gutter, to the note. Where passages nest, the inner one's highlight sits darker inside the outer one.
+- The note in focus stays level with its passage; only the notes in its way move, in 180 ms.
+- Selecting text puts a manicule in the gutter, pointing at the selection. It starts a comment, as does `⌘⌥M`.
+- Fields have no box: writing in a note looks like writing on it. Buttons are words (Comment, Reply, Accept in emerald; Cancel in `ink-soft`), and Reply appears only once there is a reply to send. Resolving is the check in the note's corner.
+- Pins on figures are small emerald numerals in a circle, matching the numeral on their note.
+- Notes have no bubbles or avatars. Everything else on the page stays quiet.
 
 On a phone the margin becomes a sheet that rises to half the screen, so the passage stays visible above the note, and `‹ ›` in the sheet walk through the comments while the text scrolls along.
 

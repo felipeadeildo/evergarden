@@ -68,7 +68,7 @@ Commenting works like Google Docs: a comment is posted the moment you save it, a
 
 On the AWS report, three comments show all three kinds:
 
-1. You select "Data transfer is the second biggest line item" and press **Comment** (or `⌘⌥M`). A note opens in the margin, level with the passage. You write "Is this NAT gateway traffic? Say so." and press **Comment** again. The passage stays marked in emerald.
+1. You select "Data transfer is the second biggest line item". A manicule appears in the gutter beside it; you click it (or press `⌘⌥M`). A note opens in the margin, level with the passage. You write "Is this NAT gateway traffic? Say so." and press **Comment** again. The passage stays marked in emerald.
 2. You press `+` beside the cost table and write "Sort by cost, not by service name."
 3. In the mermaid diagram, you click the arrow that points to EC2 and write "This should go to S3." A pin numbered 3 stays on the arrow.
 
