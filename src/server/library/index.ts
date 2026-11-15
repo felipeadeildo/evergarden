@@ -270,7 +270,7 @@ export type DocumentPage = Read & {
   body: Rendered;
 };
 
-export type Sibling = { id: string; title: string };
+export type Sibling = { id: string; title: string; summary: string | null };
 
 /**
  * Keeps the stored summary in step with the current version's frontmatter, for documents saved
@@ -292,7 +292,7 @@ const MAX_SIBLINGS = 200;
 /** None at the top of the library, which is not a folder one reads through. */
 function siblingsOf(documentId: string): Promise<Sibling[]> {
   return db
-    .select({ id: document.id, title: document.title })
+    .select({ id: document.id, title: document.title, summary: document.summary })
     .from(document)
     .where(
       and(
