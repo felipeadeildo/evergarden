@@ -22,6 +22,7 @@ import { ListBulletsIcon } from "@phosphor-icons/react/dist/ssr/ListBullets";
 import { LockSimpleIcon } from "@phosphor-icons/react/dist/ssr/LockSimple";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/ssr/MagnifyingGlass";
 import { MinusIcon } from "@phosphor-icons/react/dist/ssr/Minus";
+import { NotePencilIcon } from "@phosphor-icons/react/dist/ssr/NotePencil";
 import { PencilSimpleIcon } from "@phosphor-icons/react/dist/ssr/PencilSimple";
 import { PlugsConnectedIcon } from "@phosphor-icons/react/dist/ssr/PlugsConnected";
 import { PlusIcon } from "@phosphor-icons/react/dist/ssr/Plus";
@@ -83,3 +84,4 @@ export const CalloutIcons = {
   warning: icon(PhosphorWarning),
   caution: icon(WarningOctagonIcon),
 };
+export const DraftIcon = icon(NotePencilIcon);

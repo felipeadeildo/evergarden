@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { setResponseHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 
+import { render } from "#/render";
 import { EvergardenError } from "#/server/errors";
 import {
   documentPage,
@@ -13,9 +14,10 @@ import {
   search,
 } from "#/server/library";
 import type { FolderStep } from "#/server/library";
+import { discardDraft, getDraft, publishDraft } from "#/server/library/drafts";
 import { type Shared, guestAccess, sharingOf } from "#/server/sharing";
 
-import { libraryAccess, sessionAccess } from "./middleware";
+import { libraryAccess, ownerAccess, sessionAccess } from "./middleware";
 
 /** A page someone may not open: they see a sign-in prompt, or that the library is private. */
 const PRIVATE = { state: "private" as const };
@@ -88,16 +90,29 @@ export const getFolder = createServerFn({ method: "GET" })
 // serialization type check rejects.
 export const getDocumentPage = createServerFn({ method: "GET", strict: { output: false } })
   .middleware([sessionAccess])
-  .validator(z.object({ id: z.string(), version: z.int().positive().optional() }))
+  .validator(
+    z.object({
+      id: z.string(),
+      version: z.union([z.int().positive(), z.literal("draft")]).optional(),
+    }),
+  )
   .handler(async ({ data, context: { principal } }) => {
     setResponseHeader("cache-control", "private, no-store");
     try {
       const target = { kind: "document" as const, id: data.id };
       const shared = await guestAccess(principal, target, "read");
-      const [page, sharing] = await Promise.all([
-        documentPage(data.id, data.version),
-        principal?.kind === "owner" ? sharingOf(target) : null,
+      const owner = principal?.kind === "owner";
+      const showDraft = data.version === "draft";
+      if (showDraft && !owner) throw notFound();
+      const [page, sharing, draft] = await Promise.all([
+        documentPage(data.id, typeof data.version === "number" ? data.version : undefined),
+        owner ? sharingOf(target) : null,
+        owner ? getDraft(data.id) : null,
       ]);
+      if (showDraft) {
+        if (!draft) throw notFound();
+        Object.assign(page, { source: draft.markdown, body: await render(draft.markdown) });
+      }
       // A document shared at its current version only keeps its history from guests.
       const current = shared?.versions === "current";
       if (current && page.version.number !== page.document.version) throw notFound();
@@ -108,6 +123,13 @@ export const getDocumentPage = createServerFn({ method: "GET", strict: { output:
         folder: sharedPath(page.folder, shared),
         shared,
         sharing,
+        draft: draft && {
+          baseVersion: draft.baseVersion,
+          edits: draft.edits,
+          authorName: draft.authorName,
+          updatedAt: draft.updatedAt,
+        },
+        showsDraft: showDraft,
       };
     } catch (error) {
       if (isPrivate(error)) return PRIVATE;
@@ -115,6 +137,16 @@ export const getDocumentPage = createServerFn({ method: "GET", strict: { output:
       throw error;
     }
   });
+
+export const publishDocumentDraft = createServerFn({ method: "POST" })
+  .middleware([ownerAccess])
+  .validator(z.object({ id: z.string() }))
+  .handler(({ data }) => publishDraft(data.id));
+
+export const discardDocumentDraft = createServerFn({ method: "POST" })
+  .middleware([ownerAccess])
+  .validator(z.object({ id: z.string() }))
+  .handler(({ data }) => discardDraft(data.id));
 
 /** Called by the page once it renders: the loader also runs when a link is merely hovered. */
 export const markDocumentRead = createServerFn({ method: "POST" })

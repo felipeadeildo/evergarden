@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect } from "react";
 import { z } from "zod";
@@ -11,7 +11,11 @@ import { SearchProvider } from "#/components/navigation/search";
 import { GuestActions } from "#/components/sharing/guest-actions";
 import { ShareButton } from "#/components/sharing/share-dialog";
 import { SharedPath } from "#/components/sharing/shared-path";
-import { markDocumentRead } from "#/functions/library.functions";
+import {
+  discardDocumentDraft,
+  markDocumentRead,
+  publishDocumentDraft,
+} from "#/functions/library.functions";
 import { documentQuery, threadsQuery } from "#/functions/queries";
 
 import katexCss from "katex/dist/katex.min.css?url";
@@ -22,7 +26,10 @@ import katexCss from "katex/dist/katex.min.css?url";
  * comments and they signed in.
  */
 export const Route = createFileRoute("/d/$id")({
-  validateSearch: z.object({ v: z.int().positive().optional(), c: z.string().optional() }),
+  validateSearch: z.object({
+    v: z.union([z.int().positive(), z.literal("draft")]).optional(),
+    c: z.string().optional(),
+  }),
   loaderDeps: ({ search }) => ({ version: search.v }),
   loader: async ({ params, deps, location, context: { queryClient, viewer } }) => {
     const owner = viewer?.kind === "owner";
@@ -83,19 +90,27 @@ function DocumentPage() {
   );
 
   if (page.state === "private") return <Private name={viewer?.name ?? ""} />;
-  const { document, version, versions, folder, shared } = page;
+  const { document, version, versions, folder, shared, draft, showsDraft } = page;
   const isOld = version.number !== document.version;
   const byline = (
-    <VersionsMenu documentId={document.id} versions={versions} shown={version.number} />
+    <VersionsMenu
+      documentId={document.id}
+      versions={versions}
+      shown={showsDraft ? "draft" : version.number}
+      draft={draft}
+    />
   );
-  const notice = isOld ? (
-    <p className="old-version">
-      You are reading version {version.number} of {document.version}.{" "}
-      <Link to="/d/$id" params={{ id: document.id }}>
-        Read the current version
-      </Link>
-    </p>
-  ) : null;
+  const notice =
+    showsDraft && draft ? (
+      <DraftNotice id={document.id} draft={draft} />
+    ) : isOld ? (
+      <p className="old-version">
+        You are reading version {version.number} of {document.version}.{" "}
+        <Link to="/d/$id" params={{ id: document.id }}>
+          Read the current version
+        </Link>
+      </p>
+    ) : null;
 
   if (viewer?.kind === "owner") {
     return (
@@ -115,7 +130,7 @@ function DocumentPage() {
           }
           byline={byline}
           notice={notice}
-          comments={{ active: search.c ?? null, setActive, moderate: true }}
+          comments={showsDraft ? null : { active: search.c ?? null, setActive, moderate: true }}
         />
       </SearchProvider>
     );
@@ -141,6 +156,56 @@ function DocumentPage() {
         commenting && viewer ? { active: search.c ?? null, setActive, moderate: false } : null
       }
     />
+  );
+}
+
+/** Above a draft: what it is, and what the owner can do with it before the agent does. */
+function DraftNotice({
+  id,
+  draft,
+}: {
+  id: string;
+  draft: { baseVersion: number; edits: number; authorName: string };
+}) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const done = useMutation({
+    mutationFn: async (action: "publish" | "discard") => {
+      const run = action === "publish" ? publishDocumentDraft : discardDocumentDraft;
+      await run({ data: { id } });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["document", id] });
+      await navigate({ to: "/d/$id", params: { id }, search: {} });
+    },
+  });
+  const edits = `${draft.edits} edit${draft.edits === 1 ? "" : "s"}`;
+  return (
+    <div className="old-version draft-notice">
+      <p>
+        A draft by {draft.authorName}, {edits} on version {draft.baseVersion}. Readers do not see
+        it.
+      </p>
+      <p className="draft-actions">
+        <button
+          type="button"
+          className="button"
+          disabled={done.isPending}
+          onClick={() => done.mutate("publish")}
+        >
+          Publish
+        </button>
+        <button
+          type="button"
+          className="quiet-button"
+          disabled={done.isPending}
+          onClick={() => done.mutate("discard")}
+        >
+          Discard
+        </button>
+      </p>
+      {done.error ? <p className="form-error">{done.error.message}</p> : null}
+    </div>
   );
 }
 

@@ -25,7 +25,7 @@ export function folderPageQuery(id: string) {
   });
 }
 
-export function documentQuery(id: string, version?: number) {
+export function documentQuery(id: string, version?: number | "draft") {
   return queryOptions({
     queryKey: ["document", id, version ?? "current"],
     queryFn: () => getDocumentPage({ data: { id, version } }),

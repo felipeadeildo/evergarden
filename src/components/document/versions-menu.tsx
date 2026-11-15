@@ -3,18 +3,29 @@ import { useId, useMemo, useRef } from "react";
 
 import { useMaybeComments } from "#/components/comments/comments";
 import type { Thread } from "#/components/comments/use-threads";
-import { CheckIcon, CommentIcon, HistoryIcon, OpenMenuIcon } from "#/components/ui/icons";
+import {
+  CheckIcon,
+  CommentIcon,
+  DraftIcon,
+  HistoryIcon,
+  OpenMenuIcon,
+} from "#/components/ui/icons";
 import { RelativeTime } from "#/components/ui/relative-time";
 import type { VersionEntry } from "#/server/library";
+
+export type DraftEntry = { edits: number; authorName: string; updatedAt: Date };
 
 export function VersionsMenu({
   documentId,
   versions,
   shown,
+  draft,
 }: {
   documentId: string;
   versions: VersionEntry[];
-  shown: number;
+  shown: number | "draft";
+  /** The next version an agent is editing, shown to the owner above the published ones. */
+  draft?: DraftEntry | null;
 }) {
   const menuId = useId();
   const menu = useRef<HTMLDivElement>(null);
@@ -32,7 +43,7 @@ export function VersionsMenu({
     </>
   );
 
-  if (versions.length === 1 && !resolved.has(latest.number)) {
+  if (versions.length === 1 && !draft && !resolved.has(latest.number)) {
     return <p className="byline byline-text">{byline}</p>;
   }
   const close = () => menu.current?.hidePopover();
@@ -51,6 +62,26 @@ export function VersionsMenu({
         aria-label="Versions"
       >
         <ol className="menu-list">
+          {draft ? (
+            <li>
+              <Link
+                to="/d/$id"
+                params={{ id: documentId }}
+                search={{ v: "draft" }}
+                className="menu-item"
+                aria-current={shown === "draft" ? "page" : undefined}
+                onClick={close}
+              >
+                <span className="menu-icon">
+                  {shown === "draft" ? <CheckIcon /> : <DraftIcon />}
+                </span>
+                <span className="menu-label">Draft, not published</span>
+                <span className="menu-detail">
+                  {draft.authorName}, <RelativeTime date={draft.updatedAt} />
+                </span>
+              </Link>
+            </li>
+          ) : null}
           {versions.map((entry) => {
             const at = entry.number === latest.number ? {} : { v: entry.number };
             const threads = resolved.get(entry.number) ?? [];
