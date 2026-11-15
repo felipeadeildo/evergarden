@@ -22,9 +22,16 @@ export function Tabs({ node, children, ...props }: ComponentProps<"figure"> & { 
   const panels = Children.toArray(children).filter(isValidElement);
 
   function onKeyDown(event: KeyboardEvent) {
-    const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
-    if (!step) return;
-    const next = (shown + step + labels.length) % labels.length;
+    const last = labels.length - 1;
+    const targets: Record<string, number> = {
+      ArrowRight: shown === last ? 0 : shown + 1,
+      ArrowLeft: shown === 0 ? last : shown - 1,
+      Home: 0,
+      End: last,
+    };
+    const next = targets[event.key];
+    if (next === undefined) return;
+    event.preventDefault();
     setShown(next);
     list.current?.querySelectorAll<HTMLElement>("[role=tab]")[next]?.focus();
   }
@@ -50,7 +57,7 @@ export function Tabs({ node, children, ...props }: ComponentProps<"figure"> & { 
       </div>
       {panels.map((panel, index) => (
         <div
-          key={labels[index] ?? index}
+          key={panel.key}
           role="tabpanel"
           id={`${id}-panel-${index}`}
           aria-labelledby={`${id}-tab-${index}`}

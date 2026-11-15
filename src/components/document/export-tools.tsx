@@ -22,7 +22,7 @@ export function ExportTools({ title, source }: { title: string; source: string }
     <div className="export-tools">
       <button type="button" title="Copy the markdown" onClick={() => void copy()}>
         {copied ? <CheckIcon /> : <CopyIcon />}
-        {copied ? "Copied" : "Copy"}
+        <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>
       </button>
       <button type="button" title="Download the markdown" onClick={download}>
         <DownloadIcon />
