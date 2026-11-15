@@ -23,7 +23,7 @@ import {
 export type { Heading };
 
 /** Part of every cache key for rendered trees: bump it whenever the output changes. */
-export const RENDERER_VERSION = 10;
+export const RENDERER_VERSION = 11;
 
 export type Rendered = {
   tree: Root;

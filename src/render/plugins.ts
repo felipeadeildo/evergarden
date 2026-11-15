@@ -9,6 +9,8 @@ import { SKIP, visit } from "unist-util-visit";
 import type { VFile } from "vfile";
 import { parse as parseYaml } from "yaml";
 
+import { isFileName } from "#/lib/files";
+
 import { figureFrom } from "./figures";
 import { highlighter } from "./highlight";
 
@@ -109,7 +111,10 @@ export function rehypeEvergarden() {
       if (node.tagName === "a") {
         const id = documentLink(node);
         if (id) links.add(id);
+        else markFile(node, "href");
       }
+
+      if (node.tagName === "img") markFile(node, "src");
 
       if (node.tagName === "p" && isLinkCard(node)) node.properties.dataCard = "";
 
@@ -151,6 +156,22 @@ function documentLink(node: Element): string | undefined {
   const text = toString(node).trim();
   if (text === href || text === id) node.properties.dataBare = "";
   return id;
+}
+
+/**
+ * Marks a link or image whose address is a plain file name, `chart.png` beside the markdown, so
+ * the page can point it at the document's file when the version has one by that name.
+ */
+function markFile(node: Element, attribute: "href" | "src") {
+  const value = node.properties[attribute];
+  if (typeof value !== "string") return;
+  let name: string;
+  try {
+    name = decodeURIComponent(value);
+  } catch {
+    return;
+  }
+  if (isFileName(name) && name.includes(".")) node.properties.dataFile = name;
 }
 
 /** A paragraph holding nothing but a bare link to a document becomes a card. */
