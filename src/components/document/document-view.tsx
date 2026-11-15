@@ -11,6 +11,7 @@ import { CommentsMargin } from "#/components/comments/margin";
 import { CommentPins } from "#/components/comments/pins";
 import { DocumentBody } from "#/components/document/body";
 import { Contents } from "#/components/document/contents";
+import { type DocumentLinks, LinksProvider } from "#/components/document/links";
 import { TopBar } from "#/components/navigation/top-bar";
 import { CommentIcon, ContentsIcon } from "#/components/ui/icons";
 import { Page, PageHeader } from "#/components/ui/page";
@@ -30,7 +31,7 @@ export function DocumentView({
   notice,
   comments,
 }: {
-  page: DocumentPage;
+  page: DocumentPage & { links?: DocumentLinks };
   /** Where the document sits, in the top bar. */
   place: ReactNode;
   /** More buttons for the top bar, after the document's own. */
@@ -86,7 +87,9 @@ export function DocumentView({
         <PageHeader title={document.title}>{byline}</PageHeader>
         <div className="document-text">
           <div ref={text}>
-            <DocumentBody tree={body.tree} />
+            <LinksProvider links={page.links}>
+              <DocumentBody tree={body.tree} />
+            </LinksProvider>
           </div>
           {commenting ? <CommentPins /> : null}
         </div>

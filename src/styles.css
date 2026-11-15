@@ -1713,6 +1713,48 @@
     text-decoration-thickness: 2px;
   }
 
+  /* Links to other documents: see components/document/links.tsx */
+
+  .prose .document-link svg {
+    display: inline;
+    width: 0.9em;
+    height: 0.9em;
+    margin-right: 0.18em;
+    vertical-align: -0.1em;
+  }
+
+  .prose .document-card a {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.65rem;
+    padding: 0.75rem 0.95rem;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .prose .document-card a:hover {
+    border-color: var(--prussian);
+  }
+
+  .prose .document-card svg {
+    grid-row: span 2;
+    width: 1.3rem;
+    height: 1.3rem;
+    margin-top: 0.15rem;
+    color: var(--prussian);
+  }
+
+  .document-card-title {
+    font-weight: 600;
+  }
+
+  .document-card-meta {
+    color: var(--ink-soft);
+    font-size: 0.85rem;
+  }
+
   .prose strong {
     font-weight: 620;
   }

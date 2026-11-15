@@ -8,6 +8,7 @@ import { stringProperty } from "#/lib/hast";
 
 import { CodeBlock } from "./code-block";
 import { Diagram } from "./diagram";
+import { Anchor, Paragraph } from "./links";
 
 type WithNode<T extends keyof React.JSX.IntrinsicElements> = ComponentProps<T> & { node?: Element };
 
@@ -67,6 +68,8 @@ function sectionHeading(Tag: "h2" | "h3" | "h4") {
 }
 
 const components = {
+  a: Anchor,
+  p: Paragraph,
   aside: Aside,
   figure: Figure,
   table: Table,

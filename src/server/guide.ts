@@ -28,6 +28,10 @@ heading is shown as the page title and not repeated in the body.
   message or label that needs a pause takes a comma: "version 2, with your comment" draws, and
   "version 2; your comment" fails to parse.
 - Highlighted code in about 80 languages; name the language after the opening fence.
+- Links to other documents: \`[the cache plan](/d/<id>)\` shows with a document icon, and a
+  bare \`/d/<id>\` URL takes the document's current title. A link alone in its paragraph becomes
+  a card with the title, folder and age. Readers who may not open the linked document see the text
+  without a link.
 
 Raw HTML is sanitised: no scripts, styles or event handlers.
 

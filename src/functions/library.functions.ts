@@ -13,7 +13,7 @@ import {
   recent,
   search,
 } from "#/server/library";
-import type { FolderStep } from "#/server/library";
+import { type FolderStep, type LinkedDocument, linkedDocuments } from "#/server/library";
 import { discardDraft, getDraft, publishDraft } from "#/server/library/drafts";
 import { type Shared, guestAccess, sharingOf } from "#/server/sharing";
 
@@ -27,6 +27,30 @@ function sharedPath(path: FolderStep[], shared: Shared | null): FolderStep[] {
   if (!shared) return path;
   const from = path.findIndex((step) => step.id === shared.root);
   return from === -1 ? [] : path.slice(from);
+}
+
+/**
+ * The linked documents this reader may open, and the ids of those they may not, which show as
+ * plain text. Ids that are not in this library are links to somewhere else and stay links.
+ */
+async function linksFor(
+  ids: string[],
+  principal: Parameters<typeof guestAccess>[0],
+): Promise<{ open: LinkedDocument[]; hidden: string[] }> {
+  const found = await linkedDocuments(ids);
+  if (principal && principal.kind !== "guest") return { open: found, hidden: [] };
+  const open = await Promise.all(
+    found.map((entry) =>
+      guestAccess(principal, { kind: "document", id: entry.id }, "read").then(
+        () => true,
+        () => false,
+      ),
+    ),
+  );
+  return {
+    open: found.filter((_, index) => open[index]),
+    hidden: found.filter((_, index) => !open[index]).map((entry) => entry.id),
+  };
 }
 
 function isPrivate(error: unknown): boolean {
@@ -113,6 +137,7 @@ export const getDocumentPage = createServerFn({ method: "GET", strict: { output:
         if (!draft) throw notFound();
         Object.assign(page, { source: draft.markdown, body: await render(draft.markdown) });
       }
+      const links = await linksFor(page.body.links, principal);
       // A document shared at its current version only keeps its history from guests.
       const current = shared?.versions === "current";
       if (current && page.version.number !== page.document.version) throw notFound();
@@ -130,6 +155,7 @@ export const getDocumentPage = createServerFn({ method: "GET", strict: { output:
           updatedAt: draft.updatedAt,
         },
         showsDraft: showDraft,
+        links,
       };
     } catch (error) {
       if (isPrivate(error)) return PRIVATE;

@@ -1,4 +1,15 @@
-import { type AnyColumn, and, asc, count, desc, eq, isNull, type SQL, sql } from "drizzle-orm";
+import {
+  type AnyColumn,
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  type SQL,
+  sql,
+} from "drizzle-orm";
 
 import { newId } from "#/lib/id";
 import { FOLDER_PAGE_SIZE } from "#/lib/text";
@@ -101,6 +112,31 @@ function liveDocuments(where?: SQL) {
     .from(document)
     .innerJoin(version, currentVersion)
     .where(and(isNull(document.deletedAt), where));
+}
+
+export type LinkedDocument = {
+  id: string;
+  title: string;
+  folder: string | null;
+  version: number;
+  updatedAt: Date;
+};
+
+/** The documents a page links to, as they are now, for showing the links with their titles. */
+export async function linkedDocuments(ids: string[]): Promise<LinkedDocument[]> {
+  if (ids.length === 0) return [];
+  return db
+    .select({
+      id: document.id,
+      title: document.title,
+      folder: folder.name,
+      version: document.currentVersion,
+      updatedAt: document.updatedAt,
+    })
+    .from(document)
+    .leftJoin(folder, eq(folder.id, document.folderId))
+    .where(and(isNull(document.deletedAt), inArray(document.id, ids)))
+    .all();
 }
 
 export function checkContent(content: string): string {
