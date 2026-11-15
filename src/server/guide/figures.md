@@ -80,7 +80,7 @@ Nested files or an org chart, with a note after any item.
 
 ## stat
 
-Two to four headline numbers. The first word of each row is the number, so keep units in the label; bold the row to lead.
+Two to four headline numbers. Each row starts with the number, and a unit right after it stays with it: `16,5 h`, `800 ms`, `14.7 TB`. Bold the row to lead.
 
 ```
 ::stat
