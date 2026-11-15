@@ -1,11 +1,12 @@
 import { apiKey } from "@better-auth/api-key";
 import { mcp } from "@better-auth/mcp";
-import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
+// The minimal build leaves out Kysely; the database is reached through the Drizzle adapter.
+import { betterAuth } from "better-auth/minimal";
 import { emailOTP, jwt } from "better-auth/plugins";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
-import { env } from "cloudflare:workers";
+import { env, waitUntil } from "cloudflare:workers";
 
 import { db } from "#/server/db";
 import * as schema from "#/server/db/schema";
@@ -44,6 +45,8 @@ export const auth = betterAuth({
   advanced: {
     // Workers do not set X-Forwarded-For; without this every visitor shares one rate-limit bucket.
     ipAddress: { ipAddressHeaders: ["cf-connecting-ip"] },
+    // Work that need not delay the response, such as cleanup, runs after it is sent.
+    backgroundTasks: { handler: waitUntil },
   },
   plugins: [
     emailOTP({
