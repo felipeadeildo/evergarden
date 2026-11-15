@@ -1312,26 +1312,30 @@
     align-items: center;
     gap: 0.3rem;
     margin-top: 0.7rem;
-    padding: 0 0.45rem;
+    padding: 0.2rem 0.45rem;
+    border: 0;
     border-radius: 6px;
+    background: none;
     color: var(--ink-soft);
+    font: inherit;
     font-size: 0.8rem;
+    cursor: pointer;
   }
 
   .order-select:hover,
-  .order-select:focus-within {
+  .order-select:focus-visible,
+  .order-select:has(+ :popover-open) {
     background: var(--sheet);
     color: var(--ink);
   }
 
-  .order-select select {
-    field-sizing: content;
-    padding: 0.2rem 0;
-    border: 0;
-    background: none;
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
+  .order-menu {
+    width: 11rem;
+  }
+
+  .order-menu .menu-item {
+    grid-template-columns: 1.15em minmax(0, 1fr);
+    column-gap: 0.4rem;
   }
 
   /* The document a folder starts with. */

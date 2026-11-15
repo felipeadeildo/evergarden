@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useEffectEvent, useId, useState } from "react";
 
 import { DocumentRow } from "#/components/library/rows";
-import { EntryIcon, HandleIcon, SortIcon } from "#/components/ui/icons";
+import { CheckIcon, EntryIcon, HandleIcon, OpenMenuIcon, SortIcon } from "#/components/ui/icons";
 import { pinEntry, placeItem, sortItems } from "#/functions/organize.functions";
 import type { FolderSort } from "#/server/db/schema";
 import type { DocumentEntry } from "#/server/library";
@@ -15,41 +15,54 @@ const SORTS: { value: FolderSort; label: string }[] = [
   { value: "title", label: "Title A–Z" },
 ];
 
-function isSort(value: string): value is FolderSort {
-  return SORTS.some((option) => option.value === value);
-}
-
 /** After any change of order, every list that shows documents reads them again. */
 function useRefresh() {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries();
 }
 
-/** The folder's rule, beside its other tools. */
+/** The folder's rule, as a menu beside its other tools. */
 export function OrderSelect({ folderId, sort }: { folderId: string; sort: FolderSort }) {
+  const menuId = useId();
   const refresh = useRefresh();
   const change = useMutation({
     mutationFn: (next: FolderSort) => sortItems({ data: { folderId, sort: next } }),
     onSettled: refresh,
   });
+  const current = change.isPending ? change.variables : sort;
+  const label = SORTS.find((option) => option.value === current)?.label;
+
+  function choose(next: FolderSort) {
+    document.getElementById(menuId)?.hidePopover();
+    if (next !== current) change.mutate(next);
+  }
+
   return (
-    <label className="order-select">
-      <SortIcon />
-      <span className="sr-only">Order</span>
-      <select
-        value={change.isPending ? change.variables : sort}
-        onChange={(event) => {
-          const next = event.currentTarget.value;
-          if (isSort(next)) change.mutate(next);
-        }}
-      >
-        {SORTS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
+    <>
+      <button type="button" className="order-select" popoverTarget={menuId}>
+        <SortIcon />
+        <span className="sr-only">Order: </span>
+        {label}
+        <OpenMenuIcon className="byline-caret" />
+      </button>
+      <div id={menuId} popover="auto" className="popover menu order-menu" aria-label="Order">
+        <ul className="menu-list">
+          {SORTS.map((option) => (
+            <li key={option.value}>
+              <button
+                type="button"
+                className="menu-item"
+                aria-current={option.value === current || undefined}
+                onClick={() => choose(option.value)}
+              >
+                <span className="menu-icon">{option.value === current ? <CheckIcon /> : null}</span>
+                <span className="menu-label">{option.label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
   );
 }
 
