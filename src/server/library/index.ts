@@ -272,6 +272,21 @@ export type DocumentPage = Read & {
 
 export type Sibling = { id: string; title: string };
 
+/**
+ * Keeps the stored summary in step with the current version's frontmatter, for documents saved
+ * before the renderer read it the way it does now.
+ */
+async function currentSummary(
+  found: DocumentEntry,
+  shown: number,
+  body: Rendered,
+): Promise<Rendered> {
+  if (shown === found.version && body.summary !== found.summary) {
+    await db.update(document).set({ summary: body.summary }).where(eq(document.id, found.id));
+  }
+  return body;
+}
+
 const MAX_SIBLINGS = 200;
 
 /** None at the top of the library, which is not a folder one reads through. */
@@ -310,7 +325,11 @@ export async function documentPage(id: string, versionNumber?: number): Promise<
     versions: history,
     folder: path,
     siblings,
-    body: await cachedRender(shown.version.sha256, shown.markdown, shown.cache),
+    body: await currentSummary(
+      found,
+      shown.version.number,
+      await cachedRender(shown.version.sha256, shown.markdown, shown.cache),
+    ),
   };
 }
 
