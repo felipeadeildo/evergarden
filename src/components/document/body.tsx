@@ -4,18 +4,39 @@ import { Children, type ComponentProps, isValidElement, useMemo } from "react";
 import { Fragment, jsx, jsxs } from "react/jsx-runtime";
 
 import { CalloutIcons } from "#/components/ui/icons";
+import { INLINE_ICONS } from "#/components/ui/inline-icons";
 import { stringProperty } from "#/lib/hast";
+import { ICON_NAMES, type IconName } from "#/render/icons";
 
 import { CodeBlock } from "./code-block";
 import { Diagram } from "./diagram";
 import { Anchor, Paragraph } from "./links";
+import { Tabs } from "./tabs";
 
 type WithNode<T extends keyof React.JSX.IntrinsicElements> = ComponentProps<T> & { node?: Element };
 
 function Figure({ node, children, ...props }: WithNode<"figure">) {
   if (node?.properties.dataKind === "diagram") return <Diagram node={node} />;
+  if (node?.properties.dataKind === "tabs") {
+    return (
+      <Tabs node={node} {...props}>
+        {children}
+      </Tabs>
+    );
+  }
   if (node?.properties.dataKind === "code") return <CodeBlock node={node}>{children}</CodeBlock>;
   return <figure {...props}>{children}</figure>;
+}
+
+function Span({ node, children, ...props }: WithNode<"span">) {
+  const name = node && stringProperty(node, "dataIcon");
+  const Icon = name && isIconName(name) ? INLINE_ICONS[name] : null;
+  if (Icon) return <Icon className="inline-icon" />;
+  return <span {...props}>{children}</span>;
+}
+
+function isIconName(name: string): name is IconName {
+  return ICON_NAMES.has(name);
 }
 
 function isCalloutKind(kind: string): kind is keyof typeof CalloutIcons {
@@ -70,6 +91,7 @@ function sectionHeading(Tag: "h2" | "h3" | "h4") {
 const components = {
   a: Anchor,
   p: Paragraph,
+  span: Span,
   aside: Aside,
   figure: Figure,
   table: Table,

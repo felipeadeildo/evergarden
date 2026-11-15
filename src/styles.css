@@ -1721,6 +1721,496 @@
     text-decoration-thickness: 2px;
   }
 
+  /* Inline icons, tabs, details, and figures after mdxcn's grammar: see render/figures.ts */
+
+  .prose .inline-icon {
+    display: inline;
+    width: 1.05em;
+    height: 1.05em;
+    vertical-align: -0.15em;
+  }
+
+  .prose kbd {
+    padding: 0.05em 0.4em;
+    border: 1px solid var(--rule);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: var(--sheet);
+    font-family: var(--mono);
+    font-size: 0.8em;
+  }
+
+  .prose kbd + kbd {
+    margin-left: 0.2em;
+  }
+
+  .prose details {
+    margin: 1.4rem 0;
+    padding: 0.55rem 0.95rem;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+  }
+
+  .prose summary {
+    cursor: pointer;
+    font-weight: 560;
+  }
+
+  .prose details[open] > summary {
+    margin-bottom: 0.5rem;
+  }
+
+  .prose figure.tabs {
+    margin: 1.5rem 0;
+  }
+
+  .tabs [role="tablist"] {
+    display: flex;
+    gap: 0.15rem;
+    margin-bottom: 0.7rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .tabs [role="tab"] {
+    margin-bottom: -1px;
+    padding: 0.35rem 0.75rem;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+
+  .tabs [role="tab"][aria-selected="true"] {
+    border-bottom-color: var(--prussian);
+    color: var(--ink);
+  }
+
+  .tabs [role="tabpanel"] > :first-child {
+    margin-top: 0;
+  }
+
+  .prose figure[data-kind="block"] {
+    margin: 1.6rem 0;
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+  }
+
+  .prose figure[data-kind="block"] :is(ul, ol) {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .prose figure[data-kind="block"] li {
+    margin: 0;
+  }
+
+  .block-title {
+    margin: 0 0 0.75rem;
+    color: var(--ink-soft);
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .prose figure[data-kind="block"] span.block-note {
+    margin-left: 0.6em;
+    color: var(--ink-soft);
+    font-size: 0.92em;
+  }
+
+  .prose figure[data-kind="block"] p.block-note {
+    margin: 0.8rem 0 0;
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+  }
+
+  .prose figure[data-kind="block"] [data-tone="accent"] {
+    color: var(--prussian);
+    font-weight: 600;
+  }
+
+  .prose figure[data-kind="block"] [data-tone="muted"] {
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  .timeline {
+    display: grid;
+    grid-template-columns: 0.75rem max-content minmax(0, 1fr);
+    column-gap: 0.8rem;
+    row-gap: 0.6rem;
+  }
+
+  .timeline li {
+    position: relative;
+    display: grid;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
+  }
+
+  .timeline li::before {
+    content: "";
+    align-self: start;
+    width: 0.6rem;
+    height: 0.6rem;
+    margin-top: 0.5em;
+    border: 1.5px solid var(--ink-soft);
+    border-radius: 50%;
+    background: var(--ink-soft);
+  }
+
+  .timeline li:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: calc(0.5em + 0.6rem + 3px);
+    bottom: calc(-0.6rem - 0.5em);
+    left: calc(0.3rem - 0.5px);
+    width: 1px;
+    background: var(--rule);
+  }
+
+  .timeline li[data-state="now"]::before {
+    border-color: var(--prussian);
+    background: var(--prussian);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--prussian) 18%, transparent);
+  }
+
+  .timeline li[data-state="next"]::before {
+    background: none;
+  }
+
+  .timeline-when {
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .timeline li[data-state="now"] .timeline-what {
+    color: var(--prussian);
+    font-weight: 600;
+  }
+
+  .timeline li[data-state="next"] .timeline-what {
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  .prose .steps {
+    counter-reset: step;
+  }
+
+  .prose .steps > li {
+    position: relative;
+    padding: 0 0 0.9rem 2.5rem;
+    counter-increment: step;
+  }
+
+  .prose .steps > li:last-child {
+    padding-bottom: 0;
+  }
+
+  .prose .steps > li::before {
+    content: counter(step);
+    position: absolute;
+    top: 0.1em;
+    left: 0;
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border: 1px solid var(--rule);
+    border-radius: 50%;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .prose .steps > li:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 1.95rem;
+    bottom: 0.25rem;
+    left: 0.8rem;
+    width: 1px;
+    background: var(--rule);
+  }
+
+  .prose .steps > li > p {
+    margin: 0 0 0.3rem;
+  }
+
+  .prose .steps > li > p:first-child {
+    font-weight: 600;
+  }
+
+  .decision li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.15rem 0;
+  }
+
+  .decision li::before {
+    flex: none;
+    width: 1rem;
+    color: var(--ink-soft);
+    text-align: center;
+  }
+
+  .decision li[data-state="chosen"] {
+    color: var(--prussian);
+    font-weight: 600;
+  }
+
+  .decision li[data-state="chosen"]::before {
+    content: "●";
+    color: var(--prussian);
+  }
+
+  .decision li[data-state="rejected"] {
+    color: var(--ink-soft);
+  }
+
+  .decision li[data-state="rejected"]::before {
+    content: "×";
+  }
+
+  .decision li[data-state="open"]::before {
+    content: "○";
+  }
+
+  .decision li .block-note {
+    font-weight: 400;
+  }
+
+  .prose .tree {
+    font-family: var(--mono);
+    font-size: 0.86rem;
+    line-height: 1.7;
+  }
+
+  .prose .tree .tree > li {
+    position: relative;
+    padding-left: 1.4rem;
+  }
+
+  .prose .tree .tree > li::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0.35rem;
+    width: 0.75rem;
+    height: 0.85em;
+    border-bottom: 1px solid var(--rule);
+    border-left: 1px solid var(--rule);
+  }
+
+  .prose .tree .tree > li:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0.35rem;
+    border-left: 1px solid var(--rule);
+  }
+
+  .prose .stat {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    gap: 1rem;
+    margin: 0;
+  }
+
+  .prose .stat > div {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+
+  .stat-value {
+    margin: 0;
+    font-size: 1.9rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+  }
+
+  .stat-value strong {
+    font-weight: inherit;
+  }
+
+  .stat-label {
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+  }
+
+  .prose :is(.spec, .keys) {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    column-gap: 1.5rem;
+    row-gap: 0.35rem;
+    margin: 0;
+  }
+
+  .prose :is(.spec, .keys) > div {
+    display: contents;
+  }
+
+  .prose :is(.spec, .keys) dd {
+    margin: 0;
+  }
+
+  .prose .spec dt {
+    color: var(--ink-soft);
+  }
+
+  .prose .flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.6rem;
+  }
+
+  .prose .flow + .flow {
+    margin-top: 0.6rem;
+  }
+
+  .prose .flow li {
+    position: relative;
+    padding: 0.2rem 0.7rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+  }
+
+  .prose .flow li + li::before {
+    content: "→";
+    position: absolute;
+    left: -1.25rem;
+    color: var(--ink-soft);
+    font-style: normal;
+    font-weight: 400;
+  }
+
+  .prose .flow li[data-tone="accent"] {
+    border-color: var(--prussian);
+  }
+
+  .prose .flow li[data-tone="muted"] {
+    border-style: dashed;
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 1rem;
+  }
+
+  .prose .board-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    margin: 0 0 0.45rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .board-count {
+    color: var(--ink-soft);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .prose .board ul {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .prose .board li {
+    padding: 0.35rem 0.6rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    font-size: 0.92rem;
+  }
+
+  .prose .faq {
+    margin: 0;
+  }
+
+  .prose .faq > div + div {
+    margin-top: 0.9rem;
+  }
+
+  .prose .faq dt {
+    font-weight: 600;
+  }
+
+  .prose .faq dd {
+    margin: 0.15rem 0 0;
+  }
+
+  .prose .faq dd > p {
+    margin: 0 0 0.4rem;
+  }
+
+  .prose .rank {
+    display: grid;
+    grid-template-columns: minmax(0, max-content) max-content minmax(4rem, 1fr);
+    align-items: center;
+    column-gap: 0.9rem;
+    row-gap: 0.4rem;
+  }
+
+  .prose .rank li {
+    display: contents;
+  }
+
+  .rank-value {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .rank-value strong {
+    font-weight: inherit;
+  }
+
+  .rank-bar,
+  .meter-bar {
+    height: 0.55rem;
+    border-radius: 3px;
+    background: linear-gradient(var(--bar-fill), var(--bar-fill)) no-repeat left /
+      calc(var(--share) * 100%) 100%;
+    --bar-fill: color-mix(in oklab, var(--ink) 30%, transparent);
+  }
+
+  .rank li[data-tone="accent"] .rank-bar,
+  .meter-bar {
+    --bar-fill: var(--prussian);
+  }
+
+  .meter-bar {
+    background-color: var(--sheet);
+  }
+
+  .meter {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: center;
+    gap: 0.25rem 0.9rem;
+  }
+
+  .meter-value {
+    font-size: 1.4rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .prose figure[data-kind="block"] .meter span.block-note {
+    grid-column: 1 / -1;
+    margin-left: 0;
+  }
+
   /* Links to other documents: see components/document/links.tsx */
 
   .prose .document-link svg {
@@ -2879,5 +3369,9 @@ figure[data-pinning]::after {
 
   .prose pre {
     white-space: pre-wrap;
+  }
+
+  .tabs [role="tabpanel"][hidden] {
+    display: block;
   }
 }

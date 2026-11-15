@@ -39,7 +39,7 @@ import { XIcon } from "@phosphor-icons/react/dist/ssr/X";
 type IconProps = { className?: string };
 
 /** Hidden from screen readers: the text or label beside an icon carries its meaning. */
-function icon(Glyph: PhosphorIcon) {
+export function icon(Glyph: PhosphorIcon) {
   return ({ className }: IconProps) => (
     <Glyph
       size="1.15em"
