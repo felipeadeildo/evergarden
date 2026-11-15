@@ -10,7 +10,6 @@ import {
   childFolder,
   documentFolderPath,
   ensureFolder,
-  findFolder,
   firstDocumentPosition,
   folderPath,
   lastFolderPosition,
@@ -98,17 +97,6 @@ export async function moveFolder(id: string, parentId: string | null): Promise<v
 /** Where a path such as "reports/2026" points, creating the folders it names; "" is the top. */
 export function folderAt(path: string): Promise<string | null> {
   return ensureFolder(parseFolderPath(path));
-}
-
-/** Finds an existing folder by path, for tools that name folders rather than ids. */
-export async function existingFolder(path: string): Promise<string> {
-  const names = parseFolderPath(path);
-  if (names.length === 0) {
-    throw new EvergardenError("invalid", "Name a folder, not the top of the library.");
-  }
-  const id = await findFolder(names);
-  if (!id) throw new EvergardenError("not_found", `No folder at "${path}".`);
-  return id;
 }
 
 /** Stops sharing what goes to the trash, so restoring it never reopens it to anyone. */

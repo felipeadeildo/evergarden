@@ -8,7 +8,6 @@ import {
   deleteDocument,
   deleteFolder,
   destroyDocument,
-  existingFolder,
   folderAt,
   moveDocument,
   moveFolder,
@@ -87,7 +86,7 @@ describe("folders", () => {
     await moveFolder(id!, await folderAt("elsewhere"));
     expect(await pathOf(doc)).toBe("elsewhere/branch/leaf");
     await expect(moveFolder(id!, leaf)).rejects.toThrow(/inside itself/);
-    expect(await existingFolder("elsewhere/branch")).toBe(id);
+    expect(await findFolder(["elsewhere", "branch"])).toBe(id);
   });
 
   it("delete into the trash, and restoring a document brings its folders back", async () => {
