@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, isNull, type SQL, sql } from "drizzle-orm";
+import { type AnyColumn, and, asc, count, desc, eq, isNull, type SQL, sql } from "drizzle-orm";
 
 import { newId } from "#/lib/id";
 import { FOLDER_PAGE_SIZE } from "#/lib/text";
@@ -7,6 +7,7 @@ import { relocateComments } from "#/server/comments/relocate";
 import { db } from "#/server/db";
 import {
   type AuthorKind,
+  type ShareAudience,
   content as contentTable,
   document,
   folder,
@@ -45,6 +46,8 @@ export type DocumentEntry = {
   version: number;
   updatedAt: Date;
   updatedBy: string;
+  /** Who besides the owner may open it, by its own setting; null when it has none. */
+  shared: ShareAudience | null;
 };
 
 export type FolderEntry = {
@@ -53,7 +56,17 @@ export type FolderEntry = {
   name: string;
   position: string;
   repo: string | null;
+  shared: ShareAudience | null;
 };
+
+/** The audience of a target's own sharing setting, while it has not expired. */
+function sharedColumn(kind: "document" | "folder", id: AnyColumn) {
+  return sql<ShareAudience | null>`(
+    select audience from sharing
+    where target_kind = ${kind} and target_id = ${id}
+      and (expires_at is null or expires_at > unixepoch('subsecond') * 1000)
+  )`;
+}
 
 export type FolderSummary = FolderEntry & { documents: number };
 
@@ -74,6 +87,7 @@ const documentEntry = {
   version: document.currentVersion,
   updatedAt: document.updatedAt,
   updatedBy: version.authorName,
+  shared: sharedColumn("document", document.id),
 };
 
 const currentVersion = and(
@@ -429,6 +443,7 @@ const folderColumns = {
   name: folder.name,
   position: folder.position,
   repo: folder.repo,
+  shared: sharedColumn("folder", folder.id),
 };
 
 function versionRow(documentId: string, number: number, sha: string, author: Author) {

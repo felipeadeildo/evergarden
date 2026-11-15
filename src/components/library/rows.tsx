@@ -1,6 +1,12 @@
 import { Link } from "@tanstack/react-router";
 
-import { DocumentIcon, FolderIcon, RepositoryIcon } from "#/components/ui/icons";
+import {
+  DocumentIcon,
+  FolderIcon,
+  PeopleIcon,
+  RepositoryIcon,
+  ShareIcon,
+} from "#/components/ui/icons";
 import { RelativeTime } from "#/components/ui/relative-time";
 import { FOLDER_PAGE_SIZE, plural } from "#/lib/text";
 import type { DocumentEntry, FolderSummary } from "#/server/library";
@@ -32,6 +38,7 @@ export function DocumentRow({
         <span className="row-place">{place}</span>
         <span className="row-end">
           {unread ? <span className="sr-only">Changed since you read it, </span> : null}
+          <SharedMark shared={entry.shared} />
           <RelativeTime date={entry.updatedAt} short />
         </span>
       </Link>
@@ -46,11 +53,25 @@ export function FolderRow({ entry }: { entry: FolderSummary }) {
         <FolderIcon className="row-icon" />
         <span className="row-name row-folder">{entry.name}</span>
         <span className="row-place row-repo">{entry.repo}</span>
-        <span className="row-end" title={plural(entry.documents, "document")}>
-          {entry.documents}
+        <span className="row-end">
+          <SharedMark shared={entry.shared} />
+          <span title={plural(entry.documents, "document")}>{entry.documents}</span>
         </span>
       </Link>
     </li>
+  );
+}
+
+/** A small mark for a document or folder others can open: by link, or a list of people. */
+function SharedMark({ shared }: { shared: "link" | "people" | null }) {
+  if (!shared) return null;
+  const label = shared === "link" ? "Shared by link" : "Shared with people";
+  const Icon = shared === "link" ? ShareIcon : PeopleIcon;
+  return (
+    <span className="row-shared" title={label}>
+      <Icon />
+      <span className="sr-only">{label}, </span>
+    </span>
   );
 }
 
