@@ -29,11 +29,14 @@ import { discardDraft, editDraft, getDraft, publishDraft } from "#/server/librar
 import { attachFile, detachFile } from "#/server/library/files";
 import { findFolder, parseFolderPath } from "#/server/library/folders";
 import {
+  deleteDocument,
+  deleteFolder,
   folderAt,
   moveDocument,
   moveFolder,
   renameDocument,
   renameFolder,
+  TRASH_DAYS,
 } from "#/server/library/organize";
 import { setSharing, sharingOf } from "#/server/sharing";
 
@@ -415,6 +418,26 @@ function mcpServer(principal: Principal, origin: string): McpServer {
         }
         const { version } = await renameDocument(target.id, input.name, author);
         return `Saved version ${version} titled ${input.name.trim()}: ${url(target.id)}`;
+      }),
+  );
+
+  server.registerTool(
+    "delete",
+    {
+      description: `Sends a document, or a folder with everything in it, to the trash and stops sharing it. Your user can restore it from Settings for ${TRASH_DAYS} days; after that it is gone. Call it only when your user asks.`,
+      inputSchema: z.object({
+        id: z.string().optional().describe("A document id. Give this or `folder`."),
+        folder: z.string().optional().describe('The folder to delete, as a path: "reports/2026".'),
+      }),
+      annotations: { destructiveHint: true },
+    },
+    (input) =>
+      run(async () => {
+        const target = await targetOf(input.id, input.folder);
+        if (target.kind === "document") await deleteDocument(target.id);
+        else await deleteFolder(target.id);
+        const what = target.kind === "document" ? input.id : `The folder ${input.folder}`;
+        return `${what} is in the trash. Your user can restore it from Settings for ${TRASH_DAYS} days.`;
       }),
   );
 
