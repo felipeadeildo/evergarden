@@ -25,6 +25,13 @@ import {
 } from "#/server/library";
 import { discardDraft, editDraft, getDraft, publishDraft } from "#/server/library/drafts";
 import { findFolder, parseFolderPath } from "#/server/library/folders";
+import {
+  folderAt,
+  moveDocument,
+  moveFolder,
+  renameDocument,
+  renameFolder,
+} from "#/server/library/organize";
 import { setSharing, sharingOf } from "#/server/sharing";
 
 const INSTRUCTIONS = [
@@ -303,7 +310,7 @@ function mcpServer(principal: Principal, origin: string): McpServer {
     },
     (input) =>
       run(async () => {
-        const target = await shareTarget(input.id, input.folder);
+        const target = await targetOf(input.id, input.folder);
         if (input.who) {
           await setSharing(
             target,
@@ -328,6 +335,52 @@ function mcpServer(principal: Principal, origin: string): McpServer {
         }
         if (target.kind === "document") lines.push(url(target.id));
         return lines.join("\n");
+      }),
+  );
+
+  server.registerTool(
+    "move",
+    {
+      description:
+        "Moves a document or a folder (with everything in it) to another folder. Call it only when your user asks.",
+      inputSchema: z.object({
+        id: z.string().optional().describe("A document id. Give this or `folder`."),
+        folder: z.string().optional().describe('The folder to move, as a path: "reports/2026".'),
+        to: z
+          .string()
+          .describe('The folder to move into, created when missing; "" is the top of the library.'),
+      }),
+    },
+    (input) =>
+      run(async () => {
+        const target = await targetOf(input.id, input.folder);
+        const into = await folderAt(input.to);
+        if (target.kind === "document") await moveDocument(target.id, into);
+        else await moveFolder(target.id, into);
+        return `Moved to ${input.to.trim() || "the top of the library"}.`;
+      }),
+  );
+
+  server.registerTool(
+    "rename",
+    {
+      description:
+        "Renames a folder, or retitles a document by saving a version with the new title in its markdown. Call it only when your user asks.",
+      inputSchema: z.object({
+        id: z.string().optional().describe("A document id. Give this or `folder`."),
+        folder: z.string().optional().describe('The folder to rename, as a path: "reports/2026".'),
+        name: z.string().describe("The new title or folder name."),
+      }),
+    },
+    (input) =>
+      run(async () => {
+        const target = await targetOf(input.id, input.folder);
+        if (target.kind === "folder") {
+          await renameFolder(target.id, input.name);
+          return `Renamed the folder to ${input.name.trim()}.`;
+        }
+        const { version } = await renameDocument(target.id, input.name, author);
+        return `Saved version ${version} titled ${input.name.trim()}: ${url(target.id)}`;
       }),
   );
 
@@ -363,7 +416,7 @@ function mcpServer(principal: Principal, origin: string): McpServer {
   return server;
 }
 
-async function shareTarget(id?: string, path?: string) {
+async function targetOf(id?: string, path?: string) {
   if (id) {
     await getDocument(id);
     return { kind: "document" as const, id };
