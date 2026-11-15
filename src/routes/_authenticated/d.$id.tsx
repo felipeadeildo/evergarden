@@ -26,6 +26,8 @@ export const Route = createFileRoute("/_authenticated/d/$id")({
   validateSearch: z.object({ v: z.int().positive().optional(), c: z.string().optional() }),
   loaderDeps: ({ search }) => ({ version: search.v }),
   loader: ({ params, deps }) => getDocumentPage({ data: { id: params.id, version: deps.version } }),
+  // Opening a comment only changes `?c=`; the document reloads when it is opened again.
+  shouldReload: ({ cause }) => cause !== "stay",
   head: ({ loaderData }) => ({
     meta: [{ title: loaderData ? `${loaderData.document.title}, evergarden` : "evergarden" }],
     links: loaderData?.body.features.math ? [{ rel: "stylesheet", href: katexCss }] : [],

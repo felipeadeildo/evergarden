@@ -5,8 +5,13 @@ import { getViewer } from "#/functions/session.functions";
 import { authClient } from "#/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: async ({ location }) => {
-    const viewer = await getViewer();
+  // Every navigation runs this, so the answer is kept for a few minutes instead of asked again.
+  beforeLoad: async ({ location, context }) => {
+    const viewer = await context.queryClient.fetchQuery({
+      queryKey: ["viewer"],
+      queryFn: () => getViewer(),
+      staleTime: 5 * 60_000,
+    });
     if (!viewer) throw redirect({ to: "/sign-in", search: { next: location.href } });
     return { viewer };
   },

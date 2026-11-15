@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { type SubmitEvent, useEffect, useRef, useState } from "react";
 
@@ -8,6 +9,7 @@ import { textField } from "#/lib/form";
 /** Who is signed in, with the name that signs their comments, which they can change here. */
 export function Account({ name, email }: { name: string; email: string }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const field = useRef<HTMLInputElement>(null);
@@ -22,6 +24,7 @@ export function Account({ name, email }: { name: string; email: string }) {
       await renameMe({ data: { name: textField(new FormData(event.currentTarget), "name") } });
       setEditing(false);
       setError(null);
+      await queryClient.invalidateQueries({ queryKey: ["viewer"] });
       await router.invalidate();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "The name was not saved.");
