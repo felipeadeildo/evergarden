@@ -52,12 +52,16 @@ There are no passwords and no GitHub or Google sign-in. You type your email on `
 1. Your domain must use Cloudflare DNS. In the dashboard, open **Compute > Email Service > Email Sending**, onboard the domain, and let Cloudflare add the DNS records it asks for.
 2. Set `EMAIL_FROM` to an address on that domain, such as `evergarden@example.com`.
 3. Choose how the codes are paid for:
-   - **Workers Free.** Email Sending can deliver only to verified destination addresses. Under **Email Service > Email Routing > Destination addresses**, add `OWNER_EMAIL` and click the link Cloudflare sends. Codes to a verified address are free and do not count toward any quota.
+   - **Workers Free.** Email can go only to verified destination addresses, and only from a domain with Email Routing turned on. Turn on Email Routing for the domain, then under **Email Routing > Destination addresses** add `OWNER_EMAIL` and click the link Cloudflare sends. Codes to a verified address are free and do not count toward any quota. Email Routing replaces the domain's MX records, so if the domain already receives mail elsewhere, send from a subdomain such as `mail.example.com` instead.
    - **Workers Paid.** Codes can go to any address, which guests will need once share links exist. The plan includes 3,000 emails a month; more cost $0.35 per thousand.
 
 Email Sending has been in public beta since April 2026, and new accounts start with a low daily quota that grows over time. If a code does not arrive, check the spam folder first; the Worker logs a failed send as `Sign-in code not sent:` with Cloudflare's error code.
 
 In `bun run dev` nothing is sent: the terminal prints `[evergarden] sign-in code for …`, and the simulated email is saved under `.wrangler/tmp/email/`.
+
+## The instance's address
+
+An instance answers only on a custom domain: `wrangler.jsonc` turns off the `*.workers.dev` address and preview URLs, because sign-in accepts one address, the one in `BETTER_AUTH_URL`. Add the domain under **Workers & Pages > evergarden > Settings > Domains & Routes**, then set `BETTER_AUTH_URL` to it. Email sign-in already needs a domain on Cloudflare, so the same one works.
 
 ## What a deploy changes, and what it leaves alone
 
