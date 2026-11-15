@@ -99,6 +99,20 @@ export const version = sqliteTable(
   (table) => [uniqueIndex("version_document_number_idx").on(table.documentId, table.number)],
 );
 
+/** The next version of a document, which an agent edits in place before publishing it. */
+export const draft = sqliteTable("draft", {
+  documentId: text("document_id")
+    .primaryKey()
+    .references(() => document.id, { onDelete: "cascade" }),
+  baseVersion: integer("base_version").notNull(),
+  markdown: text("markdown").notNull(),
+  edits: integer("edits").notNull(),
+  authorKind: text("author_kind").$type<AuthorKind>().notNull(),
+  authorId: text("author_id").notNull(),
+  authorName: text("author_name").notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+});
+
 export const comment = sqliteTable(
   "comment",
   {

@@ -103,7 +103,7 @@ function liveDocuments(where?: SQL) {
     .where(and(isNull(document.deletedAt), where));
 }
 
-function checkContent(content: string): string {
+export function checkContent(content: string): string {
   if (!content.trim()) throw new EvergardenError("invalid", "The content is empty.");
   if (new TextEncoder().encode(content).length > MAX_CONTENT_BYTES) {
     throw new EvergardenError("invalid", `Documents are at most ${MAX_CONTENT_BYTES / 1024} KB.`);
