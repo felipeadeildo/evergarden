@@ -1,3 +1,4 @@
+import { waitUntil } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
 import type { JWTPayload } from "jose";
 
@@ -22,7 +23,7 @@ export async function principalFrom(headers: Headers): Promise<Principal | null>
       throw new EvergardenError("unauthorized", "The API key is invalid, expired or revoked.");
     }
     const found = await agentForKey(result.key.id, result.key.referenceId, result.key.name);
-    await touchAgent(found.id);
+    waitUntil(touchAgent(found.id));
     return { kind: "agent", agentId: found.id, name: found.name };
   }
 
@@ -41,15 +42,17 @@ export async function principalFromToken(claims: JWTPayload): Promise<Principal>
   if (!userId || typeof clientId !== "string") {
     throw new EvergardenError("unauthorized", "The access token names no user or client.");
   }
-  const owner = await db.select({ email: user.email }).from(user).where(eq(user.id, userId)).get();
+  const [owner, found] = await Promise.all([
+    db.select({ email: user.email }).from(user).where(eq(user.id, userId)).get(),
+    agentForClient(userId, clientId),
+  ]);
   if (!owner || !isOwner(owner.email)) {
     throw new EvergardenError("forbidden", "This library is private.");
   }
-  const found = await agentForClient(userId, clientId);
   if (!found) {
     throw new EvergardenError("unauthorized", "This agent was disconnected. Sign in again.");
   }
-  await touchAgent(found.id);
+  waitUntil(touchAgent(found.id));
   return { kind: "agent", agentId: found.id, name: found.name };
 }
 

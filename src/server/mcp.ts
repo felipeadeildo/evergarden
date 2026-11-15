@@ -120,8 +120,7 @@ function mcpServer(principal: Principal, origin: string): McpServer {
     },
     ({ id, version }) =>
       run(async () => {
-        const result = await read(id, version);
-        const open = await openCount(id);
+        const [result, open] = await Promise.all([read(id, version), openCount(id)]);
         const comments = open
           ? `, ${open} open comment${open === 1 ? "" : "s"} (call open_comments)`
           : "";
