@@ -21,7 +21,7 @@ Callouts are GitHub alerts: `> [!NOTE]`, `TIP`, `IMPORTANT`, `WARNING` or `CAUTI
 
 Math uses KaTeX: `$x^2$` or `$$x^2$$` inline, and `$$` on lines of their own around a block. Prices need no escaping: a `$` followed by a space, or one right before a digit, never closes math, so "$5 and $10" stays text.
 
-Code is highlighted in about 80 languages; name the language after the opening fence.
+Code is highlighted in about 80 languages, PromQL among them; name the language after the opening fence (`ts`, `sql`, `promql`).
 
 ## Links to other documents
 
