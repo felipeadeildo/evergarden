@@ -1501,20 +1501,28 @@
   }
 
   .prose .contains-task-list {
-    padding-left: 0.2em;
+    padding-left: 0;
     list-style: none;
+  }
+
+  /* The box hangs to the left, so wrapped lines align with the first. */
+  .prose .task-list-item {
+    position: relative;
+    padding-left: 1.6em;
   }
 
   .prose .task-list-item input {
     appearance: none;
-    display: inline-grid;
+    position: absolute;
+    top: 0.36em;
+    left: 0.1em;
+    display: grid;
     place-content: center;
     width: 0.9em;
     height: 0.9em;
-    margin: 0 0.6em 0 0;
+    margin: 0;
     border: 1.5px solid var(--ink-soft);
     border-radius: 3px;
-    vertical-align: -0.08em;
   }
 
   .prose .task-list-item input:checked {
@@ -1537,10 +1545,16 @@
   }
 
   .prose :not(pre) > code {
-    padding: 0.06em 0.32em;
+    padding: 0.06em 0.2em;
     border-radius: 4px;
     background: var(--sheet);
     font-size: 0.84em;
+  }
+
+  /* Inside a commented passage the highlight carries the colour, so the box gives way to it. */
+  .prose :not(pre) > code[data-marked] {
+    padding-inline: 0;
+    background: none;
   }
 
   .prose blockquote {
@@ -2019,16 +2033,17 @@
 
 /* Comments: see components/comments */
 
+/* Pixel offsets keep the underline on one line across inline code, which is set smaller. */
 ::highlight(comment) {
   background-color: color-mix(in srgb, var(--emerald) 11%, transparent);
   text-decoration: underline 1.5px color-mix(in srgb, var(--emerald) 55%, transparent);
-  text-underline-offset: 0.24em;
+  text-underline-offset: 5px;
 }
 
 ::highlight(comment-active) {
   background-color: color-mix(in srgb, var(--emerald) 24%, transparent);
   text-decoration: underline 2px var(--emerald);
-  text-underline-offset: 0.24em;
+  text-underline-offset: 5px;
 }
 
 @layer components {

@@ -195,11 +195,26 @@ function useHighlights(
       "comment-active",
       new Highlight(...marked.filter(([id]) => strong.has(id)).map(([, range]) => range)),
     );
+    // A highlight paints only over text, so inline code drops its own box inside one.
+    const codes = marked.flatMap(([, range]) => inlineCodeIn(range));
+    for (const code of codes) code.dataset.marked = "";
     return () => {
       CSS.highlights.delete("comment");
       CSS.highlights.delete("comment-active");
+      for (const code of codes) delete code.dataset.marked;
     };
   }, [ranges, active, hovered]);
+}
+
+function inlineCodeIn(range: Range): HTMLElement[] {
+  const scope = range.commonAncestorContainer;
+  const root = scope instanceof Element ? scope : scope.parentElement;
+  if (!root) return [];
+  const inside = root.closest(":not(pre) > code");
+  if (inside instanceof HTMLElement) return [inside];
+  return [...root.querySelectorAll<HTMLElement>(":not(pre) > code")].filter((code) =>
+    range.intersectsNode(code),
+  );
 }
 
 function useClickToOpen(
