@@ -1819,6 +1819,20 @@
     border-color: var(--prussian);
   }
 
+  /* With no files yet, only a quiet way to attach some. */
+  .file-list[data-empty]:not([data-over]) {
+    padding: 0;
+    background: none;
+  }
+
+  .file-list[data-empty] .file-attach {
+    margin-top: 0;
+  }
+
+  .file-list[data-empty]:not([data-over]) .file-attach > span {
+    display: none;
+  }
+
   .file-list h2 {
     margin: 0 0 0.5rem;
     font-size: 1rem;

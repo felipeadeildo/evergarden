@@ -90,9 +90,12 @@ export function FileList({ editable }: { editable: boolean }) {
       ref={dropZone}
       aria-labelledby="files-heading"
       className="file-list"
+      data-empty={files.byName.size === 0 || undefined}
       data-over={dropping || undefined}
     >
-      <h2 id="files-heading">Files</h2>
+      <h2 id="files-heading" className={files.byName.size === 0 ? "sr-only" : undefined}>
+        Files
+      </h2>
       {files.byName.size > 0 ? (
         <ul>
           {[...files.byName.values()].map((file) => (
@@ -122,6 +125,7 @@ export function FileList({ editable }: { editable: boolean }) {
             type="button"
             className="quiet-button"
             disabled={upload.pending}
+            title={`Up to ${formatSize(MAX_FILE_BYTES)} each; use them in the text by name`}
             onClick={() => input.current?.click()}
           >
             <AttachIcon />
