@@ -13,6 +13,20 @@ function Byline({ name, date }: { name: string; date: Date }) {
   );
 }
 
+/** The passage a thread is on, as the reader saw it, cut to two lines. */
+export function Passage({ thread }: { thread: Thread }) {
+  const starts = thread.passage.map((_, i) =>
+    thread.passage.slice(0, i).reduce((sum, piece) => sum + piece.text.length, 0),
+  );
+  return (
+    <blockquote className="note-passage">
+      {thread.passage.map((piece, i) =>
+        piece.code ? <code key={starts[i]}>{piece.text}</code> : piece.text,
+      )}
+    </blockquote>
+  );
+}
+
 /** A thread folded to its first line, as it sits in the margin until it is opened. */
 export function FoldedThread({
   thread,

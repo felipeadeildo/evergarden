@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { Manicule } from "#/components/ui/wordmark";
 
-import { DRAFT, SELECTION, ThreadActions, useComments } from "./comments";
+import { DRAFT, OtherComments, SELECTION, ThreadActions, useComments } from "./comments";
 import { sourcePosition } from "./dom";
 import { BLOCKS, FIGURES, lineOf, pinArea } from "./places";
 import { Composer, FoldedThread } from "./thread";
@@ -97,6 +97,13 @@ export function CommentsMargin() {
       );
 
       // The Comment button sits in the gutter beside the selection or the block under the pointer.
+      // The other comments sit level with the document's byline, as more of its details.
+      const other = container.querySelector<HTMLElement>(".other-comments");
+      const byline = root.current?.closest("main")?.querySelector(".page-header .byline");
+      if (other && byline) {
+        other.style.top = `${byline.getBoundingClientRect().top - origin.top}px`;
+      }
+
       const button = gutterButton.current;
       const beside = ranges().get(SELECTION)?.getClientRects()[0] ?? block?.getBoundingClientRect();
       if (button && beside) {
@@ -120,6 +127,7 @@ export function CommentsMargin() {
       <svg className="comments-leader" aria-hidden focusable={false}>
         <path ref={leader} />
       </svg>
+      <OtherComments />
       {(selection || block) && !draft ? (
         <button
           ref={gutterButton}

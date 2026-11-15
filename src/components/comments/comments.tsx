@@ -5,19 +5,20 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useId,
   useMemo,
   useState,
   useSyncExternalStore,
 } from "react";
 
 import type { Range as SourceRange } from "#/anchor";
-import { BackIcon, ForwardIcon } from "#/components/ui/icons";
+import { BackIcon, CommentIcon, ForwardIcon, OpenMenuIcon } from "#/components/ui/icons";
 import { Sheet } from "#/components/ui/sheet";
 import { Manicule } from "#/components/ui/wordmark";
 
 import { domRange, selectedSource } from "./dom";
 import { type Place, placeOf, scrollToPlace } from "./places";
-import { Composer, OpenThread } from "./thread";
+import { Composer, OpenThread, Passage } from "./thread";
 import { type Target, type Thread, useThreads } from "./use-threads";
 
 /** Keys for the two passages that are not threads yet, in `ranges()`. */
@@ -482,41 +483,84 @@ export function ThreadActions({ thread }: { thread: Thread }) {
 }
 
 /** Threads that left the margin: their passage was rewritten, or they were resolved. */
-export function CommentsEnd() {
+function useOtherThreads(): { detached: Thread[]; resolved: Thread[] } {
   const { threads, open } = useComments();
-  const shown = new Set(open.map((thread) => thread.id));
-  const detached = threads.filter(
-    (thread) => thread.status !== "resolved" && !shown.has(thread.id),
+  return useMemo(() => {
+    const shown = new Set(open.map((thread) => thread.id));
+    return {
+      detached: threads.filter((thread) => thread.status !== "resolved" && !shown.has(thread.id)),
+      resolved: threads.filter((thread) => thread.status === "resolved"),
+    };
+  }, [threads, open]);
+}
+
+/** On a wide screen, the other threads open from the top of the margin. */
+export function OtherComments() {
+  const { detached, resolved } = useOtherThreads();
+  const menuId = useId();
+  if (detached.length === 0 && resolved.length === 0) return null;
+  const label = [
+    detached.length > 0 ? `${detached.length} on changed text` : null,
+    resolved.length > 0 ? `${resolved.length} resolved` : null,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  return (
+    <div className="other-comments">
+      <button type="button" className="byline-button" popoverTarget={menuId}>
+        <CommentIcon />
+        {label}
+        <OpenMenuIcon className="byline-caret" />
+      </button>
+      <div id={menuId} popover="auto" className="popover menu other-comments-menu">
+        {detached.length > 0 ? (
+          <section aria-label="Comments on text that changed">
+            <h2 className="menu-title">On text that changed</h2>
+            <OtherThreadList threads={detached} />
+          </section>
+        ) : null}
+        {resolved.length > 0 ? (
+          <section aria-label="Resolved comments">
+            <h2 className="menu-title">Resolved</h2>
+            <OtherThreadList threads={resolved} />
+          </section>
+        ) : null}
+      </div>
+    </div>
   );
-  const resolved = threads.filter((thread) => thread.status === "resolved");
+}
+
+/** On a phone, the other threads follow the text. */
+export function CommentsEnd() {
+  const { detached, resolved } = useOtherThreads();
   if (detached.length === 0 && resolved.length === 0) return null;
   return (
     <section className="comments-end" aria-label="Other comments">
       {detached.length > 0 ? (
         <details open>
           <summary>Comments on text that changed ({detached.length})</summary>
-          {detached.map((thread) => (
-            <EndThread key={thread.id} thread={thread} />
-          ))}
+          <OtherThreadList threads={detached} />
         </details>
       ) : null}
       {resolved.length > 0 ? (
         <details>
           <summary>Resolved ({resolved.length})</summary>
-          {resolved.map((thread) => (
-            <EndThread key={thread.id} thread={thread} />
-          ))}
+          <OtherThreadList threads={resolved} />
         </details>
       ) : null}
     </section>
   );
 }
 
-function EndThread({ thread }: { thread: Thread }) {
+function OtherThreadList({ threads }: { threads: Thread[] }) {
   return (
-    <div className="comments-end-thread">
-      <blockquote>{thread.anchor.exact}</blockquote>
-      <ThreadActions thread={thread} />
-    </div>
+    <ol className="other-threads">
+      {threads.map((thread) => (
+        <li key={thread.id}>
+          <Passage thread={thread} />
+          <ThreadActions thread={thread} />
+        </li>
+      ))}
+    </ol>
   );
 }

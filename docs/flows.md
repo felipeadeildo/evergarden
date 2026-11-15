@@ -80,7 +80,7 @@ On a phone, selecting text brings a bar to the bottom of the screen, clear of th
 
 ### Replies and resolving
 
-Anyone who can comment can reply in a thread. **Resolve** closes it and takes it out of the margin; "3 resolved" at the end of the margin shows them again. `J` and `K` move to the next and previous comment, and `Esc` closes the open one.
+Anyone who can comment can reply in a thread. **Resolve** closes it and takes it out of the margin. "3 resolved", in the margin beside the document's byline, shows them again. On a phone they follow the text. `J` and `K` move to the next and previous comment, and `Esc` closes the open one.
 
 ## The agent works through the comments
 
@@ -118,7 +118,7 @@ The agent then:
 
 `update(id: "k7q2mxa9pt", content: "…")` saves version 2. Publishing the same content twice returns the existing version, so an agent that retries after a timeout does no harm. If someone else saved a version in between (for example, you accepted a suggestion), the agent can pass `base_version` and the call fails instead of overwriting; it then reads and tries again.
 
-evergarden then looks for each open comment's passage in the new text, and finds it even when the paragraph moved. When the agent rewrote the passage beyond recognition, the comment moves to "Comments on text that changed" at the end of the document, quoting the old text, so you still see it.
+evergarden then looks for each open comment's passage in the new text, and finds it even when the paragraph moved. When the agent rewrote the passage beyond recognition, the comment moves next to the resolved ones, as "1 on changed text", quoting the old text, so you still see it.
 
 ## Older versions stay out of the way
 
