@@ -19,3 +19,9 @@ export const ownerAccess = createMiddleware({ type: "function" }).server(async (
   }
   return next({ context: { owner: principal } });
 });
+
+/** Whoever is signed in, or no one: for pages that a share link can open. */
+export const sessionAccess = createMiddleware({ type: "function" }).server(async ({ next }) => {
+  const principal = await principalFrom(getRequestHeaders());
+  return next({ context: { principal } });
+});

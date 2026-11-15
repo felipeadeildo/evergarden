@@ -7,27 +7,34 @@ import {
   acceptSuggestion,
   addComment,
   addReply,
+  commentDocument,
   reopen,
   resolve,
   threads,
 } from "#/server/comments";
+import { guestAccess } from "#/server/shares";
 
-import { libraryAccess } from "./middleware";
+import { libraryAccess, sessionAccess } from "./middleware";
+
+// Guests reach comments through a share link and send its token; the owner and agents need none.
+const token = z.string().max(64).optional();
 
 export const getThreads = createServerFn({ method: "GET" })
-  .middleware([libraryAccess])
-  .validator(z.object({ documentId: z.string() }))
-  .handler(({ data }) => {
+  .middleware([sessionAccess])
+  .validator(z.object({ documentId: z.string(), token }))
+  .handler(async ({ data, context: { principal } }) => {
     setResponseHeader("cache-control", "private, no-store");
+    await guestAccess(principal, data.token, data.documentId, "comment");
     return threads(data.documentId);
   });
 
 export const postComment = createServerFn({ method: "POST" })
-  .middleware([libraryAccess])
+  .middleware([sessionAccess])
   .validator(
     z.intersection(
       z.object({
         documentId: z.string(),
+        token,
         version: z.int().positive(),
         start: z.int().nonnegative(),
         end: z.int().positive(),
@@ -44,16 +51,18 @@ export const postComment = createServerFn({ method: "POST" })
       ]),
     ),
   )
-  .handler(({ data: { documentId, ...input }, context: { principal } }) =>
-    addComment(documentId, input, authorOf(principal)),
-  );
+  .handler(async ({ data: { documentId, token: link, ...input }, context: { principal } }) => {
+    await guestAccess(principal, link, documentId, "comment");
+    return addComment(documentId, input, authorOf(principal!));
+  });
 
 export const postReply = createServerFn({ method: "POST" })
-  .middleware([libraryAccess])
-  .validator(z.object({ commentId: z.string(), body: z.string().max(10_000) }))
-  .handler(({ data, context: { principal } }) =>
-    addReply(data.commentId, data.body, authorOf(principal)),
-  );
+  .middleware([sessionAccess])
+  .validator(z.object({ commentId: z.string(), body: z.string().max(10_000), token }))
+  .handler(async ({ data, context: { principal } }) => {
+    await guestAccess(principal, data.token, await commentDocument(data.commentId), "comment");
+    return addReply(data.commentId, data.body, authorOf(principal!));
+  });
 
 export const setThreadState = createServerFn({ method: "POST" })
   .middleware([libraryAccess])
