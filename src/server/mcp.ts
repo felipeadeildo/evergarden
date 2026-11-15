@@ -12,7 +12,7 @@ import {
   resolve,
 } from "#/server/comments";
 import { EvergardenError } from "#/server/errors";
-import { SYNTAX_GUIDE } from "#/server/guide";
+import guide from "#/server/guide.md?raw";
 import {
   type DocumentEntry,
   type FolderEntry,
@@ -54,7 +54,7 @@ function mcpServer(principal: Principal, origin: string): McpServer {
         "Returns the markdown evergarden renders and how your user wants documents written.",
       annotations: { readOnlyHint: true },
     },
-    () => text(SYNTAX_GUIDE),
+    () => text(guide),
   );
 
   server.registerTool(
