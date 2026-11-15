@@ -1,14 +1,22 @@
 import type { ReactNode } from "react";
 
 /** Every library page uses this frame, so moving between pages never shifts the text column. */
-export function Page({ aside, children }: { aside?: ReactNode; children: ReactNode }) {
+export function Page({
+  aside,
+  margin,
+  children,
+}: {
+  aside?: ReactNode;
+  margin?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <div className="page">
       <aside className="page-aside">{aside}</aside>
       <main id="main" className="page-main">
         {children}
       </main>
-      <div className="page-margin" aria-hidden="true" />
+      <div className="page-margin">{margin}</div>
     </div>
   );
 }

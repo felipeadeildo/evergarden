@@ -5,6 +5,7 @@ import { BookmarkSimpleIcon } from "@phosphor-icons/react/dist/ssr/BookmarkSimpl
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { CaretLeftIcon } from "@phosphor-icons/react/dist/ssr/CaretLeft";
 import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr/CaretRight";
+import { ChatCircleTextIcon } from "@phosphor-icons/react/dist/ssr/ChatCircleText";
 import { CheckIcon as PhosphorCheck } from "@phosphor-icons/react/dist/ssr/Check";
 import { ClockCounterClockwiseIcon } from "@phosphor-icons/react/dist/ssr/ClockCounterClockwise";
 import { CopyIcon as PhosphorCopy } from "@phosphor-icons/react/dist/ssr/Copy";
@@ -58,6 +59,7 @@ export const ZoomInIcon = icon(PlusIcon);
 export const ZoomOutIcon = icon(MinusIcon);
 export const FitIcon = icon(ArrowsInIcon);
 export const OpenMenuIcon = icon(CaretDownIcon);
+export const CommentIcon = icon(ChatCircleTextIcon);
 export const PersonIcon = icon(UserIcon);
 export const ServerIcon = icon(PlugsConnectedIcon);
 export const AddIcon = icon(PlusIcon);

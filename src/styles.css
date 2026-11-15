@@ -1967,3 +1967,257 @@
     white-space: nowrap;
   }
 }
+
+/* Comments: see components/comments */
+
+::highlight(comment) {
+  background-color: color-mix(in srgb, var(--emerald) 12%, transparent);
+  text-decoration: underline 1.5px color-mix(in srgb, var(--emerald) 70%, transparent);
+  text-underline-offset: 0.22em;
+}
+
+::highlight(comment-active) {
+  background-color: color-mix(in srgb, var(--emerald) 26%, transparent);
+  text-decoration: underline 2px var(--emerald);
+  text-underline-offset: 0.22em;
+}
+
+@layer components {
+  .button-small {
+    min-height: 2rem;
+    padding: 0.3rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .page-margin {
+    position: relative;
+  }
+
+  .comments-margin {
+    position: relative;
+    height: 100%;
+  }
+
+  .comments-margin-item {
+    position: absolute;
+    left: 0;
+    right: 0;
+    max-width: 20rem;
+    visibility: hidden;
+    transition: top 180ms var(--ease);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .comments-margin-item {
+      transition: none;
+    }
+  }
+
+  .note {
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: var(--ink);
+  }
+
+  .note-folded {
+    width: 100%;
+    padding: 0.15rem 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 0.92rem;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .note-line {
+    overflow: hidden;
+    font-style: italic;
+    color: var(--emerald);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .note-folded:hover .note-line {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .note-open {
+    padding: 0.8rem 0.9rem 0.7rem;
+    border-left: 2px solid var(--emerald);
+    border-radius: 0 8px 8px 0;
+    background: var(--sheet);
+  }
+
+  .note-body {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .note-byline {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+
+  .note-reply {
+    display: grid;
+    gap: 0.2rem;
+    margin-top: 0.35rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .note-suggestion {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0.2rem 0;
+    padding: 0.5rem 0.6rem;
+    border-radius: 6px;
+    background: var(--paper);
+    font-size: 0.88rem;
+  }
+
+  .note-suggestion-label {
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+  }
+
+  .note-suggestion del {
+    color: var(--alizarin);
+  }
+
+  .note-suggestion ins {
+    color: var(--emerald);
+    text-decoration: none;
+  }
+
+  .note textarea {
+    width: 100%;
+    min-height: 2.4rem;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--paper);
+    color: var(--ink);
+    font: inherit;
+    resize: vertical;
+    field-sizing: content;
+  }
+
+  .note textarea:focus-visible {
+    outline: 2px solid var(--prussian);
+    outline-offset: 1px;
+  }
+
+  .note-form {
+    margin-top: 0.4rem;
+  }
+
+  .note-toggle {
+    justify-self: start;
+    margin-left: -0.4rem;
+    font-size: 0.82rem;
+  }
+
+  .note-field {
+    display: grid;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+
+  .note-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    margin-left: -0.4rem;
+  }
+
+  .note-primary {
+    margin-left: auto;
+  }
+
+  .note-actions .quiet-button {
+    font-size: 0.82rem;
+  }
+
+  .selection-action {
+    position: fixed;
+    z-index: 30;
+    translate: -50% 0;
+  }
+
+  .selection-action .button {
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 18%, transparent);
+  }
+
+  .selection-bar {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 30;
+    display: flex;
+    justify-content: center;
+    padding: 0.6rem max(1rem, env(safe-area-inset-right)) max(0.8rem, env(safe-area-inset-bottom))
+      max(1rem, env(safe-area-inset-left));
+    border-top: 1px solid var(--rule);
+    background: var(--sheet);
+  }
+
+  .selection-bar .button {
+    width: 100%;
+    min-height: 2.75rem;
+  }
+
+  .comments-sheet::backdrop {
+    background: color-mix(in srgb, var(--ink) 12%, transparent);
+  }
+
+  .comments-sheet .note-open {
+    border-left: 0;
+    border-radius: 0;
+    padding: 0.4rem 0 0;
+    background: none;
+  }
+
+  .sheet-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+
+  .comments-end {
+    display: grid;
+    gap: 1rem;
+    margin-top: 3rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .comments-end summary {
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+
+  .comments-end-quote {
+    display: grid;
+    gap: 0.6rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .comments-end-quote > p {
+    margin: 0;
+    padding-left: 0.8rem;
+    border-left: 2px solid var(--rule);
+    font-style: italic;
+    color: var(--ink-soft);
+  }
+}
