@@ -288,6 +288,18 @@
     }
   }
 
+  /* On the narrowest phones the hand alone stands for evergarden, leaving room for the buttons. */
+  @media (max-width: 480px) {
+    .top-bar .wordmark-name {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
   .field {
     display: grid;
     gap: 0.3rem;
@@ -522,6 +534,41 @@
     margin: 0.7rem 0 0;
   }
 
+  /* Who wrote the document on the left, ways to take it out on the right. */
+  .document-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    column-gap: 1rem;
+  }
+
+  .export-tools {
+    display: flex;
+    gap: 0.1rem;
+    margin-top: 0.7rem;
+  }
+
+  .export-tools button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.45rem;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .export-tools button:hover,
+  .export-tools button:focus-visible {
+    background: var(--sheet);
+    color: var(--ink);
+  }
+
   .byline-button {
     display: inline-flex;
     align-items: center;
@@ -734,14 +781,6 @@
     min-width: 17rem;
     max-width: calc(100vw - 1.5rem);
     margin-inline-start: calc(0.45rem - 0.4rem - 0.55rem - 1px);
-  }
-
-  .export-menu {
-    width: min(15rem, calc(100vw - 1.5rem));
-  }
-
-  .export-menu .menu-item {
-    grid-template-columns: 1.15em minmax(0, 1fr);
   }
 
   .versions-menu .menu-item {
@@ -1406,8 +1445,8 @@
   }
 
   /* The Share button names the policy in force; shared pages show it in emerald. */
-  .share-button[data-shared="link"],
-  .share-button[data-shared="people"] {
+  .access-button[data-shared="link"],
+  .access-button[data-shared="people"] {
     color: var(--emerald);
   }
 
@@ -1476,39 +1515,39 @@
   /* Share */
 
   /* One column as wide as the sheet: a long address scrolls inside its line, not the sheet. */
-  .share-form {
+  .access-form {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 1.1rem;
   }
 
-  .share-form .choice {
+  .access-form .choice {
     min-inline-size: 0;
   }
 
   @media (max-width: 420px) {
-    .share-form .segmented label {
+    .access-form .segmented label {
       padding-inline: 0.5rem;
     }
   }
 
-  .share-form h2 {
+  .access-form h2 {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 600;
   }
 
-  .share-form .segmented {
+  .access-form .segmented {
     margin: 0;
   }
 
-  .share-note {
+  .access-note {
     margin: 0;
     font-size: 0.9rem;
     color: var(--ink-soft);
   }
 
-  .share-actions {
+  .access-actions {
     display: flex;
     justify-content: flex-end;
     gap: 0.6rem;
@@ -1657,6 +1696,7 @@
 @layer components {
   .prose {
     font-size: 1rem;
+    overflow-wrap: break-word;
   }
 
   .prose > :first-child {
@@ -2079,6 +2119,8 @@
 
   .prose .flow li {
     position: relative;
+    max-width: 100%;
+    overflow-wrap: anywhere;
     padding: 0.2rem 0.7rem;
     border: 1px solid var(--rule);
     border-radius: 6px;
@@ -2329,6 +2371,11 @@
 
   .prose .task-list-item:has(input:checked) {
     color: var(--ink-soft);
+  }
+
+  /* Identifiers and URLs are single words; let them break so tables and narrow screens fit. */
+  .prose :is(:not(pre) > code, a) {
+    overflow-wrap: anywhere;
   }
 
   .prose :not(pre) > code {
@@ -3322,7 +3369,8 @@ figure[data-pinning]::after {
   .heading-link,
   .code-copy,
   .diagram-expand,
-  .byline-caret {
+  .byline-caret,
+  .export-tools {
     display: none;
   }
 

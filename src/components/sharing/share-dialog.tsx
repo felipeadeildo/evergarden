@@ -43,7 +43,7 @@ export function ShareButton({
     <>
       <button
         type="button"
-        className="quiet-button share-button"
+        className="quiet-button access-button"
         data-shared={kindOf(shown)}
         title={sentence(shown)}
         onClick={() => setOpen(true)}
@@ -51,7 +51,7 @@ export function ShareButton({
         <Icon />
         <span className="label">{shortLabel(shown)}</span>
       </button>
-      <Sheet open={open} onClose={() => setOpen(false)} label="Share" className="share-sheet">
+      <Sheet open={open} onClose={() => setOpen(false)} label="Share" className="access-sheet">
         <ShareSettingsForm
           subject={subject}
           state={state}
@@ -154,10 +154,10 @@ function ShareSettingsForm({
         };
 
   return (
-    <div className="share-form">
-      <h2 className="share-title">Share</h2>
+    <div className="access-form">
+      <h2 className="access-title">Share</h2>
       {inherited ? (
-        <p className="share-note">
+        <p className="access-note">
           Through the folder <strong>{inherited.through.name}</strong>: {sentence(inherited)}
         </p>
       ) : null}
@@ -220,7 +220,7 @@ function ShareSettingsForm({
         <code>{url}</code>
         <CopyButton text={url} label="Copy link" iconOnly />
       </div>
-      <p className="share-note" aria-live="polite">
+      <p className="access-note" aria-live="polite">
         {draft.who === "people" && draft.people.length === 0
           ? "Add an email or an @domain to share."
           : sentence(shown)}
@@ -233,7 +233,7 @@ function ShareSettingsForm({
           {save.error.message}
         </p>
       ) : null}
-      <div className="share-actions">
+      <div className="access-actions">
         <button type="button" className="button" onClick={onDone}>
           Done
         </button>
