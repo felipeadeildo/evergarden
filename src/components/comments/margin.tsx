@@ -77,11 +77,11 @@ export function CommentsMargin() {
 
       const textEdge = (root.current?.getBoundingClientRect().right ?? origin.left) - origin.left;
       const target = placed[pivot];
-      const rects = target
-        ? found.get(target.note.dataset.note ?? "")?.getClientRects()
-        : undefined;
-      // A passage that wraps runs to the end of its first line, so the leader can start at it.
-      const from = rects && rects.length > 1 ? rects[0]!.right - origin.left : textEdge;
+      const from =
+        leaderStart(
+          target ? found.get(target.note.dataset.note ?? "") : undefined,
+          textEdge + origin.left,
+        ) - origin.left;
       drawLeader(
         leader.current,
         target && target.note.dataset.note === focused
@@ -159,6 +159,21 @@ export function CommentsMargin() {
       ))}
     </div>
   );
+}
+
+/**
+ * Where the leader leaves the text. A passage that wraps runs to the end of its first line, so
+ * the leader starts there; one that ends mid-line starts at the column's edge, clear of the text
+ * after it. A line splits into several boxes around links and bold, so its end is the box that
+ * reaches furthest right on the passage's first line.
+ */
+function leaderStart(range: Range | undefined, columnEdge: number): number {
+  const rects = [...(range?.getClientRects() ?? [])];
+  const first = rects[0];
+  if (!first) return columnEdge;
+  const firstLine = rects.filter((rect) => Math.abs(rect.top - first.top) < 2);
+  if (firstLine.length === rects.length) return columnEdge;
+  return Math.max(...firstLine.map((rect) => rect.right));
 }
 
 function gapAfter(placed: { line: number }[], i: number): number {
