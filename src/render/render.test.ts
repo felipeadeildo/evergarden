@@ -254,3 +254,20 @@ describe("directives and figures", () => {
     expect(headings.map((heading) => heading.text)).toEqual(["Real"]);
   });
 });
+
+describe("promql", () => {
+  it("tells metrics, labels, functions and comments apart", async () => {
+    const out = await renderHtml(
+      '```promql\n# share used\nsum by (zone) (rate(hedy_bytes{service_name="hedy"}[5m])) / 1e11\n```',
+    );
+    expect(out).toContain('data-language="promql"');
+    expect(out).toContain('<span class="th-token th-comment"># share used</span>');
+    expect(out).toContain('<span class="th-token th-function">sum</span>');
+    expect(out).toContain('<span class="th-token th-keyword">by</span>');
+    expect(out).toContain('<span class="th-token th-function">rate</span>');
+    expect(out).toContain('<span class="th-token th-property">service_name</span>');
+    expect(out).toContain('<span class="th-token th-string">"hedy"</span>');
+    expect(out).toContain('<span class="th-token th-number">[5m]</span>');
+    expect(out).toContain('<span class="th-token th-number">1e11</span>');
+  });
+});
