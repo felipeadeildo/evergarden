@@ -24,7 +24,9 @@ heading is shown as the page title and not repeated in the body.
   digit, never closes math, so "$5 and $10" stays text.
 - Diagrams in a \`\`\`mermaid code block, in Mermaid syntax: flowcharts, sequence, state, class,
   ER, gantt, timeline, mindmap, xychart, sankey, architecture, tree view and the rest. They adapt
-  to narrow screens, so prefer them to ASCII drawings.
+  to narrow screens, so prefer them to ASCII drawings. In Mermaid a \`;\` ends a statement, so a
+  message or label that needs a pause takes a comma: "version 2, with your comment" draws, and
+  "version 2; your comment" fails to parse.
 - Highlighted code in about 80 languages; name the language after the opening fence.
 
 Raw HTML is sanitised: no scripts, styles or event handlers.
