@@ -317,19 +317,43 @@ function lines(nodes: ElementContent[]): ElementContent[][] {
 }
 
 /** `**860** shipped` or `12,400 /docs`: the figure first, then what it counts. */
+// Units that belong to the number before them: "16,5 h", "800 ms", "14.7 TB", "7,51 mil".
+const UNIT = String.raw`(?:%|pp|x|×|ms|s|min|h|d|dias?|days?|mo|y|k|M|bi|mi|mil|[KMGTP]i?B|[kMG]bps)`;
+const LEADING_VALUE = new RegExp(String.raw`^(\S+(?:\s+${UNIT}(?=\s|$))?)\s*(.*)$`, "s");
+
 function leadingValue(nodes: ElementContent[]): [ElementContent[], ElementContent[]] {
   const [first, ...rest] = trim(nodes);
   if (!first) return [[], []];
   if (isElement(first) && first.tagName === "strong") return [[first], trim(rest)];
   if (first.type === "text") {
-    const match = /^(\S+)\s*(.*)$/s.exec(first.value);
+    const match = LEADING_VALUE.exec(first.value);
     if (match) return [[text(match[1] ?? "")], trim([text(match[2] ?? ""), ...rest])];
   }
   return [[first], trim(rest)];
 }
 
-function numberIn(value: string): number {
-  return Number.parseFloat(value.replace(/[^\d.-]/g, "")) || 0;
+const SCALE: Record<string, number> = { k: 1e3, mil: 1e3, M: 1e6, mi: 1e6, B: 1e9, bi: 1e9 };
+
+/**
+ * The number in "12,400", "1.279.942", "7,51 mil" or "1.30M", in either convention. A separator
+ * is the decimal point unless it repeats, or the other separator comes after it, or exactly three
+ * digits follow it in a number that does not start with 0.
+ */
+export function numberIn(value: string): number {
+  const match = /(-?\d[\d.,]*)\s*(?:(mil|mi|bi|[kMB])(?!\p{L}))?/u.exec(value);
+  if (!match) return 0;
+  const digits = (match[1] ?? "").replace(/[.,]+$/, "");
+  const last = Math.max(digits.lastIndexOf("."), digits.lastIndexOf(","));
+  const before = digits.slice(0, last);
+  const fraction = digits.slice(last + 1);
+  const isDecimal =
+    last !== -1 &&
+    (/[.,]/.test(before)
+      ? !before.includes(digits.charAt(last))
+      : fraction.length !== 3 || /^-?0$/.test(before));
+  const whole = (isDecimal ? before : digits).replace(/[.,]/g, "");
+  const number = Number(isDecimal ? `${whole}.${fraction}` : whole) || 0;
+  return number * (SCALE[match[2] ?? ""] ?? 1);
 }
 
 /** `⌘K`, `Ctrl+Shift+P` or `g then d`, as keys. */

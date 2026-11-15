@@ -281,3 +281,24 @@ describe("the guide's examples", () => {
     expect(out).not.toMatch(/<p[^>]*>::/);
   });
 });
+
+describe("numbers in figures", () => {
+  it("reads both conventions, short scales, and leaves words alone", async () => {
+    const { numberIn } = await import("./figures");
+    expect(numberIn("12,400 /docs")).toBe(12_400);
+    expect(numberIn("1.279.942 respostas")).toBe(1_279_942);
+    expect(numberIn("1,234.5")).toBe(1234.5);
+    expect(numberIn("1.234,5")).toBe(1234.5);
+    expect(numberIn("99,93%")).toBe(99.93);
+    expect(numberIn("0.045")).toBe(0.045);
+    expect(numberIn("7,51 mil")).toBe(7510);
+    expect(numberIn("1.30M")).toBe(1_300_000);
+    expect(numberIn("5 Bright Data")).toBe(5);
+  });
+
+  it("keeps a unit with the number in a stat", async () => {
+    const out = await renderHtml("::stat\n- 16,5 h do primeiro ao último\n- 860 shipped\n::");
+    expect(out).toContain('<dd class="stat-value">16,5 h</dd>');
+    expect(out).toContain('<dd class="stat-value">860</dd>');
+  });
+});
