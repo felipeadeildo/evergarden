@@ -1,6 +1,7 @@
 import { type CallToolResult, createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
+import { sentence } from "#/lib/sharing";
 import { authorOf, type Principal } from "#/server/access";
 import {
   acceptSuggestion,
@@ -15,12 +16,15 @@ import { SYNTAX_GUIDE } from "#/server/guide";
 import {
   type DocumentEntry,
   type FolderEntry,
+  getDocument,
   list,
   publish,
   read,
   search,
   update,
 } from "#/server/library";
+import { findFolder, parseFolderPath } from "#/server/library/folders";
+import { setSharing, sharingOf } from "#/server/sharing";
 
 const INSTRUCTIONS = [
   "evergarden stores the documents you write for your user (reports, plans, specs, dossiers)",
@@ -196,6 +200,57 @@ function mcpServer(principal: Principal, origin: string): McpServer {
   );
 
   server.registerTool(
+    "share",
+    {
+      description:
+        "Sets who besides your user can open a document or a folder (and everything in it). Call it only when your user asks. Without `who`, returns the current setting.",
+      inputSchema: z.object({
+        id: z.string().optional().describe("A document id. Give this or `folder`."),
+        folder: z.string().optional().describe('A folder path such as "reports/2026".'),
+        who: z
+          .enum(["only_me", "people", "link"])
+          .optional()
+          .describe("only_me stops sharing; people needs `people`; link is anyone with the URL."),
+        people: z
+          .array(z.string())
+          .optional()
+          .describe('Emails and whole domains, such as "ana@acme.com" or "@acme.com".'),
+        can: z.enum(["read", "comment"]).default("read"),
+        versions: z.enum(["current", "all"]).default("current"),
+        expires_in_days: z.int().positive().optional(),
+      }),
+    },
+    (input) =>
+      run(async () => {
+        const target = await shareTarget(input.id, input.folder);
+        if (input.who) {
+          await setSharing(
+            target,
+            input.who === "only_me"
+              ? null
+              : {
+                  audience: input.who,
+                  people: input.people ?? [],
+                  permission: input.can,
+                  versions: input.versions,
+                  expiresInDays: input.expires_in_days ?? null,
+                },
+          );
+        }
+        const state = await sharingOf(target);
+        const alone = state.inherited.length
+          ? "Not shared on its own."
+          : "Only your user can open it.";
+        const lines = [state.own ? sentence(state.own) : alone];
+        for (const above of state.inherited) {
+          lines.push(`Through the folder ${above.through.name}: ${sentence(above)}`);
+        }
+        if (target.kind === "document") lines.push(url(target.id));
+        return lines.join("\n");
+      }),
+  );
+
+  server.registerTool(
     "list",
     {
       description:
@@ -225,6 +280,17 @@ function mcpServer(principal: Principal, origin: string): McpServer {
   );
 
   return server;
+}
+
+async function shareTarget(id?: string, path?: string) {
+  if (id) {
+    await getDocument(id);
+    return { kind: "document" as const, id };
+  }
+  const folderId = path ? await findFolder(parseFolderPath(path)) : null;
+  if (!folderId)
+    throw new EvergardenError("not_found", "Give a document id or an existing folder path.");
+  return { kind: "folder" as const, id: folderId };
 }
 
 function text(value: string): CallToolResult {

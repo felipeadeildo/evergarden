@@ -2,10 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { sentence } from "#/components/sharing/summary";
 import { DocumentIcon, FolderIcon, PersonIcon } from "#/components/ui/icons";
 import { RelativeTime } from "#/components/ui/relative-time";
 import { getSharedList, removePerson, updateSharing } from "#/functions/sharing.functions";
+import { sentence } from "#/lib/sharing";
 import type { SharedEntry } from "#/server/sharing";
 
 const queryKey = ["shared-list"];

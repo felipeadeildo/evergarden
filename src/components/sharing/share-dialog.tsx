@@ -7,9 +7,8 @@ import { CloseIcon, PeopleIcon, PrivateIcon, ShareIcon } from "#/components/ui/i
 import { Sheet } from "#/components/ui/sheet";
 import { updateSharing } from "#/functions/sharing.functions";
 import { isPersonOrDomain } from "#/lib/people";
+import { effective, kindOf, sentence, shortLabel } from "#/lib/sharing";
 import type { ShareSettings, SharingState } from "#/server/sharing";
-
-import { effective, kindOf, sentence, shortLabel } from "./summary";
 
 export type ShareSubject = { kind: "document" | "folder"; id: string };
 
