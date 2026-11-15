@@ -135,14 +135,18 @@ function hasClass(node: Element, name: string): boolean {
   return Array.isArray(className) && className.includes(name);
 }
 
-/** `> [!NOTE]` becomes `<aside class="callout" data-callout="note">`, as on GitHub. */
+/**
+ * `> [!NOTE]` becomes `<aside class="callout" data-callout="note">`, as on GitHub. Text after the
+ * marker on its line replaces the title, as in Obsidian: `> [!IMPORTANT] Importante`.
+ */
 function toCallout(node: Element): void {
   const paragraph = node.children.find(isElement);
   const first = paragraph?.children[0];
   if (paragraph?.tagName !== "p" || first?.type !== "text") return;
 
-  const match = /^\[!(\w+)\][ \t]*\n?/.exec(first.value);
+  const match = /^\[!(\w+)\][ \t]*([^\n]*)\n?/.exec(first.value);
   const kind = match?.[1]?.toLowerCase();
+  const title = match?.[2]?.trim();
   if (!match || !kind || !CALLOUTS.has(kind)) return;
 
   first.value = first.value.slice(match[0].length);
@@ -156,7 +160,7 @@ function toCallout(node: Element): void {
     type: "element",
     tagName: "p",
     properties: { className: ["callout-title"] },
-    children: [{ type: "text", value: kind[0]!.toUpperCase() + kind.slice(1) }],
+    children: [{ type: "text", value: title || kind[0]!.toUpperCase() + kind.slice(1) }],
   });
 }
 

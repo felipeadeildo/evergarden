@@ -69,6 +69,13 @@ describe("render", () => {
     expect(headings).toEqual([{ depth: 2, text: "Data transfer", id: "data-transfer" }]);
   });
 
+  it("takes a callout title from the marker's line", async () => {
+    const { tree } = await render("> [!IMPORTANT] Importante\n> O código não chega.");
+    const callout = find(tree, (node) => node.tagName === "aside");
+    expect(toHtml(callout!)).toContain('<p class="callout-title">Importante</p>');
+    expect(toHtml(callout!)).toContain("O código não chega.");
+  });
+
   it("turns GitHub alerts into callouts", async () => {
     const { tree } = await render(REPORT);
     const callout = find(tree, (node) => node.tagName === "aside");
