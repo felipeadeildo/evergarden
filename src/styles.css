@@ -735,6 +735,29 @@
     margin-inline-start: 1.25rem;
   }
 
+  .note-resolved {
+    margin: 0;
+    padding-top: 0.45rem;
+    border-top: 1px solid var(--rule);
+    font-style: italic;
+  }
+
+  /* Comments resolved on a version sit under it, a step in, one line each. */
+  .resolved-list {
+    margin: 0 0 0.25rem 1.55rem;
+  }
+
+  .versions-menu .resolved-item {
+    max-width: 24rem;
+    padding-block: 0.3rem;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+
+  .versions-menu .resolved-item .menu-detail {
+    margin-inline-start: 0.75rem;
+  }
+
   .menu-note {
     margin: 0.35rem 0.55rem 0.4rem;
     font-size: 0.82rem;
