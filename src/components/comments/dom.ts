@@ -37,8 +37,8 @@ function offsetOf(nodes: Text[], container: Node, offset: number): number {
 export function selectedSource(root: Element, source: string): SourceRange | null {
   const selection = window.getSelection();
   if (!selection || selection.isCollapsed || selection.rangeCount === 0) return null;
-  const range = selection.getRangeAt(0);
-  if (!root.contains(range.commonAncestorContainer)) return null;
+  const range = selectedText(root, selection.getRangeAt(0));
+  if (!range) return null;
 
   const shared = blockOf(root, range.commonAncestorContainer);
   if (shared) {
@@ -54,6 +54,25 @@ export function selectedSource(root: Element, source: string): SourceRange | nul
   return typeof from === "number" && typeof to === "number" && to > from
     ? { start: from, end: to }
     : null;
+}
+
+/**
+ * The selection cut to the characters it covers. Dragging to the end of a paragraph often ends
+ * the selection at the start of the next block, which holds none of it.
+ */
+function selectedText(root: Element, range: Range): Range | null {
+  const nodes = textNodes(root).filter(
+    (node) => /\S/.test(node.data) && range.intersectsNode(node),
+  );
+  const first = nodes.find(
+    (node) => node !== range.startContainer || range.startOffset < node.data.length,
+  );
+  const last = nodes.findLast((node) => node !== range.endContainer || range.endOffset > 0);
+  if (!first || !last) return null;
+  const text = document.createRange();
+  text.setStart(first, first === range.startContainer ? range.startOffset : 0);
+  text.setEnd(last, last === range.endContainer ? range.endOffset : last.data.length);
+  return text.collapsed ? null : text;
 }
 
 function blockOf(root: Element, node: Node): Element | null {
