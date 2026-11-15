@@ -718,6 +718,23 @@
     color: var(--ink-soft);
   }
 
+  /* Lines the check and the version up under the byline's clock and words. */
+  .versions-menu {
+    width: max-content;
+    min-width: 17rem;
+    max-width: calc(100vw - 1.5rem);
+    margin-inline-start: calc(0.45rem - 0.4rem - 0.55rem - 1px);
+  }
+
+  .versions-menu .menu-item {
+    grid-template-columns: 1.15em minmax(0, 1fr) auto;
+    column-gap: 0.4rem;
+  }
+
+  .versions-menu .menu-detail {
+    margin-inline-start: 1.25rem;
+  }
+
   .menu-note {
     margin: 0.35rem 0.55rem 0.4rem;
     font-size: 0.82rem;

@@ -37,7 +37,13 @@ export function VersionsMenu({
         {byline}
         <OpenMenuIcon className="byline-caret" />
       </button>
-      <div id={menuId} ref={menu} popover="auto" className="popover menu" aria-label="Versions">
+      <div
+        id={menuId}
+        ref={menu}
+        popover="auto"
+        className="popover menu versions-menu"
+        aria-label="Versions"
+      >
         <ol className="menu-list">
           {versions.map((entry) => (
             <li key={entry.number}>
