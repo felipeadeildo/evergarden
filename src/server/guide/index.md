@@ -38,13 +38,13 @@ npm install pele
 :::
 ````
 
-## More, when you need it
+## What else you can write
 
-Call `guide` with a topic for its syntax and examples:
+Each of these has its syntax and examples behind `guide(topic)`. Call it when the document needs one.
 
-| Topic      | Covers                                                                    |
-| ---------- | ------------------------------------------------------------------------- |
-| `figures`  | Timeline, steps, check, decision, tree, stat, spec, flow, board, and more |
-| `diagrams` | Which Mermaid diagram fits, chart legends, and what breaks parsing        |
-| `formulas` | Showing what a query or rule computes as a formula beside its code        |
-| `icons`    | `:icon[name]` and the names it knows                                      |
+| When the document has                                                                                        | Call                |
+| ------------------------------------------------------------------------------------------------------------ | ------------------- |
+| Events in order, a procedure, a punch list, a tradeoff, a few headline numbers, a file tree, a roadmap board | `guide("figures")`  |
+| A process, calls between services, a schema, a chart over time, parts of a whole                             | `guide("diagrams")` |
+| A query, alert rule or code that computes a number                                                           | `guide("formulas")` |
+| A heading or status that an icon would make easier to scan                                                   | `guide("icons")`    |

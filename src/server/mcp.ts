@@ -50,10 +50,18 @@ function mcpServer(principal: Principal, origin: string): McpServer {
   server.registerTool(
     "guide",
     {
-      description:
-        "How to write for evergarden: the essentials, or one topic in detail with examples.",
+      description: [
+        "How to write for evergarden. Call it without a topic before your first publish: it",
+        "returns the essentials and what else you can write. Then call it with a topic when you",
+        "need one: figures (timelines, decisions, checklists, boards, stats), diagrams (which",
+        "Mermaid diagram fits, charts with legends), formulas (what a query computes, beside its",
+        "code) or icons (inline icon names).",
+      ].join(" "),
       inputSchema: {
-        topic: z.enum(GUIDE_TOPICS).optional().describe("Leave out for the essentials."),
+        topic: z
+          .enum(GUIDE_TOPICS)
+          .optional()
+          .describe("Leave out for the essentials and the list of topics."),
       },
       annotations: { readOnlyHint: true },
     },
