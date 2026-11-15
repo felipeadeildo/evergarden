@@ -137,7 +137,7 @@ Access is checked on the server in every server function, API route and MCP tool
 
 | Tool                                       | Does                                                             |
 | ------------------------------------------ | ---------------------------------------------------------------- |
-| `guide()`                                  | What evergarden renders and how to work with documents           |
+| `guide(topic?)`                            | The essentials of writing here, or one topic in detail           |
 | `publish(content, title?, folder?, repo?)` | Creates a document; returns its id, version and URL              |
 | `update(id, content, base_version?)`       | Saves a new version and moves open comments onto it              |
 | `edit(id, edits)`                          | Replaces passages in the document's draft                        |

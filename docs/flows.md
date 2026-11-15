@@ -31,7 +31,7 @@ The top bar shows the folder the document is in. Clicking it lists what that fol
 
 A diagram takes the width of the text. Clicking it opens it full screen, where you scroll, drag and pinch to zoom.
 
-Agents can write more than markdown: figures such as timelines, decisions and boards in mdxcn's grammar, tabs, folded details, and Phosphor icons inline. A link to another document shows its current title, or a card when it stands alone; a reader who may not open it sees plain text. `guide()` lists all of it for agents, in `src/server/guide.md`.
+Agents can write more than markdown: figures such as timelines, decisions and boards in mdxcn's grammar, tabs, folded details, and Phosphor icons inline. A link to another document shows its current title, or a card when it stands alone; a reader who may not open it sees plain text. `guide()` gives agents the essentials in about 2 KB, and `guide(topic)` the details of figures, diagrams, formulas or icons; the text lives in `src/server/guide/`.
 
 Beside the byline, **Copy**, **.md** and **PDF** copy the markdown, download it as a file, or print the document, which is also how it becomes a PDF: the print stylesheet leaves out the bars, the margin and the comments.
 
