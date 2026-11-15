@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
+import { sentence } from "#/components/sharing/summary";
 import { DocumentIcon, FolderIcon, PersonIcon } from "#/components/ui/icons";
 import { RelativeTime } from "#/components/ui/relative-time";
 import { getSharedList, removePerson, updateSharing } from "#/functions/sharing.functions";
@@ -18,7 +19,7 @@ export function SharedList() {
   const stop = useMutation({
     mutationFn: (entry: SharedEntry) =>
       updateSharing({
-        data: { kind: entry.kind, id: entry.id, permission: null, expiresInDays: null },
+        data: { kind: entry.kind, id: entry.id, settings: null },
       }),
     onSuccess: refresh,
   });
@@ -89,7 +90,7 @@ function SharedRow({ entry, onStop }: { entry: SharedEntry; onStop: () => Promis
     <ConfirmRow
       icon={<Icon className="row-icon" />}
       name={name}
-      place={entry.permission === "comment" ? "Read and comment" : "Read"}
+      place={sentence(entry)}
       end={entry.expiresAt ? <span>until {day.format(new Date(entry.expiresAt))}</span> : null}
       action="Stop sharing"
       warning="The link stops working at once, for everyone who has it."
