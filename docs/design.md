@@ -100,7 +100,7 @@ Better Auth owns `user`, `session`, `account`, `verification`, `apikey` and the 
 | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `content`   | `sha256`, `markdown`, the gzipped rendered tree, `renderer_version`                                                                          |
 | `folder`    | `id`, `parent_id`, `name`, `position`, `repo` (unique when set)                                                                              |
-| `document`  | `id`, `folder_id`, `position`, `title`, `current_version`, `updated_at`, `deleted_at`                                                        |
+| `document`  | `id`, `folder_id`, `position`, `title`, `summary`, `current_version`, `updated_at`, `deleted_at`, `deleted_from`                             |
 | `version`   | `id`, `document_id`, `number`, `sha256`, `author_kind`, `author_id`, `author_name`                                                           |
 | `comment`   | `id`, `document_id`, `version_id`, `anchor` (JSON), `body`, `suggestion`, `status` (`open`, `resolved`, `detached`), author, `agent_seen_at` |
 | `reply`     | `id`, `comment_id`, `body`, author, `edited_at`                                                                                              |
@@ -143,6 +143,8 @@ Access is checked on the server in every server function, API route and MCP tool
 | `edit(id, edits)`                          | Replaces passages in the document's draft                        |
 | `publish_draft(id)`, `discard_draft(id)`   | Saves the draft as the next version, or throws it away           |
 | `share(id? \| folder?, who?, …)`           | Reads or sets who else can open a document or folder             |
+| `move(id? \| folder?, to)`                 | Moves a document or folder; creates the target folders           |
+| `rename(id? \| folder?, name)`             | Renames a folder, or retitles a document in a new version        |
 | `read(id, version?, draft?)`               | Returns the markdown                                             |
 | `list(folder?, repo?)`                     | Folders and documents, with open comment counts                  |
 | `search(query)`                            | Full-text search; ids, titles and an excerpt                     |

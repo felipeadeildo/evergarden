@@ -2,7 +2,7 @@
 
 Your user reads these documents closely and comments on passages. Put the answer first, keep paragraphs short, and use a figure only where it reads faster than prose: two or three per document at most.
 
-The title is frontmatter `title` or the first `# heading`, not both.
+The title is frontmatter `title` or the first `# heading`, not both. A frontmatter `summary` of one sentence shows under the title, in link cards and in link previews; write one for any document longer than a screen.
 
 ## Working with documents
 

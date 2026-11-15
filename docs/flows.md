@@ -13,7 +13,7 @@ publish(content: "# AWS costs, November\n…", folder: "reports/2026")
 → Published k7q2mxa9pt, version 1: https://docs.example.com/d/k7q2mxa9pt
 ```
 
-`k7q2mxa9pt` is the document's only address: ten random lower-case letters and digits. The title comes from the frontmatter `title`, or else the first `#` heading. `publish` creates the folders it names.
+`k7q2mxa9pt` is the document's only address: ten random lower-case letters and digits. The title comes from the frontmatter `title`, or else the first `#` heading. A frontmatter `summary` shows under the title, in link cards and in link previews. `publish` creates the folders it names.
 
 A folder can be linked to a repository. An agent working inside `github.com/ranqia/ada` publishes with `repo: "github.com/ranqia/ada"` and the document lands in the linked folder; `list(repo: …)` returns everything written about that repository.
 
@@ -119,6 +119,13 @@ The first time, the agent opens your browser on `/connect`: "pi wants to read, p
 - **Connected agents**, with how each connected, when it was last seen, and **Revoke**, which stops even an unexpired token at once.
 - **Shared**: everything you shared, with the policy in force and **Stop sharing**.
 - **People**: everyone who signed in as a guest, with **Remove**, which signs them out; their comments stay.
+- **Trash**: deleted documents for 30 days, with **Restore** and **Delete forever**.
+
+## You organize it
+
+Beside the title, **Rename**, **Move** and **Delete** act on the document; a folder's page has the same three for the folder. Renaming a document saves a version with the new title in its markdown, so the title travels with the `.md` and agents read it. Move picks a folder from the tree, or creates one from a typed path such as `reports/2027`. A folder moves with everything in it, and cannot go inside itself.
+
+Delete sends documents to the trash and stops sharing them at once. Deleting a folder sends every document under it to the trash, each remembering its path; restoring one brings back the folders it needs. Agents can `move` and `rename`, but only you delete.
 
 ## Left out on purpose
 
