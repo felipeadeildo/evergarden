@@ -2080,20 +2080,25 @@
     border-left: 1px solid var(--rule);
   }
 
+  /* Each number takes the width it needs and never breaks; a row that does not fit wraps. */
   .prose .stat {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
-    gap: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
     margin: 0;
   }
 
+  /* Equal columns that labels wrap within; a column is never narrower than its number. */
   .prose .stat > div {
     display: flex;
+    flex: 1 1 7rem;
     flex-direction: column-reverse;
+    justify-content: flex-end;
   }
 
   .stat-value {
     margin: 0;
+    white-space: nowrap;
     font-size: 1.9rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
