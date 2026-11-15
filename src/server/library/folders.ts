@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, type SQL, sql } from "drizzle-orm";
 import { generateKeyBetween } from "fractional-indexing";
 
 import { newId } from "#/lib/id";
@@ -128,19 +128,26 @@ export async function resolveTarget(path?: string, repo?: string): Promise<strin
 
 export type FolderStep = { id: string; name: string };
 
+/** The folders from the top of the library down to `folderId`, in one query. */
 export async function folderPath(folderId: string | null): Promise<FolderStep[]> {
-  const path: FolderStep[] = [];
-  for (let id = folderId; id;) {
-    const row = await db
-      .select({ id: folder.id, name: folder.name, parentId: folder.parentId })
-      .from(folder)
-      .where(eq(folder.id, id))
-      .get();
-    if (!row) break;
-    path.unshift({ id: row.id, name: row.name });
-    id = row.parentId;
-  }
-  return path;
+  return folderId ? pathFrom(sql`${folderId}`) : [];
+}
+
+/** The folders down to the one a document sits in, without looking the document up first. */
+export function documentFolderPath(documentId: string): Promise<FolderStep[]> {
+  return pathFrom(sql`(select folder_id from document where id = ${documentId})`);
+}
+
+function pathFrom(start: SQL): Promise<FolderStep[]> {
+  return db.all<FolderStep>(sql`
+    with recursive up(id, name, parent_id, depth) as (
+      select id, name, parent_id, 0 from folder where id = ${start}
+      union all
+      select folder.id, folder.name, folder.parent_id, up.depth + 1
+      from folder join up on folder.id = up.parent_id
+    )
+    select id, name from up order by depth desc
+  `);
 }
 
 /** New documents go to the top of their folder. */

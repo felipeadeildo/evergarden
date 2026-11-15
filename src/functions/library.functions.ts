@@ -5,15 +5,12 @@ import { z } from "zod";
 
 import { EvergardenError } from "#/server/errors";
 import {
+  documentPage,
   folderContents,
   folderInfo,
-  folderPath,
   markRead,
-  read,
   recent,
-  rendered,
   search,
-  versions,
 } from "#/server/library";
 
 import { libraryAccess } from "./middleware";
@@ -59,20 +56,7 @@ export const getDocumentPage = createServerFn({ method: "GET", strict: { output:
   .handler(async ({ data }) => {
     setResponseHeader("cache-control", "private, no-store");
     try {
-      const page = await read(data.id, data.version);
-      const [history, body, folder] = await Promise.all([
-        versions(data.id),
-        rendered(page.version.sha256),
-        folderPath(page.document.folderId),
-      ]);
-      return {
-        document: page.document,
-        version: page.version,
-        versions: history,
-        body,
-        folder,
-        source: page.source,
-      };
+      return await documentPage(data.id, data.version);
     } catch (error) {
       if (error instanceof EvergardenError && error.code === "not_found") throw notFound();
       throw error;

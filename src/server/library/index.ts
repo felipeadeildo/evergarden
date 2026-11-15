@@ -2,14 +2,22 @@ import { and, asc, count, desc, eq, isNull, type SQL, sql } from "drizzle-orm";
 
 import { newId } from "#/lib/id";
 import { FOLDER_PAGE_SIZE } from "#/lib/text";
-import { render } from "#/render";
+import { type Rendered, render } from "#/render";
 import { relocateComments } from "#/server/comments/relocate";
 import { db } from "#/server/db";
-import { type AuthorKind, document, folder, readMark, version } from "#/server/db/schema";
+import {
+  type AuthorKind,
+  content as contentTable,
+  document,
+  folder,
+  readMark,
+  version,
+} from "#/server/db/schema";
 import { EvergardenError } from "#/server/errors";
 
-import { sha256, source, store } from "./content";
+import { cachedRender, sha256, store } from "./content";
 import {
+  documentFolderPath,
   findFolder,
   folderPath,
   type FolderStep,
@@ -181,24 +189,75 @@ export type Read = {
 };
 
 export async function read(id: string, versionNumber?: number): Promise<Read> {
-  const found = await getDocument(id);
-  const row = await versionByNumber(id, versionNumber ?? found.version);
+  const [found, shown] = await Promise.all([getDocument(id), shownVersion(id, versionNumber)]);
+  return { document: found, version: shown.version, source: shown.markdown };
+}
+
+export type DocumentPage = Read & {
+  versions: VersionEntry[];
+  folder: FolderStep[];
+  body: Rendered;
+};
+
+/**
+ * Everything the document page shows. The queries are independent, so they run at once and the
+ * page costs one round trip to D1 instead of one per query.
+ */
+export async function documentPage(id: string, versionNumber?: number): Promise<DocumentPage> {
+  const [found, shown, history, path] = await Promise.all([
+    getDocument(id),
+    shownVersion(id, versionNumber),
+    versions(id),
+    documentFolderPath(id),
+  ]);
   return {
     document: found,
-    version: {
-      id: row.id,
-      number: row.number,
-      authorKind: row.authorKind,
-      authorName: row.authorName,
-      createdAt: row.createdAt,
-      sha256: row.sha256,
-    },
-    source: await source(row.sha256),
+    version: shown.version,
+    source: shown.markdown,
+    versions: history,
+    folder: path,
+    body: await cachedRender(shown.version.sha256, shown.markdown, shown.cache),
   };
 }
 
+/** A version with its text and cached rendering; the current one when `number` is not given. */
+async function shownVersion(id: string, number?: number) {
+  const row = await db
+    .select({
+      id: version.id,
+      number: version.number,
+      authorKind: version.authorKind,
+      authorName: version.authorName,
+      createdAt: version.createdAt,
+      sha256: version.sha256,
+      markdown: contentTable.markdown,
+      rendered: contentTable.rendered,
+      rendererVersion: contentTable.rendererVersion,
+    })
+    .from(version)
+    .innerJoin(contentTable, eq(contentTable.sha256, version.sha256))
+    .where(
+      and(
+        eq(version.documentId, id),
+        eq(
+          version.number,
+          number ??
+            sql`(select ${document.currentVersion} from ${document} where ${document.id} = ${id})`,
+        ),
+      ),
+    )
+    .get();
+  if (!row) {
+    throw new EvergardenError(
+      "not_found",
+      number ? `Document "${id}" has no version ${number}.` : `No document with id "${id}".`,
+    );
+  }
+  const { markdown, rendered, rendererVersion, ...shown } = row;
+  return { version: shown, markdown, cache: { rendered, rendererVersion } };
+}
+
 export async function versions(id: string): Promise<VersionEntry[]> {
-  await getDocument(id);
   return db
     .select({
       number: version.number,
@@ -215,8 +274,10 @@ export async function versions(id: string): Promise<VersionEntry[]> {
 export type Library = { folders: FolderEntry[]; documents: DocumentEntry[] };
 
 export async function list(filter: { folder?: string; repo?: string } = {}): Promise<Library> {
-  const folders = await db.select(folderColumns).from(folder).all();
-  const documents = await liveDocuments().all();
+  const [folders, documents] = await Promise.all([
+    db.select(folderColumns).from(folder).all(),
+    liveDocuments().all(),
+  ]);
 
   let rootId: string | null | undefined;
   if (filter.repo) {
@@ -264,22 +325,24 @@ export async function folderContents(folderId: string | null, offset = 0): Promi
 }
 
 async function childFolders(parentId: string | null): Promise<FolderSummary[]> {
-  const children = await db
-    .select(folderColumns)
-    .from(folder)
-    .where(parentId ? eq(folder.parentId, parentId) : isNull(folder.parentId))
-    .orderBy(asc(folder.position))
-    .all();
-  if (children.length === 0) return [];
-  const counts = await countDocuments(children.map((entry) => entry.id));
+  const [children, counts] = await Promise.all([
+    db
+      .select(folderColumns)
+      .from(folder)
+      .where(parentId ? eq(folder.parentId, parentId) : isNull(folder.parentId))
+      .orderBy(asc(folder.position))
+      .all(),
+    countDocuments(parentId ? sql`parent_id = ${parentId}` : sql`parent_id is null`),
+  ]);
   const byRoot = new Map(counts.map((row) => [row.root, row.documents]));
   return children.map((entry) => Object.assign(entry, { documents: byRoot.get(entry.id) ?? 0 }));
 }
 
-function countDocuments(ids: string[]): Promise<Array<{ root: string; documents: number }>> {
+/** Documents in each folder that `roots` selects, counting those in its subfolders. */
+function countDocuments(roots: SQL): Promise<Array<{ root: string; documents: number }>> {
   return db.all<{ root: string; documents: number }>(sql`
     with recursive tree(root, id) as (
-      select id, id from folder where id in ${ids}
+      select id, id from folder where ${roots}
       union all
       select tree.root, folder.id from folder join tree on folder.parent_id = tree.id
     )
@@ -294,9 +357,14 @@ export async function withPlaces<T extends DocumentEntry>(
   entries: T[],
 ): Promise<Array<T & { place: string | null }>> {
   if (entries.length === 0) return [];
-  const folders = new Map(
-    (await db.select(folderColumns).from(folder).all()).map((f) => [f.id, f]),
-  );
+  return placeIn(entries, await db.select(folderColumns).from(folder).all());
+}
+
+function placeIn<T extends DocumentEntry>(
+  entries: T[],
+  folderRows: FolderEntry[],
+): Array<T & { place: string | null }> {
+  const folders = new Map(folderRows.map((f) => [f.id, f]));
   return entries.map((entry) => {
     const names: string[] = [];
     for (let id = entry.folderId; id; id = folders.get(id)?.parentId ?? null) {
@@ -327,26 +395,32 @@ export type RecentDocument = DocumentEntry & { place: string | null; unread: boo
 export async function recent(userId: string | null, limit = 10): Promise<RecentDocument[]> {
   const unread = sql<number>`${userId === null ? 0 : 1}
     and coalesce(${readMark.versionNumber}, 0) < ${document.currentVersion}`.mapWith(Boolean);
-  const rows = await db
-    .select({ ...documentEntry, unread })
-    .from(document)
-    .innerJoin(version, currentVersion)
-    .leftJoin(
-      readMark,
-      and(eq(readMark.documentId, document.id), eq(readMark.userId, userId ?? "")),
-    )
-    .where(isNull(document.deletedAt))
-    .orderBy(desc(document.updatedAt))
-    .limit(limit)
-    .all();
-  return withPlaces(rows);
+  const [rows, folders] = await Promise.all([
+    db
+      .select({ ...documentEntry, unread })
+      .from(document)
+      .innerJoin(version, currentVersion)
+      .leftJoin(
+        readMark,
+        and(eq(readMark.documentId, document.id), eq(readMark.userId, userId ?? "")),
+      )
+      .where(isNull(document.deletedAt))
+      .orderBy(desc(document.updatedAt))
+      .limit(limit)
+      .all(),
+    db.select(folderColumns).from(folder).all(),
+  ]);
+  return placeIn(rows, folders);
 }
 
 export async function folderInfo(id: string): Promise<FolderSummary & { path: FolderStep[] }> {
-  const row = await db.select(folderColumns).from(folder).where(eq(folder.id, id)).get();
+  const [row, [counted], path] = await Promise.all([
+    db.select(folderColumns).from(folder).where(eq(folder.id, id)).get(),
+    countDocuments(sql`id = ${id}`),
+    folderPath(id),
+  ]);
   if (!row) throw new EvergardenError("not_found", "There is no folder with this id.");
-  const [counted] = await countDocuments([row.id]);
-  return Object.assign(row, { documents: counted?.documents ?? 0, path: await folderPath(id) });
+  return Object.assign(row, { documents: counted?.documents ?? 0, path });
 }
 
 const folderColumns = {

@@ -18,26 +18,25 @@ export async function store(sha: string, markdown: string, output: Rendered): Pr
     .onConflictDoUpdate({ target: content.sha256, set: cache });
 }
 
-export async function source(sha: string): Promise<string> {
-  const row = await db
-    .select({ markdown: content.markdown })
-    .from(content)
-    .where(eq(content.sha256, sha))
-    .get();
-  if (!row) throw new Error(`Missing content ${sha}`);
-  return row.markdown;
-}
-
-export async function rendered(sha: string): Promise<Rendered> {
-  const row = await db.select().from(content).where(eq(content.sha256, sha)).get();
-  if (!row) throw new Error(`Missing content ${sha}`);
-  if (row.rendered && row.rendererVersion === RENDERER_VERSION) return gunzip(row.rendered);
-  const result = await render(row.markdown);
+/** The rendered tree from its cache, rendering it again (and caching it) after a renderer change. */
+export async function cachedRender(
+  sha: string,
+  markdown: string,
+  cache: { rendered: Buffer | null; rendererVersion: number | null },
+): Promise<Rendered> {
+  if (cache.rendered && cache.rendererVersion === RENDERER_VERSION) return gunzip(cache.rendered);
+  const result = await render(markdown);
   await db
     .update(content)
     .set({ rendered: await gzip(result), rendererVersion: RENDERER_VERSION })
     .where(eq(content.sha256, sha));
   return result;
+}
+
+export async function rendered(sha: string): Promise<Rendered> {
+  const row = await db.select().from(content).where(eq(content.sha256, sha)).get();
+  if (!row) throw new Error(`Missing content ${sha}`);
+  return cachedRender(sha, row.markdown, row);
 }
 
 // The tree is 5 to 10 times the size of its markdown, and gzip brings it back to about the same
