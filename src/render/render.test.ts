@@ -271,3 +271,13 @@ describe("promql", () => {
     expect(out).toContain('<span class="th-token th-number">1e11</span>');
   });
 });
+
+describe("the guide's examples", () => {
+  it("draw every figure they name", async () => {
+    const { default: figures } = await import("#/server/guide/figures.md?raw");
+    const examples = [...figures.matchAll(/\n```\n([\s\S]*?)\n```\n/g)].map((match) => match[1]);
+    const out = await renderHtml(examples.join("\n\n"));
+    expect(out.match(/<figure data-kind="block"/g)).toHaveLength(examples.length);
+    expect(out).not.toMatch(/<p[^>]*>::/);
+  });
+});
