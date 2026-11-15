@@ -2,6 +2,7 @@ import { and, asc, desc, eq, inArray, isNull, or } from "drizzle-orm";
 
 import { quote, relocate } from "#/anchor";
 import { newId } from "#/lib/id";
+import { type Piece, quoteText } from "#/render/quote";
 import { db } from "#/server/db";
 import {
   type Anchor,
@@ -25,6 +26,8 @@ export type Thread = {
   id: string;
   status: CommentStatus;
   anchor: Anchor;
+  /** The passage as the reader saw it, without markdown; a figure is named instead. */
+  passage: Piece[];
   version: number;
   body: string;
   suggestion: string | null;
@@ -66,6 +69,7 @@ export async function threads(documentId: string): Promise<Thread[]> {
       id: row.id,
       status: row.status,
       anchor: row.anchor,
+      passage: passageOf(row.anchor),
       version: versionNumber,
       body: row.body,
       suggestion: row.suggestion,
@@ -141,6 +145,11 @@ export async function commentOn(
     body: input.body,
     author,
   });
+}
+
+/** The document a comment is on, to check who may answer it. */
+export async function commentDocument(commentId: string): Promise<string> {
+  return (await getComment(commentId)).documentId;
 }
 
 export async function addReply(commentId: string, body: string, author: Author): Promise<string> {
@@ -275,6 +284,14 @@ function describe(row: typeof comment.$inferSelect, replies: Reply[], unseen: bo
   lines.push(`- ${row.authorName}: ${row.body}`);
   for (const item of replies) lines.push(`- ${item.author.name}: ${item.body}`);
   return lines.join("\n");
+}
+
+function passageOf(anchor: Anchor): Piece[] {
+  const head = anchor.exact.trimStart();
+  if (anchor.kind !== "text" && head.startsWith("```")) {
+    return [{ text: head.startsWith("```mermaid") ? "A diagram" : "A code block" }];
+  }
+  return quoteText(anchor);
 }
 
 function place(anchor: Anchor): string {
