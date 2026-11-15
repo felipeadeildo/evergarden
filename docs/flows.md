@@ -80,7 +80,7 @@ On a phone, selecting text brings a bar to the bottom of the screen, clear of th
 
 ### Replies and resolving
 
-Anyone who can comment can reply in a thread. **Resolve** closes it and takes it out of the margin. "3 resolved", in the margin beside the document's byline, shows them again. On a phone they follow the text. `J` and `K` move to the next and previous comment, and `Esc` closes the open one.
+Anyone who can comment can reply in a thread. **Resolve** closes it and takes it out of the margin. A resolved comment belongs to the version it was resolved on: the versions menu lists it under that version, and opening it there shows that version with the comment on its passage. `J` and `K` move to the next and previous comment, and `Esc` closes the open one.
 
 ## The agent works through the comments
 
@@ -118,33 +118,38 @@ The agent then:
 
 `update(id: "k7q2mxa9pt", content: "…")` saves version 2. Publishing the same content twice returns the existing version, so an agent that retries after a timeout does no harm. If someone else saved a version in between (for example, you accepted a suggestion), the agent can pass `base_version` and the call fails instead of overwriting; it then reads and tries again.
 
-evergarden then looks for each open comment's passage in the new text, and finds it even when the paragraph moved. When the agent rewrote the passage beyond recognition, the comment moves next to the resolved ones, as "1 on changed text", quoting the old text, so you still see it.
+evergarden then looks for each open comment's passage in the new text, and finds it even when the paragraph moved. When the agent rewrote the passage beyond recognition, the comment leaves the margin for "1 on changed text", above it, quoting the old text, so you still see it.
 
 ## Older versions stay out of the way
 
-The line under the title says "Updated 2 hours ago by pi". Its menu lists the versions; opening one shows it read-only, with a banner above the title that links back to the current version. There is no diff view. Versions exist so that comments keep their context and a share link can point at a fixed version.
+The line under the title says "Updated 2 hours ago by pi". Its menu lists the versions, each with the comments resolved on it; opening one shows it with those comments in the margin, and a banner above the title that links back to the current version. Nobody comments on an older version. There is no diff view. Versions exist so that comments keep their context.
 
 ## You share it
 
 A document has one address, `https://evergarden.adeildo.dev/d/k7q2mxa9pt`, and so does a folder. Sharing changes who may open that address; it never makes a new one. **Share**, in the top bar of a document or folder, sets:
 
-| Choice          | Options                                                                            | Default  |
-| --------------- | ---------------------------------------------------------------------------------- | -------- |
-| Who can open it | Only you; anyone with the link can read; anyone with the link can read and comment | Only you |
-| Stops working   | Never, in 7 days, in 30 days                                                       | Never    |
+| Choice          | Options                                             | Default          |
+| --------------- | --------------------------------------------------- | ---------------- |
+| Who can open it | Only you; people I list; anyone with the link       | Only you         |
+| They can        | Read; read and comment                              | Read             |
+| Versions        | Only the current one; all versions (documents only) | Only the current |
+| Stops working   | Never, in 7 days, in 30 days                        | Never            |
 
-Each choice applies at once, and the dialog shows the address to copy. Sharing a folder shares everything inside it, at any depth, including what agents publish there later. A document inside a shared folder says so ("The folder team is shared"), and its own setting can only open it further. Settings lists everything shared, with **Stop sharing** on each.
+"People I list" takes emails and whole domains, `ana@acme.com` or `@acme.com`. No invitation is sent: they open the address, sign in with a code sent to their email, and read. Nobody else gets a code.
 
-To send one version, add `?v=3` to the address: anyone who may read the document may read its versions.
+Each choice applies at once, and a sentence under the choices says what is in force: "ana@acme.com and @acme.com can read, the current version only." The Share button names it too ("Only you", "Link, read"), and lists in the library mark what is shared. Sharing a folder shares everything inside it, at any depth, including what agents publish there later. A document inside a shared folder says so, and its own setting can only open it further. Settings lists everything shared, with **Stop sharing** on each.
+
+With "All versions", a guest opens older versions from the versions menu or with `?v=3`; with "Only the current one" they see neither the menu nor the comments resolved on older versions.
 
 ## Someone opens your link
 
 A colleague opens the address on their phone, from a chat app. The chat app's preview already showed the report's title and first sentence.
 
+- **Shared with people**: they sign in with an email code first, then read or comment as below.
 - **Shared to read**: they read the document with no sign-in. The top bar has no search and no settings; its folder path starts at the shared folder, so nothing above it shows. Anything else in the library sends them to sign in, and then tells them the library is private.
 - **Shared to comment**: the same, plus **Sign in to comment**. They get a code by email, come back to the page, and comment and reply exactly as you do, seeing every comment, yours included. Resolving and accepting suggestions stay with you and your agents.
 
-Their comments reach the agent like yours, with their name on each. Codes go only to the owner and to people signing in from a page shared for comments; anyone else who tries gets no email.
+Their comments reach the agent like yours, with their name on each. Codes go only to the owner, to the people listed on a shared page, and to people signing in from a page shared by link for comments; anyone else who tries gets no email.
 
 ## You manage access
 
