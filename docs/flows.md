@@ -60,11 +60,11 @@ Opening a document records which version you read, which is what empties "New fo
 
 Commenting works like Google Docs: a comment is posted the moment you save it, and the agent can read it right away. What you can attach a comment to depends on what you are looking at.
 
-| You point at                                          | How                                                        | The comment is attached to       |
-| ----------------------------------------------------- | ---------------------------------------------------------- | -------------------------------- |
-| Text in a paragraph, list item, heading or table cell | Select it                                                  | That passage, which stays marked |
-| A whole block: a table, a code block, a callout       | The `+` beside the block, in the margin                    | The block                        |
-| A point in a figure: an image, a diagram, a mockup    | The comment button on the figure, then a click on the spot | A numbered pin at that spot      |
+| You point at                                          | How                                                                 | The comment is attached to                     |
+| ----------------------------------------------------- | ------------------------------------------------------------------- | ---------------------------------------------- |
+| Text in a paragraph, list item, heading or table cell | Select it                                                           | That passage, which stays marked               |
+| A whole block: a table, a code block, a callout       | The ☜ that appears in the gutter beside the block under the pointer | The block, outlined while it has open comments |
+| A point in a diagram                                  | The ☜ beside the diagram, then a click on the spot (Esc cancels)    | A numbered pin at that spot                    |
 
 On the AWS report, three comments show all three kinds:
 
@@ -103,7 +103,7 @@ Context: …EC2 was 41% of the bill, about $3,100. >>>Data transfer is the secon
 ### c_32 on the table "Cost by service", open
 - felipe: Sort by cost, not by service name.
 
-### c_33 on a point in the figure "Traffic flow" (mermaid), open
+### c_33 on a point 62% across and 40% down a diagram, open
 Pin at 64% across, 38% down. Nearest label: "EC2".
 - felipe: This should go to S3.
 ```
