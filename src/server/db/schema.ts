@@ -23,6 +23,8 @@ export type AuthorKind = "agent" | "user";
 export type CommentStatus = "open" | "resolved" | "detached";
 export type SharePermission = "read" | "comment";
 export type ShareTargetKind = "document" | "folder";
+export type ShareAudience = "link" | "people";
+export type ShareVersions = "current" | "all";
 
 type Quote = { start: number; end: number; exact: string; prefix: string; suffix: string };
 
@@ -148,6 +150,14 @@ export const sharing = sqliteTable(
     targetKind: text("target_kind").$type<ShareTargetKind>().notNull(),
     targetId: text("target_id").notNull(),
     permission: text("permission").$type<SharePermission>().notNull(),
+    /** "link": anyone with the address; "people": only the emails and @domains in `people`. */
+    audience: text("audience").$type<ShareAudience>().notNull().default("link"),
+    people: text("people", { mode: "json" })
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'`),
+    /** "current": only the latest version; "all": every version, through `?v=`. */
+    versions: text("versions").$type<ShareVersions>().notNull().default("current"),
     createdAt: createdAt(),
     expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
   },

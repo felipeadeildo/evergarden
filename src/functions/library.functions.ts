@@ -13,7 +13,7 @@ import {
   search,
 } from "#/server/library";
 import type { FolderStep } from "#/server/library";
-import { type Shared, guestAccess } from "#/server/sharing";
+import { type Shared, guestAccess, sharingOf } from "#/server/sharing";
 
 import { libraryAccess, sessionAccess } from "./middleware";
 
@@ -51,13 +51,19 @@ export const getFolderPage = createServerFn({ method: "GET" })
   .handler(async ({ data, context: { principal } }) => {
     setResponseHeader("cache-control", "private, no-store");
     try {
-      const shared = await guestAccess(principal, { kind: "folder", id: data.id }, "read");
-      const [folder, contents] = await Promise.all([folderInfo(data.id), folderContents(data.id)]);
+      const target = { kind: "folder" as const, id: data.id };
+      const shared = await guestAccess(principal, target, "read");
+      const [folder, contents, sharing] = await Promise.all([
+        folderInfo(data.id),
+        folderContents(data.id),
+        principal?.kind === "owner" ? sharingOf(target) : null,
+      ]);
       return {
         state: "open" as const,
         folder: { ...folder, path: sharedPath(folder.path, shared) },
         contents,
         shared,
+        sharing,
       };
     } catch (error) {
       if (isPrivate(error)) return PRIVATE;
@@ -86,13 +92,22 @@ export const getDocumentPage = createServerFn({ method: "GET", strict: { output:
   .handler(async ({ data, context: { principal } }) => {
     setResponseHeader("cache-control", "private, no-store");
     try {
-      const shared = await guestAccess(principal, { kind: "document", id: data.id }, "read");
-      const page = await documentPage(data.id, data.version);
+      const target = { kind: "document" as const, id: data.id };
+      const shared = await guestAccess(principal, target, "read");
+      const [page, sharing] = await Promise.all([
+        documentPage(data.id, data.version),
+        principal?.kind === "owner" ? sharingOf(target) : null,
+      ]);
+      // A document shared at its current version only keeps its history from guests.
+      const current = shared?.versions === "current";
+      if (current && page.version.number !== page.document.version) throw notFound();
       return {
         state: "open" as const,
         ...page,
+        versions: current ? page.versions.slice(0, 1) : page.versions,
         folder: sharedPath(page.folder, shared),
         shared,
+        sharing,
       };
     } catch (error) {
       if (isPrivate(error)) return PRIVATE;

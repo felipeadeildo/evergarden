@@ -20,7 +20,10 @@ export const Route = createFileRoute("/f/$id")({
   loader: async ({ params, location, context: { queryClient, viewer } }) => {
     const page = await queryClient.ensureQueryData(folderPageQuery(params.id));
     if (page.state === "private" && !viewer) {
-      throw redirect({ to: "/sign-in", search: { next: location.href } });
+      throw redirect({
+        to: "/sign-in",
+        search: { next: location.href, shared: `folder:${params.id}` },
+      });
     }
     return page.state === "open" ? { name: page.folder.name } : null;
   },
@@ -36,7 +39,14 @@ function FolderPage() {
   const page = useSuspenseQuery(folderPageQuery(id)).data;
   if (page.state === "private") return <Private name={viewer?.name ?? ""} />;
   const owner = viewer?.kind === "owner";
-  const content = <FolderContent folder={page.folder} contents={page.contents} owner={owner} />;
+  const content = (
+    <FolderContent
+      folder={page.folder}
+      contents={page.contents}
+      sharing={page.sharing}
+      owner={owner}
+    />
+  );
   return owner ? <SearchProvider>{content}</SearchProvider> : content;
 }
 
@@ -45,10 +55,12 @@ type FolderPageData = Extract<Awaited<ReturnType<typeof getFolderPage>>, { state
 function FolderContent({
   folder,
   contents,
+  sharing,
   owner,
 }: {
   folder: FolderPageData["folder"];
   contents: FolderPageData["contents"];
+  sharing: FolderPageData["sharing"];
   owner: boolean;
 }) {
   const { viewer } = Route.useRouteContext();
@@ -56,7 +68,15 @@ function FolderContent({
   return (
     <>
       {owner ? (
-        <TopBar actions={<ShareButton subject={{ kind: "folder", id: folder.id }} />}>
+        <TopBar
+          actions={
+            <ShareButton
+              key={folder.id}
+              subject={{ kind: "folder", id: folder.id }}
+              sharing={sharing}
+            />
+          }
+        >
           <FolderPath key={folder.id} path={folder.path} />
         </TopBar>
       ) : (

@@ -12,7 +12,7 @@ import { SHARED_TARGET_HEADER } from "#/lib/shared";
 import { db } from "#/server/db";
 import * as schema from "#/server/db/schema";
 import { sendSignInCode } from "#/server/email";
-import { opensForComments } from "#/server/sharing";
+import { mayRequestCode } from "#/server/sharing";
 
 /** This deployment's public URL. OAuth for agents needs a fixed one, so it is required outside dev. */
 export const PUBLIC_URL = publicUrl(env.BETTER_AUTH_URL);
@@ -36,7 +36,7 @@ export const auth = betterAuth({
         // Accounts belong to the owner and to guests signing in on a page shared for comments.
         before: async (user, ctx) => {
           const shared = ctx?.headers?.get(SHARED_TARGET_HEADER);
-          if (!isOwner(user.email) && !(await opensForComments(shared))) {
+          if (!isOwner(user.email) && !(await mayRequestCode(shared, user.email))) {
             throw new APIError("FORBIDDEN", { message: "This library is private." });
           }
           // A code sign-in creates the account with an empty name; settings can change this one.
@@ -56,12 +56,12 @@ export const auth = betterAuth({
       expiresIn: 600,
       allowedAttempts: 5,
       storeOTP: "hashed",
-      // Codes go to the owner, and to guests on a page shared for comments (the page names itself
-      // in a header). Anyone else gets no email, so the form cannot be used on strangers.
+      // Codes go to the owner, and to guests on a page shared with them or shared by link for
+      // comments (the page names itself in a header). Anyone else gets no email.
       sendVerificationOTP: async ({ email, otp, type }, ctx) => {
         if (type !== "sign-in") return;
         const shared = ctx?.headers?.get(SHARED_TARGET_HEADER);
-        if (isOwner(email) || (await opensForComments(shared))) sendSignInCode(email, otp);
+        if (isOwner(email) || (await mayRequestCode(shared, email))) sendSignInCode(email, otp);
       },
     }),
     // Keys belong to the owner's agents, so the plugin's default limit of 10 requests a day is off.

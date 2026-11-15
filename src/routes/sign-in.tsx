@@ -97,7 +97,7 @@ function EmailStep({
     <>
       <h1 className="sign-in-title">
         {guest
-          ? "Sign in to comment. We send a code to your email; no password."
+          ? "Sign in to open what was shared with you. We send a code to your email; no password."
           : "Sign in to read and comment on your documents."}
       </h1>
       <form className="sign-in-form" onSubmit={(event) => void send(event)}>

@@ -32,7 +32,13 @@ export const Route = createFileRoute("/d/$id")({
       owner ? queryClient.ensureQueryData(threadsQuery(params.id)) : null,
     ]);
     if (page.state === "private") {
-      if (!viewer) throw redirect({ to: "/sign-in", search: { next: location.href } });
+      // Someone on a list of people signs in here to read; anyone else gets no code.
+      if (!viewer) {
+        throw redirect({
+          to: "/sign-in",
+          search: { next: location.href, shared: `document:${params.id}` },
+        });
+      }
       return null;
     }
     if (!owner && viewer && page.shared?.permission === "comment") {
@@ -98,7 +104,15 @@ function DocumentPage() {
         <DocumentView
           page={page}
           place={<FolderPath key={document.id} path={folder} documentId={document.id} />}
-          actions={isOld ? null : <ShareButton subject={{ kind: "document", id: document.id }} />}
+          actions={
+            isOld ? null : (
+              <ShareButton
+                key={document.id}
+                subject={{ kind: "document", id: document.id }}
+                sharing={page.sharing}
+              />
+            )
+          }
           byline={byline}
           notice={notice}
           comments={{ active: search.c ?? null, setActive, moderate: true }}
