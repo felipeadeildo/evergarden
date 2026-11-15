@@ -166,4 +166,6 @@ The server's MCP instructions tell the agent to call `guide()` before its first 
 - Responses that depend on a session send `Cache-Control: private, no-store`.
 - Sign-in codes go only to the owner, to people listed on a shared page, and to guests of a page shared for comments.
 - Better Auth reads the client IP from `cf-connecting-ip`, so rate limits apply per visitor.
-- File bytes live in R2 once per hash. `/d/<id>/files/<name>` checks the same access as the document and its versions. Only PNG, JPEG, GIF, WebP and AVIF are served inline; everything else, SVG and HTML included, downloads, and every file carries `nosniff` and a sandboxing `Content-Security-Policy`, so nothing attached runs on the library's origin. A file's type comes from its name, never from the uploader.
+- R2 stores each file's bytes once, by hash. `/d/<id>/files/<name>` checks the same access as the document and its versions.
+- The file route shows only PNG, JPEG, GIF, WebP and AVIF in the browser. Everything else, SVG and HTML included, downloads.
+- Every file goes out with `nosniff` and a sandboxing `Content-Security-Policy`, so nothing attached runs on the library's origin. The type comes from the file's name, never from the uploader.

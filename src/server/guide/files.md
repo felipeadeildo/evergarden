@@ -8,7 +8,7 @@ A document can carry files beside its markdown, like a folder holding `index.md`
 
 Names are letters, digits, spaces, dots, dashes and parentheses, up to 100 characters, without slashes. A file is at most 10 MB, and a document holds at most 100 MB of them.
 
-Files go into the document's draft and reach readers when the draft is published, as part of the next version. Each version keeps the files it had, so an old version still shows its old chart.
+Attached files go into the document's draft. Readers get them when you call `publish_draft`, as part of the next version. Each version keeps the files it had, so an old version still shows its old chart.
 
 1. Publish or update the markdown that references the files.
 2. Attach each file:

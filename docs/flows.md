@@ -81,13 +81,13 @@ The line under the title opens the list of versions, each with the comments reso
 
 ## It carries files
 
-A document can carry files beside its markdown, like a folder with `index.md` and what it uses. The markdown names them plainly: `![chart](chart.png)` shows the image, `[the data](data.csv)` becomes a download button with the size, and every file is listed under **Files** after the text.
+A document can carry files beside its markdown, like a folder with `index.md` and what it uses. The markdown names them plainly. `![chart](chart.png)` shows the image, `[the data](data.csv)` becomes a download button with the size, and a **Files** list after the text has them all.
 
-The agent calls `attach(id, name, content_base64)`, or sends larger files with `curl -T` to `/api/v1/documents/<id>/files/<name>`. You attach with **Attach files** or by dropping them on that list. Either way the files wait in the draft and reach readers with the next version. Each version keeps its own files, so an old version still shows its old chart. A file is at most 10 MB, a document at most 100 MB of them.
+The agent calls `attach(id, name, content_base64)`, or sends larger files with `curl -T` to `/api/v1/documents/<id>/files/<name>`. You attach with **Attach files** or by dropping them on that list. Either way the files go into the draft, and readers get them with the next version. Each version keeps its own files, so an old version still shows its old chart. A file is at most 10 MB, a document at most 100 MB of them.
 
 ## It sits in a folder
 
-When a document shares its folder with others, the side column lists them above the contents, and **Previous** and **Next** after the text lead to its neighbours, as do `[` and `]`. On a phone the list is in the Contents sheet. A guest sees the neighbours only when a folder above was shared with them.
+When a folder holds other documents, the side column lists them above the contents. **Previous** and **Next** after the text, and the `[` and `]` keys, open the neighbours. On a phone the list is in the Contents sheet. A guest sees the neighbours only when a folder above was shared with them.
 
 ## You share it
 
@@ -133,9 +133,9 @@ The first time, the agent opens your browser on `/connect`: "pi wants to read, p
 
 ## You organize it
 
-Beside the title, **Rename**, **Move** and **Delete** act on the document; a folder's page has the same three for the folder. Renaming a document saves a version with the new title in its markdown, so the title travels with the `.md` and agents read it. Move picks a folder from the tree, or creates one from a typed path such as `reports/2027`. A folder moves with everything in it, and cannot go inside itself.
+Beside the title, **Rename**, **Move** and **Delete** act on the document; a folder's page has the same three for the folder. Renaming a document saves a version with the new title in its markdown, so the exported `.md` and the agents see the new title too. Move picks a folder from the tree, or creates one from a typed path such as `reports/2027`. A folder moves with everything in it, and cannot go inside itself.
 
-Delete sends documents to the trash and stops sharing them at once. Deleting a folder sends every document under it to the trash, each remembering its path; restoring one brings back the folders it needs. Agents can `move` and `rename`, but only you delete.
+Delete sends documents to the trash and stops sharing them at once. Deleting a folder sends every document under it to the trash with the path it came from. Restoring one recreates its folders. Agents can `move` and `rename`, but only you delete.
 
 ## Left out on purpose
 
