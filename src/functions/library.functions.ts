@@ -65,7 +65,14 @@ export const getDocumentPage = createServerFn({ method: "GET", strict: { output:
         rendered(page.version.sha256),
         folderPath(page.document.folderId),
       ]);
-      return { document: page.document, version: page.version, versions: history, body, folder };
+      return {
+        document: page.document,
+        version: page.version,
+        versions: history,
+        body,
+        folder,
+        source: page.source,
+      };
     } catch (error) {
       if (error instanceof EvergardenError && error.code === "not_found") throw notFound();
       throw error;
