@@ -6,7 +6,7 @@ import {
   CommentsEnd,
   CommentsProvider,
   CommentsSheet,
-  SelectionAction,
+  SelectionBar,
   useComments,
 } from "#/components/comments/comments";
 import { CommentsMargin } from "#/components/comments/margin";
@@ -102,7 +102,7 @@ function DocumentPage() {
       </Sheet>
       {isOld ? null : (
         <>
-          <SelectionAction />
+          <SelectionBar />
           <CommentsSheet />
         </>
       )}
