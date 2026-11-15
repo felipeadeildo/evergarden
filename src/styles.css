@@ -466,18 +466,6 @@
     );
   }
 
-  /* The folder's documents after the text, and under the contents on a phone: see
-     components/document/folder-nav.tsx */
-  .folder-end {
-    margin-top: 4rem;
-    padding-top: 1.2rem;
-    border-top: 1px solid var(--rule);
-  }
-
-  .folder-end .folder-nav {
-    margin-top: 1.6rem;
-  }
-
   .sheet .toc + .folder-nav {
     margin-top: 2rem;
   }
@@ -1885,35 +1873,152 @@
     white-space: nowrap;
   }
 
-  /* Previous and next in the folder, at the top of .folder-end. */
+  /* The end of a document in a folder: see components/document/folder-nav.tsx */
+  .folder-end {
+    display: grid;
+    gap: 1.4rem;
+    margin-top: 4rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .folder-end-place {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+    font-style: italic;
+  }
+
+  .folder-end-place a {
+    color: var(--ink);
+    font-style: normal;
+    font-weight: 560;
+    text-decoration: none;
+  }
+
+  .folder-end-place a:hover {
+    color: var(--prussian);
+  }
+
   .folder-pager {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
-  .folder-pager a {
+  .pager-card {
     display: grid;
-    gap: 0.15rem;
-    padding: 0.5rem 0.7rem;
-    border-radius: 8px;
-    color: var(--prussian);
+    align-content: start;
+    gap: 0.3rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    color: var(--ink);
     text-decoration: none;
-    text-wrap: balance;
+    transition: border-color 150ms var(--ease);
   }
 
-  .folder-pager a:hover {
-    background: var(--sheet);
+  .pager-card:hover,
+  .pager-card:focus-visible {
+    border-color: var(--prussian);
   }
 
-  .folder-pager a[rel="next"] {
+  .pager-card[rel="next"] {
     grid-column: 2;
     text-align: right;
   }
 
-  .folder-pager-label {
-    color: var(--ink-soft);
+  .pager-card-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--prussian);
     font-size: 0.8rem;
+  }
+
+  .pager-card[rel="next"] .pager-card-label {
+    justify-self: end;
+  }
+
+  .pager-card-title {
+    font-weight: 600;
+    line-height: 1.35;
+    text-wrap: balance;
+  }
+
+  .pager-card-summary {
+    display: -webkit-box;
+    overflow: hidden;
+    color: var(--ink-soft);
+    font-size: 0.88rem;
+    font-style: italic;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  @media (max-width: 639px) {
+    .folder-pager {
+      grid-template-columns: 1fr;
+    }
+
+    .folder-pager > span:empty {
+      display: none;
+    }
+
+    .pager-card[rel="next"] {
+      grid-column: auto;
+      text-align: left;
+    }
+
+    .pager-card[rel="next"] .pager-card-label {
+      justify-self: start;
+    }
+  }
+
+  .folder-end-list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .folder-end-list a {
+    display: grid;
+    grid-template-columns: 1.6rem minmax(0, 1fr);
+    align-items: baseline;
+    margin: 0 -0.6rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+
+  .folder-end-list a:hover {
+    background: var(--sheet);
+    color: var(--ink);
+  }
+
+  .folder-end-list a[aria-current] {
+    background: var(--sheet);
+    color: var(--ink);
+    font-weight: 560;
+  }
+
+  .folder-end-number {
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .folder-end-list a[aria-current] .folder-end-number {
+    color: var(--prussian);
+  }
+
+  .folder-end-all {
+    justify-self: start;
+    color: var(--prussian);
+    font-size: 0.88rem;
   }
 
   /* Where Move sends something: see components/library/organize.tsx */
@@ -3813,7 +3918,7 @@ figure[data-pinning]::after {
   .code-copy,
   .diagram-expand,
   .byline-caret,
-  .folder-pager,
+  .folder-end,
   .tool-row {
     display: none;
   }

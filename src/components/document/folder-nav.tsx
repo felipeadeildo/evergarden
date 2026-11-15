@@ -1,10 +1,14 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 
+import { BackIcon, ForwardIcon } from "#/components/ui/icons";
 import type { FolderStep, Sibling } from "#/server/library";
 
 /** How many of a folder's documents the side list shows around the one open. */
 const AROUND = 9;
+
+/** How many of a folder's documents the end of a document lists before linking to the folder. */
+const MAX_LISTED = 30;
 
 type Props = { folder: FolderStep; siblings: Sibling[]; current: string; onNavigate?: () => void };
 
@@ -51,8 +55,47 @@ export function FolderNav({ folder, siblings, current, onNavigate }: Props) {
   );
 }
 
+/**
+ * The end of a document in a folder: where it sits in the reading order, the documents before and
+ * after it with their summaries, and the whole folder, numbered.
+ */
+export function FolderEnd({ folder, siblings, current }: Omit<Props, "onNavigate">) {
+  const index = siblings.findIndex((entry) => entry.id === current);
+  const shown = siblings.slice(0, MAX_LISTED);
+  return (
+    <nav aria-label={`In ${folder.name}`} className="folder-end">
+      <p className="folder-end-place">
+        {index + 1} of {siblings.length} in{" "}
+        <Link to="/f/$id" params={{ id: folder.id }}>
+          {folder.name}
+        </Link>
+      </p>
+      <FolderPager siblings={siblings} current={current} />
+      <ol className="folder-end-list">
+        {shown.map((entry, position) => (
+          <li key={entry.id}>
+            <Link
+              to="/d/$id"
+              params={{ id: entry.id }}
+              aria-current={entry.id === current ? "page" : undefined}
+            >
+              <span className="folder-end-number">{position + 1}</span>
+              <span className="folder-end-title">{entry.title}</span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+      {shown.length < siblings.length ? (
+        <Link to="/f/$id" params={{ id: folder.id }} className="folder-end-all">
+          All {siblings.length} documents in {folder.name}
+        </Link>
+      ) : null}
+    </nav>
+  );
+}
+
 /** The documents before and after this one in its folder, also reached with [ and ]. */
-export function FolderPager({ siblings, current }: { siblings: Sibling[]; current: string }) {
+function FolderPager({ siblings, current }: { siblings: Sibling[]; current: string }) {
   const navigate = useNavigate();
   const index = siblings.findIndex((entry) => entry.id === current);
   const previous = index > 0 ? siblings[index - 1] : undefined;
@@ -74,21 +117,30 @@ export function FolderPager({ siblings, current }: { siblings: Sibling[]; curren
 
   if (!previous && !next) return null;
   return (
-    <nav aria-label="In this folder" className="folder-pager">
-      {previous ? (
-        <Link to="/d/$id" params={{ id: previous.id }} rel="prev" aria-keyshortcuts="[">
-          <span className="folder-pager-label">Previous</span>
-          {previous.title}
-        </Link>
-      ) : (
-        <span />
-      )}
-      {next ? (
-        <Link to="/d/$id" params={{ id: next.id }} rel="next" aria-keyshortcuts="]">
-          <span className="folder-pager-label">Next</span>
-          {next.title}
-        </Link>
-      ) : null}
-    </nav>
+    <div className="folder-pager">
+      {previous ? <PagerCard entry={previous} rel="prev" /> : <span />}
+      {next ? <PagerCard entry={next} rel="next" /> : null}
+    </div>
+  );
+}
+
+function PagerCard({ entry, rel }: { entry: Sibling; rel: "prev" | "next" }) {
+  const Icon = rel === "prev" ? BackIcon : ForwardIcon;
+  return (
+    <Link
+      to="/d/$id"
+      params={{ id: entry.id }}
+      rel={rel}
+      aria-keyshortcuts={rel === "prev" ? "[" : "]"}
+      className="pager-card"
+    >
+      <span className="pager-card-label">
+        {rel === "prev" ? <Icon /> : null}
+        {rel === "prev" ? "Previous" : "Next"}
+        {rel === "next" ? <Icon /> : null}
+      </span>
+      <span className="pager-card-title">{entry.title}</span>
+      {entry.summary ? <span className="pager-card-summary">{entry.summary}</span> : null}
+    </Link>
   );
 }
