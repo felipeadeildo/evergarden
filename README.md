@@ -23,7 +23,6 @@ The agent signs in with OAuth the first time. Settings shows the same command fo
 - [How it is used](docs/flows.md)
 - [Design](docs/design.md) and [design language](docs/design-language.md)
 - [Deploying](docs/deploy.md)
-- [Roadmap](docs/roadmap.md)
 
 ## Development
 

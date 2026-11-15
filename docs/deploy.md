@@ -47,13 +47,13 @@ From then on, a push to `main` builds and deploys, and pushes to other branches 
 
 ## Sign-in codes by email
 
-There are no passwords and no GitHub or Google sign-in. You type your email on `/sign-in`, the Worker sends a six-digit code through the `send_email` binding in `wrangler.jsonc`, and you type the code. Codes go only to `OWNER_EMAIL`; any other address sees the same screen and receives nothing.
+There are no passwords and no GitHub or Google sign-in. You type your email on `/sign-in`, the Worker sends a six-digit code through the `send_email` binding in `wrangler.jsonc`, and you type the code. Codes go only to `OWNER_EMAIL` and to the guests of what you share; any other address sees the same screen and receives nothing.
 
 1. Your domain must use Cloudflare DNS. In the dashboard, open **Compute > Email Service > Email Sending**, onboard the domain, and let Cloudflare add the DNS records it asks for.
 2. Set `EMAIL_FROM` to an address on that domain, such as `evergarden@example.com`.
 3. Choose how the codes are paid for:
    - **Workers Free.** Email can go only to verified destination addresses, and only from a domain with Email Routing turned on. Turn on Email Routing for the domain, then under **Email Routing > Destination addresses** add `OWNER_EMAIL` and click the link Cloudflare sends. Codes to a verified address are free and do not count toward any quota. Email Routing replaces the domain's MX records, so if the domain already receives mail elsewhere, send from a subdomain such as `mail.example.com` instead.
-   - **Workers Paid.** Codes can go to any address, which guests will need once share links exist. The plan includes 3,000 emails a month; more cost $0.35 per thousand.
+   - **Workers Paid.** Codes can go to any address, which guests need to sign in. The plan includes 3,000 emails a month; more cost $0.35 per thousand.
 
 Email Sending has been in public beta since April 2026, and new accounts start with a low daily quota that grows over time. If a code does not arrive, check the spam folder first; the Worker logs a failed send as `Sign-in code not sent:` with Cloudflare's error code.
 
