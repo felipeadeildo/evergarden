@@ -27,6 +27,9 @@ heading is shown as the page title and not repeated in the body.
   to narrow screens, so prefer them to ASCII drawings. In Mermaid a \`;\` ends a statement, so a
   message or label that needs a pause takes a comma: "version 2, with your comment" draws, and
   "version 2; your comment" fails to parse.
+- In an \`xychart-beta\`, name every series, \`bar "hedy" [...]\` and \`line "Bright Data" [...]\`: the
+  chart draws a legend with their colours, so the title need not say which is the bar and which
+  the line. Quote axis labels that hold anything but letters and digits: \`x-axis ["14/10", "15/10"]\`.
 - Highlighted code in about 80 languages; name the language after the opening fence.
 - Links to other documents: \`[the cache plan](/d/<id>)\` shows with a document icon, and a
   bare \`/d/<id>\` URL takes the document's current title. A link alone in its paragraph becomes
