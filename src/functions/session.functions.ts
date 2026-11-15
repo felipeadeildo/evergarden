@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders, getRequestUrl } from "@tanstack/react-start/server";
+import { z } from "zod";
 
 import { principalFrom } from "#/server/access";
+import { rename } from "#/server/account";
+
+import { ownerAccess } from "./middleware";
 
 export type Viewer = { kind: "owner" | "guest"; name: string; email: string };
 
@@ -17,3 +21,8 @@ export const getViewer = createServerFn({ method: "GET" }).handler(
 export const getMcpAddress = createServerFn({ method: "GET" }).handler(
   () => new URL("/mcp", getRequestUrl()).href,
 );
+
+export const renameMe = createServerFn({ method: "POST" })
+  .middleware([ownerAccess])
+  .validator(z.object({ name: z.string().max(60) }))
+  .handler(({ data, context: { owner } }) => rename(owner.userId, data.name));

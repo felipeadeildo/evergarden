@@ -15,7 +15,7 @@ export const ownerAccess = createMiddleware({ type: "function" }).server(async (
   const principal = await principalFrom(getRequestHeaders());
   authorize(principal);
   if (principal.kind !== "owner") {
-    throw new EvergardenError("forbidden", "Only the owner can manage agents.");
+    throw new EvergardenError("forbidden", "Only the owner of this library can do this.");
   }
   return next({ context: { owner: principal } });
 });
