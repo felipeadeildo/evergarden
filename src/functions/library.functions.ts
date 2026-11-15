@@ -146,6 +146,8 @@ export const getDocumentPage = createServerFn({ method: "GET", strict: { output:
         ...page,
         versions: current ? page.versions.slice(0, 1) : page.versions,
         folder: sharedPath(page.folder, shared),
+        // A guest sees the documents beside this one only when a folder above was shared.
+        siblings: shared && !shared.root ? [] : page.siblings,
         shared,
         sharing,
         draft: draft && {

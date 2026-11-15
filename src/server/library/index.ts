@@ -249,19 +249,42 @@ export async function read(id: string, versionNumber?: number): Promise<Read> {
 export type DocumentPage = Read & {
   versions: VersionEntry[];
   folder: FolderStep[];
+  /** The documents in its folder, itself included, in the folder's order. */
+  siblings: Sibling[];
   body: Rendered;
 };
+
+export type Sibling = { id: string; title: string };
+
+const MAX_SIBLINGS = 200;
+
+/** None at the top of the library, which is not a folder one reads through. */
+function siblingsOf(documentId: string): Promise<Sibling[]> {
+  return db
+    .select({ id: document.id, title: document.title })
+    .from(document)
+    .where(
+      and(
+        isNull(document.deletedAt),
+        sql`${document.folderId} = (select folder_id from document where id = ${documentId})`,
+      ),
+    )
+    .orderBy(asc(document.position))
+    .limit(MAX_SIBLINGS)
+    .all();
+}
 
 /**
  * Everything the document page shows. The queries are independent, so they run at once and the
  * page costs one round trip to D1 instead of one per query.
  */
 export async function documentPage(id: string, versionNumber?: number): Promise<DocumentPage> {
-  const [found, shown, history, path] = await Promise.all([
+  const [found, shown, history, path, siblings] = await Promise.all([
     getDocument(id),
     shownVersion(id, versionNumber),
     versions(id),
     documentFolderPath(id),
+    siblingsOf(id),
   ]);
   return {
     document: found,
@@ -269,6 +292,7 @@ export async function documentPage(id: string, versionNumber?: number): Promise<
     source: shown.markdown,
     versions: history,
     folder: path,
+    siblings,
     body: await cachedRender(shown.version.sha256, shown.markdown, shown.cache),
   };
 }
