@@ -24,6 +24,9 @@ export const auth = betterAuth({
   // The JWT plugin's /token would hand the browser a session JWT signed like an access token.
   disabledPaths: ["/token"],
   database: drizzleAdapter(db, { provider: "sqlite", schema }),
+  // A signed cookie carries the session for 5 minutes, so most requests skip the session query.
+  // A session revoked elsewhere stays usable here until then.
+  session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
   databaseHooks: {
     user: {
       create: {
