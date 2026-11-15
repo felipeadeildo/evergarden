@@ -99,7 +99,7 @@ Better Auth owns `user`, `session`, `account`, `verification`, `apikey` and the 
 | Table       | Main columns                                                                                                                                 |
 | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `content`   | `sha256`, `markdown`, the gzipped rendered tree, `renderer_version`                                                                          |
-| `folder`    | `id`, `parent_id`, `name`, `position`, `repo` (unique when set)                                                                              |
+| `folder`    | `id`, `parent_id`, `name`, `position`, `repo` (unique when set), `sort`, `entry_id`                                                          |
 | `document`  | `id`, `folder_id`, `position`, `title`, `summary`, `current_version`, `updated_at`, `deleted_at`, `deleted_from`                             |
 | `version`   | `id`, `document_id`, `number`, `sha256`, `files` (name, hash, size, type), `author_kind`, `author_id`, `author_name`                         |
 | `comment`   | `id`, `document_id`, `version_id`, `anchor` (JSON), `body`, `suggestion`, `status` (`open`, `resolved`, `detached`), author, `agent_seen_at` |
@@ -148,6 +148,7 @@ Access is checked on the server in every server function, API route and MCP tool
 | `move(id? \| folder?, to)`                 | Moves a document or folder; creates the target folders           |
 | `rename(id? \| folder?, name)`             | Renames a folder, or retitles a document in a new version        |
 | `delete(id? \| folder?)`                   | Sends a document or folder to the trash, for 30 days             |
+| `order(folder, by?, ids?, entry?)`         | Sets a folder's rule, its manual order, or its entry             |
 | `read(id, version?, draft?)`               | Returns the markdown                                             |
 | `list(folder?, repo?)`                     | Folders and documents, with open comment counts                  |
 | `search(query)`                            | Full-text search; ids, titles and an excerpt                     |

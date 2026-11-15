@@ -9,6 +9,7 @@ The title is frontmatter `title` or the first `# heading`, not both. A frontmatt
 - `publish` once per document, then keep its id: comments and links follow the id.
 - `edit` replaces exact passages in a draft only your user sees; `publish_draft` saves the draft as one version. `update` replaces the whole text; pass `base_version` if your user may have changed it.
 - In a git repository, pass `repo` (the remote URL) so the document lands in that repository's folder.
+- New documents go last in their folder, so publish a series in reading order. Put `index: true` in the frontmatter of the one readers should start with; it is pinned first, with its summary on the folder's page. `order` changes a folder's order later: by a rule (newest, oldest, title) or by a list of ids.
 - `share` changes who can open a document or folder. Call it only when your user asks.
 
 ## Markdown

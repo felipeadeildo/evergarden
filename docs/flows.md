@@ -133,6 +133,8 @@ The first time, the agent opens your browser on `/connect`: "pi wants to read, p
 
 ## You organize it
 
+Each folder has an **Order**: Manual, Newest first, Oldest first, or Title A–Z. New documents go last, so a series keeps the order it was published in. Dragging a row by its handle moves it and turns the folder Manual, starting from the order on screen; the handle's menu does the same with **Move up** and **Move down**, from the keyboard or a phone. One document can be the folder's entry: it sits first under **Start here** with its summary, set from the handle's menu or with `index: true` in its frontmatter. The order holds everywhere the folder shows: its page, the side list, Previous and Next, guests, and `list`. Agents change it with `order`.
+
 Beside the title, **Rename**, **Move** and **Delete** act on the document; a folder's page has the same three for the folder. Renaming a document saves a version with the new title in its markdown, so the exported `.md` and the agents see the new title too. Move picks a folder from the tree, or creates one from a typed path such as `reports/2027`. A folder moves with everything in it, and cannot go inside itself.
 
 Delete sends documents to the trash and stops sharing them at once. Deleting a folder sends every document under it to the trash with the path it came from. Restoring one recreates its folders. Agents can `move`, `rename` and `delete`; their deletions go to the same trash.
