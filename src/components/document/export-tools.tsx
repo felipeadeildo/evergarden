@@ -19,7 +19,7 @@ export function ExportTools({ title, source }: { title: string; source: string }
   }
 
   return (
-    <div className="export-tools">
+    <div className="tool-row">
       <button type="button" title="Copy the markdown" onClick={() => void copy()}>
         {copied ? <CheckIcon /> : <CopyIcon />}
         <span aria-live="polite">{copied ? "Copied" : "Copy"}</span>

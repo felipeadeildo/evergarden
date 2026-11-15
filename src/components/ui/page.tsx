@@ -21,10 +21,19 @@ export function Page({
   );
 }
 
-export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
+export function PageHeader({
+  title,
+  summary,
+  children,
+}: {
+  title: string;
+  summary?: string | null;
+  children?: ReactNode;
+}) {
   return (
     <header className="page-header">
       <h1>{title}</h1>
+      {summary ? <p className="page-summary">{summary}</p> : null}
       {children}
     </header>
   );

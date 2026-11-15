@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { DocumentView } from "#/components/document/document-view";
 import { VersionsMenu } from "#/components/document/versions-menu";
+import { OrganizeTools } from "#/components/library/organize";
 import { FolderPath } from "#/components/navigation/folder-path";
 import { Private } from "#/components/navigation/private";
 import { SearchProvider } from "#/components/navigation/search";
@@ -54,7 +55,7 @@ export const Route = createFileRoute("/d/$id")({
     return {
       title: page.document.title,
       math: page.body.features.math,
-      excerpt: page.source.replace(/^#.*$/m, "").trim().slice(0, 180),
+      excerpt: page.body.summary ?? page.source.replace(/^#.*$/m, "").trim().slice(0, 180),
     };
   },
   head: ({ loaderData }) => ({
@@ -136,6 +137,16 @@ function DocumentPage() {
           }
           byline={byline}
           notice={notice}
+          tools={
+            isOld || showsDraft ? null : (
+              <OrganizeTools
+                key={document.id}
+                subject={{ kind: "document", id: document.id }}
+                name={document.title}
+                parentId={document.folderId}
+              />
+            )
+          }
           comments={showsDraft ? null : { active: search.c ?? null, setActive, moderate: true }}
         />
       </SearchProvider>

@@ -1,4 +1,5 @@
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
+import { ArrowBendUpRightIcon } from "@phosphor-icons/react/dist/ssr/ArrowBendUpRight";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react/dist/ssr/ArrowCounterClockwise";
 import { ArrowsInIcon } from "@phosphor-icons/react/dist/ssr/ArrowsIn";
 import { ArrowsOutSimpleIcon } from "@phosphor-icons/react/dist/ssr/ArrowsOutSimple";
@@ -29,6 +30,7 @@ import { PlugsConnectedIcon } from "@phosphor-icons/react/dist/ssr/PlugsConnecte
 import { PlusIcon } from "@phosphor-icons/react/dist/ssr/Plus";
 import { PrinterIcon } from "@phosphor-icons/react/dist/ssr/Printer";
 import { SignOutIcon as PhosphorSignOut } from "@phosphor-icons/react/dist/ssr/SignOut";
+import { TrashIcon as PhosphorTrash } from "@phosphor-icons/react/dist/ssr/Trash";
 import { UserIcon } from "@phosphor-icons/react/dist/ssr/User";
 import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr/UsersThree";
 import { WarningIcon as PhosphorWarning } from "@phosphor-icons/react/dist/ssr/Warning";
@@ -89,3 +91,5 @@ export const CalloutIcons = {
 export const DraftIcon = icon(NotePencilIcon);
 export const DownloadIcon = icon(DownloadSimpleIcon);
 export const PrintIcon = icon(PrinterIcon);
+export const MoveIcon = icon(ArrowBendUpRightIcon);
+export const TrashIcon = icon(PhosphorTrash);

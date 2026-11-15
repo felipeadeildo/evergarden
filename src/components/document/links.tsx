@@ -59,6 +59,7 @@ export function Paragraph({ node, children, ...props }: Props<"p">) {
       <Link to="/d/$id" params={{ id: target.id }}>
         <DocumentIcon />
         <span className="document-card-title">{target.title}</span>
+        {target.summary ? <span className="document-card-summary">{target.summary}</span> : null}
         <span className="document-card-meta">
           {target.folder ? `${target.folder}, ` : ""}version {target.version}, updated{" "}
           <RelativeTime date={target.updatedAt} />

@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
+import { OrganizeTools } from "#/components/library/organize";
 import { DocumentRow, FolderRow, LoadMore, RepositoryLink } from "#/components/library/rows";
 import { type FolderView, useFolder } from "#/components/library/use-folder";
 import { FolderPath } from "#/components/navigation/folder-path";
@@ -102,10 +103,21 @@ function FolderContent({
       )}
       <Page>
         <PageHeader title={folder.name}>
-          <p className="page-details">
-            {plural(folder.documents, "document")}
-            {folder.repo ? <RepositoryLink repo={folder.repo} /> : null}
-          </p>
+          <div className="document-meta">
+            <p className="page-details">
+              {plural(folder.documents, "document")}
+              {folder.repo ? <RepositoryLink repo={folder.repo} /> : null}
+            </p>
+            {owner ? (
+              <OrganizeTools
+                key={folder.id}
+                subject={{ kind: "folder", id: folder.id }}
+                name={folder.name}
+                // The path ends with the folder itself.
+                parentId={folder.path.at(-2)?.id ?? null}
+              />
+            ) : null}
+          </div>
         </PageHeader>
         <FolderListing listing={listing} path={folder.path.map((step) => step.name).join("/")} />
       </Page>

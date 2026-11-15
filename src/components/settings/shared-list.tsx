@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
 
+import { ConfirmRow } from "#/components/settings/confirm-row";
 import { DocumentIcon, FolderIcon, PersonIcon } from "#/components/ui/icons";
 import { RelativeTime } from "#/components/ui/relative-time";
 import { getSharedList, removePerson, updateSharing } from "#/functions/sharing.functions";
@@ -97,59 +97,5 @@ function SharedRow({ entry, onStop }: { entry: SharedEntry; onStop: () => Promis
       confirm="Stop sharing"
       onConfirm={onStop}
     />
-  );
-}
-
-/** A row with an action that asks once, in the row itself, before it happens. */
-function ConfirmRow({
-  icon,
-  name,
-  place,
-  end,
-  action,
-  warning,
-  confirm,
-  onConfirm,
-}: {
-  icon: React.ReactNode;
-  name: React.ReactNode;
-  place: string;
-  end: React.ReactNode;
-  action: string;
-  warning: string;
-  confirm: string;
-  onConfirm: () => Promise<unknown>;
-}) {
-  const [confirming, setConfirming] = useState(false);
-  return (
-    <li>
-      <div className="row row-static">
-        {icon}
-        <span className="row-name">{name}</span>
-        <span className="row-place">{place}</span>
-        <span className="row-end">
-          {end}
-          <button
-            type="button"
-            className="row-action danger"
-            aria-expanded={confirming}
-            onClick={() => setConfirming(!confirming)}
-          >
-            {action}
-          </button>
-        </span>
-        {confirming ? (
-          <p className="row-confirm" role="alert">
-            {warning}
-            <button type="button" className="row-action danger" onClick={() => void onConfirm()}>
-              {confirm}
-            </button>
-            <button type="button" className="row-action" onClick={() => setConfirming(false)}>
-              Keep it
-            </button>
-          </p>
-        ) : null}
-      </div>
-    </li>
   );
 }

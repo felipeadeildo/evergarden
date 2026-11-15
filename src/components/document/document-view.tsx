@@ -30,6 +30,7 @@ export function DocumentView({
   shared,
   byline,
   notice,
+  tools,
   comments,
 }: {
   page: DocumentPage & { links?: DocumentLinks };
@@ -39,6 +40,8 @@ export function DocumentView({
   actions?: ReactNode;
   shared?: { home: string };
   byline: ReactNode;
+  /** The owner's tools beside the export ones, such as rename and move. */
+  tools?: ReactNode;
   /** Shown above the title, such as the note on an older version. */
   notice?: ReactNode;
   /** Comments show only when given; new ones go on the current version alone. */
@@ -85,10 +88,13 @@ export function DocumentView({
         margin={commenting ? <CommentsMargin /> : null}
       >
         {notice}
-        <PageHeader title={document.title}>
+        <PageHeader title={document.title} summary={body.summary}>
           <div className="document-meta">
             {byline}
-            <ExportTools title={document.title} source={source} />
+            <div className="page-tools">
+              <ExportTools title={document.title} source={source} />
+              {tools}
+            </div>
           </div>
         </PageHeader>
         <div className="document-text">

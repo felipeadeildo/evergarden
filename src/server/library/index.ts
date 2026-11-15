@@ -117,6 +117,7 @@ function liveDocuments(where?: SQL) {
 export type LinkedDocument = {
   id: string;
   title: string;
+  summary: string | null;
   folder: string | null;
   version: number;
   updatedAt: Date;
@@ -129,6 +130,7 @@ export async function linkedDocuments(ids: string[]): Promise<LinkedDocument[]> 
     .select({
       id: document.id,
       title: document.title,
+      summary: document.summary,
       folder: folder.name,
       version: document.currentVersion,
       updatedAt: document.updatedAt,
