@@ -100,7 +100,7 @@ export function folderAt(path: string): Promise<string | null> {
   return ensureFolder(parseFolderPath(path));
 }
 
-/** "reports/2026": how the trash remembers where a document was. */
+/** A folder path as text, such as "reports/2026", stored with a document in the trash. */
 function pathText(path: FolderStep[]): string {
   return path.map((step) => step.name).join("/");
 }
@@ -125,8 +125,8 @@ export async function deleteDocument(id: string): Promise<void> {
 }
 
 /**
- * Sends every document under a folder to the trash, each remembering its path, then removes the
- * folders. Restoring a document brings back the folders it needs.
+ * Sends every document under a folder to the trash with the path it came from, then removes the
+ * folders. Restoring a document recreates its folders.
  */
 export async function deleteFolder(id: string): Promise<void> {
   await getFolder(id);

@@ -76,7 +76,7 @@ export function FileImage({ node, src, alt, ...props }: WithNode<"img">) {
 
 /**
  * Every file of the version, after the text. The owner attaches files here, by button or by
- * dropping them on the list; both go to the draft, which opens for publishing.
+ * dropping them on the list; both add to the draft and then open it, ready to publish.
  */
 export function FileList({ editable }: { editable: boolean }) {
   const files = useContext(FilesContext);

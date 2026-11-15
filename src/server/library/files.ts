@@ -39,8 +39,8 @@ async function storeBlob(bytes: ArrayBuffer, type: string): Promise<string> {
 }
 
 /**
- * Attaches a file to the document's draft, replacing one with the same name. It reaches readers
- * when the draft is published, as part of the next version.
+ * Attaches a file to the document's draft, replacing one with the same name. Readers get it when
+ * someone publishes the draft as the next version.
  */
 export async function attachFile(
   id: string,

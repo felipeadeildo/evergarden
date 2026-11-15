@@ -58,7 +58,7 @@ export function OrganizeTools(props: Props) {
   );
 }
 
-/** After a change, every list and page that shows the item reads it again. */
+/** After a change, refetches every list and page, since any of them may show the item. */
 function useRefresh() {
   const queryClient = useQueryClient();
   const router = useRouter();
