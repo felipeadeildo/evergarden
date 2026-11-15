@@ -10,7 +10,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: "unit",
-          include: ["src/{lib,render,components}/**/*.test.ts"],
+          include: ["src/{lib,render,anchor,components}/**/*.test.ts"],
           environment: "node",
         },
       },
