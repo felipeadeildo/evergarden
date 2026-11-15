@@ -19,7 +19,11 @@ export type RenderData = {
   headings?: Heading[];
   text?: string;
   features?: { math: boolean; diagram: boolean };
+  links?: string[];
 };
+
+/** A link to a document in any evergarden: `/d/<id>`, relative or absolute. */
+const DOCUMENT_LINK = /^(?:https?:\/\/[^/]+)?\/d\/([0-9a-z]{10})\/?(?:[?#].*)?$/;
 
 declare module "vfile" {
   interface DataMap {
@@ -78,12 +82,20 @@ export function rehypeEvergarden() {
   return (tree: Root, file: VFile) => {
     const result = data(file);
     const features = { math: false, diagram: false };
+    const links = new Set<string>();
 
     visit(tree, "element", (node, index, parent) => {
       const offsets = sourceOffsets(node);
       if (offsets && SOURCEPOS_TAGS.has(node.tagName)) node.properties.dataSourcepos = offsets;
 
       if (node.tagName === "blockquote") toCallout(node);
+
+      if (node.tagName === "a") {
+        const id = documentLink(node);
+        if (id) links.add(id);
+      }
+
+      if (node.tagName === "p" && isLinkCard(node)) node.properties.dataCard = "";
 
       if (node.tagName === "code" && hasClass(node, "language-math")) features.math = true;
 
@@ -107,7 +119,35 @@ export function rehypeEvergarden() {
     result.headings = addHeadingIds(tree);
     result.text = toText(tree).replace(/\s+/g, " ").trim();
     result.features = features;
+    result.links = [...links];
   };
+}
+
+/**
+ * Marks a link to a document with its id, and as bare when its text is only the address, so the
+ * page can show the document's current title instead.
+ */
+function documentLink(node: Element): string | undefined {
+  const href = typeof node.properties.href === "string" ? node.properties.href : "";
+  const id = DOCUMENT_LINK.exec(href)?.[1];
+  if (!id) return undefined;
+  node.properties.dataDocument = id;
+  const text = toString(node).trim();
+  if (text === href || text === id) node.properties.dataBare = "";
+  return id;
+}
+
+/** A paragraph holding nothing but a bare link to a document becomes a card. */
+function isLinkCard(node: Element): boolean {
+  const content = node.children.filter((child) => !(child.type === "text" && !child.value.trim()));
+  const only = content[0];
+  return (
+    content.length === 1 &&
+    only?.type === "element" &&
+    only.tagName === "a" &&
+    documentLink(only) !== undefined &&
+    "dataBare" in only.properties
+  );
 }
 
 /** Drops positions once every block carries `data-sourcepos`, which keeps the stored tree small. */

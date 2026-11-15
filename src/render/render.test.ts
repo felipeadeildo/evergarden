@@ -173,3 +173,24 @@ describe("render", () => {
     expect(text).not.toContain("**");
   });
 });
+
+describe("links to documents", () => {
+  it("marks them with the id, as bare when the text is the address, and as a card when alone", async () => {
+    const source = [
+      "See [the cache plan](/d/k7q2mxa9pt) and https://ever.example/d/abcdefghij.",
+      "",
+      "https://ever.example/d/0123456789",
+      "",
+      "[Elsewhere](https://example.com/d/notanid) stays a plain link.",
+    ].join("\n");
+    const { tree, links } = await render(source);
+    const html = toHtml(tree);
+    expect(links).toEqual(["k7q2mxa9pt", "abcdefghij", "0123456789"]);
+    expect(html).toContain('<a href="/d/k7q2mxa9pt" data-document="k7q2mxa9pt">');
+    expect(html).toMatch(/data-document="abcdefghij" data-bare=""/);
+    expect(html).toMatch(
+      /<p data-sourcepos="[^"]+" data-card=""><a href="https:\/\/ever.example\/d\/0123456789"/,
+    );
+    expect(html).toContain('<a href="https://example.com/d/notanid">');
+  });
+});

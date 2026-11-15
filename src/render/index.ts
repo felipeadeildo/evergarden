@@ -21,7 +21,7 @@ import {
 export type { Heading };
 
 /** Part of every cache key for rendered trees: bump it whenever the output changes. */
-export const RENDERER_VERSION = 5;
+export const RENDERER_VERSION = 6;
 
 export type Rendered = {
   tree: Root;
@@ -30,6 +30,8 @@ export type Rendered = {
   headings: Heading[];
   text: string;
   features: { math: boolean; diagram: boolean };
+  /** Ids of the documents this one links to. */
+  links: string[];
 };
 
 const schema: Schema = {
@@ -68,5 +70,6 @@ export async function render(source: string): Promise<Rendered> {
     headings: data.headings ?? [],
     text: data.text ?? "",
     features: data.features ?? { math: false, diagram: false },
+    links: data.links ?? [],
   };
 }
