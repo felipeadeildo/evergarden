@@ -1944,12 +1944,6 @@
     opacity: 1;
   }
 
-  @media (hover: none) {
-    .diagram-expand {
-      opacity: 1;
-    }
-  }
-
   /* The full-screen diagram */
 
   .viewer {
