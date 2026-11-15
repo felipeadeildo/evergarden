@@ -13,7 +13,7 @@ function textNodes(block: Element): Text[] {
   return nodes;
 }
 
-function sourcePosition(block: Element): SourceRange | null {
+export function sourcePosition(block: Element): SourceRange | null {
   const [start, end] = (block.getAttribute("data-sourcepos") ?? "").split("-").map(Number);
   return start === undefined || end === undefined || Number.isNaN(start + end)
     ? null
@@ -83,3 +83,15 @@ export function domRange(root: Element, source: string, target: SourceRange): Ra
   }
   return null;
 }
+
+/** The block a block or point comment is on: the element whose source is exactly that range. */
+export function blockElement(root: Element, target: SourceRange): HTMLElement | null {
+  for (const candidate of root.querySelectorAll<HTMLElement>("[data-sourcepos]")) {
+    const position = sourcePosition(candidate);
+    if (position?.start === target.start && position.end === target.end) return candidate;
+  }
+  return null;
+}
+
+/** The block of `element` that takes whole-block comments: a table, code, a callout or a figure. */
+export const COMMENTABLE_BLOCK = ".prose > table, .prose > figure, .prose > aside, .prose > pre";

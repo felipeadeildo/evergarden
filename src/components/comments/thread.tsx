@@ -158,10 +158,13 @@ function ReplyBox({ onReply }: { onReply: (body: string) => Promise<unknown> }) 
 /** A new comment on a passage, with an optional edit of it. */
 export function Composer({
   passage,
+  canSuggest = true,
   onSubmit,
   onCancel,
 }: {
   passage: string;
+  /** Only text has a rewrite to suggest; blocks and figures take comments alone. */
+  canSuggest?: boolean;
   onSubmit: (input: { body: string; suggestion?: string }) => Promise<unknown>;
   onCancel: () => void;
 }) {
@@ -219,15 +222,17 @@ export function Composer({
         </p>
       ) : null}
       <div className="note-actions">
-        <button
-          type="button"
-          className="text-button quiet note-toggle"
-          aria-pressed={suggesting}
-          onClick={() => setSuggesting(!suggesting)}
-        >
-          <EditIcon />
-          Suggest
-        </button>
+        {canSuggest ? (
+          <button
+            type="button"
+            className="text-button quiet note-toggle"
+            aria-pressed={suggesting}
+            onClick={() => setSuggesting(!suggesting)}
+          >
+            <EditIcon />
+            Suggest
+          </button>
+        ) : null}
         <button type="button" className="text-button quiet" onClick={onCancel}>
           Cancel
         </button>

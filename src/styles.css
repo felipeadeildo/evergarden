@@ -2051,6 +2051,72 @@
   text-underline-offset: 5px;
 }
 
+/* A block with a comment on the whole of it. */
+.prose [data-commented] {
+  outline: 1.5px solid color-mix(in srgb, var(--emerald) 35%, transparent);
+  outline-offset: 8px;
+  border-radius: 2px;
+}
+
+.prose [data-commented="strong"] {
+  outline-color: var(--emerald);
+}
+
+.document-text {
+  position: relative;
+}
+
+.comment-pins {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* A numbered pin on the spot a comment points at in a figure. */
+.comment-pin {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  translate: -50% -50%;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--emerald);
+  box-shadow: 0 0 0 2px var(--paper);
+  color: var(--paper);
+  font: italic 600 0.78rem/1 var(--serif);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.comment-pin[data-active] {
+  box-shadow:
+    0 0 0 2px var(--paper),
+    0 0 0 5px color-mix(in srgb, var(--emerald) 40%, transparent);
+}
+
+/* Choosing the spot for a comment on a figure. */
+figure[data-pinning] {
+  position: relative;
+}
+
+figure[data-pinning] .diagram-open,
+figure[data-pinning] .diagram {
+  cursor: crosshair;
+}
+
+figure[data-pinning]::after {
+  content: "Click the spot to comment on. Esc cancels.";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  font: italic 0.85rem var(--serif);
+  color: var(--emerald);
+  pointer-events: none;
+}
+
 ::highlight(comment-active) {
   background-color: color-mix(in srgb, var(--emerald) 24%, transparent);
   text-decoration: underline 2px var(--emerald);

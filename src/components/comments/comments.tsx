@@ -16,8 +16,9 @@ import { Sheet } from "#/components/ui/sheet";
 import { Manicule } from "#/components/ui/wordmark";
 
 import { domRange, selectedSource } from "./dom";
+import { type Place, placeOf, scrollToPlace } from "./places";
 import { Composer, OpenThread } from "./thread";
-import { type Thread, useThreads } from "./use-threads";
+import { type Target, type Thread, useThreads } from "./use-threads";
 
 /** Keys for the two passages that are not threads yet, in `ranges()`. */
 export const DRAFT = "draft";
@@ -28,16 +29,19 @@ type Comments = ReturnType<typeof useThreads> & {
   root: RefObject<HTMLElement | null>;
   /** Open threads on the current version, in the order of their passages. */
   open: Thread[];
-  /** Where each open thread, the new comment and the selection sit in the page right now. */
+  /** The text passages of open threads, the new comment and the selection, as DOM ranges. */
   ranges: () => Map<string, Range>;
+  /** Where each open thread and the new comment sit in the page right now, whatever their kind. */
+  places: () => Map<string, Place>;
   active: string | null;
   setActive: (id: string | null) => void;
   setHovered: (id: string | null) => void;
   /** The passage the reader selected, before they chose to comment on it. */
   selection: SourceRange | null;
-  /** The passage of the comment being written. */
-  draft: SourceRange | null;
-  startDraft: () => void;
+  /** What the comment being written points at. */
+  draft: Target | null;
+  /** Starts a comment on `target`, or on the selected passage. */
+  startDraft: (target?: Target) => void;
   cancelDraft: () => void;
   wide: boolean;
 };
@@ -68,7 +72,7 @@ export function CommentsProvider({
   children: ReactNode;
 }) {
   const data = useThreads(documentId, version);
-  const [draft, setDraft] = useState<SourceRange | null>(null);
+  const [draft, setDraft] = useState<Target | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const selection = useSelection(root, source);
   const wide = useMediaQuery("(min-width: 1200px)");
@@ -81,31 +85,49 @@ export function CommentsProvider({
     [data.threads, version],
   );
 
-  const ranges = useCallback(() => {
-    const found = new Map<string, Range>();
+  const targets = useMemo(() => {
+    const all = new Map<string, Target>(open.map((thread) => [thread.id, thread.anchor]));
+    if (draft) all.set(DRAFT, draft);
+    return all;
+  }, [open, draft]);
+
+  const places = useCallback(() => {
+    const found = new Map<string, Place>();
     const element = root.current;
     if (!element) return found;
-    const place = (id: string, target: SourceRange | null) => {
-      const range = target && domRange(element, source, target);
-      if (range) found.set(id, range);
-    };
-    for (const thread of open) place(thread.id, thread.anchor);
-    place(DRAFT, draft);
-    place(SELECTION, draft ? null : selection);
+    for (const [id, target] of targets) {
+      const place = placeOf(element, source, target);
+      if (place) found.set(id, place);
+    }
     return found;
-  }, [root, source, open, draft, selection]);
+  }, [root, source, targets]);
 
-  const startDraft = useCallback(() => {
-    if (!selection) return;
-    setActive(null);
-    setDraft(selection);
-    window.getSelection()?.removeAllRanges();
-  }, [selection, setActive]);
+  const ranges = useCallback(() => {
+    const found = new Map<string, Range>();
+    for (const [id, place] of places()) if (place.kind === "text") found.set(id, place.range);
+    const element = root.current;
+    const selected = element && !draft && selection && domRange(element, source, selection);
+    if (selected) found.set(SELECTION, selected);
+    return found;
+  }, [places, root, source, draft, selection]);
+
+  const startDraft = useCallback(
+    (target?: Target) => {
+      const chosen = target ?? (selection && { kind: "text" as const, ...selection });
+      if (!chosen) return;
+      setActive(null);
+      setDraft(chosen);
+      window.getSelection()?.removeAllRanges();
+    },
+    [selection, setActive],
+  );
   const cancelDraft = useCallback(() => setDraft(null), []);
 
-  useHighlights(ranges, draft ? DRAFT : active, hovered);
+  const focus = draft ? DRAFT : active;
+  useHighlights(ranges, focus, hovered);
+  useBlockMarks(places, focus, hovered);
   useClickToOpen(root, ranges, setActive);
-  useKeys(open, ranges, active, setActive, startDraft);
+  useKeys(open, places, active, setActive, startDraft);
 
   const value = useMemo(
     () => ({
@@ -114,6 +136,7 @@ export function CommentsProvider({
       root,
       open,
       ranges,
+      places,
       active,
       setActive,
       setHovered,
@@ -129,6 +152,7 @@ export function CommentsProvider({
       root,
       open,
       ranges,
+      places,
       active,
       setActive,
       selection,
@@ -249,6 +273,28 @@ function around(range: Range, holes: HTMLElement[]): Range[] {
   return pieces.filter((part) => !part.collapsed);
 }
 
+/** Blocks with an open comment carry `data-commented`, "strong" for the one in focus. */
+function useBlockMarks(
+  places: () => Map<string, Place>,
+  focus: string | null,
+  hovered: string | null,
+) {
+  useEffect(() => {
+    const marked: HTMLElement[] = [];
+    for (const [id, place] of places()) {
+      if (place.kind !== "block") continue;
+      const strong = id === focus || id === hovered;
+      if (strong || place.element.dataset.commented === undefined) {
+        place.element.dataset.commented = strong ? "strong" : "";
+      }
+      marked.push(place.element);
+    }
+    return () => {
+      for (const element of marked) delete element.dataset.commented;
+    };
+  }, [places, focus, hovered]);
+}
+
 function useClickToOpen(
   root: RefObject<HTMLElement | null>,
   ranges: () => Map<string, Range>,
@@ -280,10 +326,10 @@ function useClickToOpen(
 /** `J` and `K` walk through the comments, `Esc` closes the open one, `⌘⌥M` comments, as in Google Docs. */
 function useKeys(
   open: Thread[],
-  ranges: () => Map<string, Range>,
+  places: () => Map<string, Place>,
   active: string | null,
   setActive: (id: string | null) => void,
-  startDraft: () => void,
+  startDraft: (target?: Target) => void,
 ) {
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -310,11 +356,12 @@ function useKeys(
       const from = index === -1 && step < 0 ? 0 : index;
       const next = open[(from + step + open.length) % open.length]!;
       setActive(next.id);
-      ranges().get(next.id)?.startContainer.parentElement?.scrollIntoView({ block: "center" });
+      const place = places().get(next.id);
+      if (place) scrollToPlace(place);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, ranges, active, setActive, startDraft]);
+  }, [open, places, active, setActive, startDraft]);
 }
 
 /** On a phone, a selection brings a bar to the bottom of the screen, clear of the system's menu. */
@@ -328,7 +375,7 @@ export function SelectionBar() {
         className="text-button"
         // Keeps the selection alive until the tap lands.
         onPointerDown={(event) => event.preventDefault()}
-        onClick={startDraft}
+        onClick={() => startDraft()}
       >
         <Manicule className="manicule" pointing="left" />
         Comment
@@ -340,19 +387,25 @@ export function SelectionBar() {
 /** On a phone, the open thread or the new comment in a sheet over the lower half of the screen. */
 export function CommentsSheet() {
   const comments = useComments();
-  const { open, active, setActive, draft, cancelDraft, wide, source, ranges } = comments;
+  const { open, active, setActive, draft, cancelDraft, wide, source, places } = comments;
   const index = open.findIndex((thread) => thread.id === active);
   const thread = index === -1 ? null : open[index];
   const shown = draft ? DRAFT : thread?.id;
 
   // The sheet covers the lower half of the screen, so the passage moves into the upper part.
   useEffect(() => {
-    const range = !wide && shown ? ranges().get(shown) : undefined;
-    if (!range) return;
+    const place = !wide && shown ? places().get(shown) : undefined;
+    if (!place) return;
+    const box =
+      place.kind === "text"
+        ? place.range.getBoundingClientRect()
+        : place.element.getBoundingClientRect();
     const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const top = range.getBoundingClientRect().top - window.innerHeight * 0.2;
-    window.scrollBy({ top, behavior: still ? "auto" : "smooth" });
-  }, [shown, wide, ranges]);
+    window.scrollBy({
+      top: box.top - window.innerHeight * 0.2,
+      behavior: still ? "auto" : "smooth",
+    });
+  }, [shown, wide, places]);
 
   if (wide) return null;
   const step = (by: number) =>
@@ -370,6 +423,7 @@ export function CommentsSheet() {
       {draft ? (
         <Composer
           passage={source.slice(draft.start, draft.end)}
+          canSuggest={draft.kind === "text"}
           onSubmit={async (input) => {
             await comments.comment.mutateAsync({ ...draft, ...input });
             cancelDraft();

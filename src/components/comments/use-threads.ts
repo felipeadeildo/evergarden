@@ -9,7 +9,13 @@ import {
 import { threadsQuery } from "#/functions/queries";
 import type { Thread } from "#/server/comments";
 
-export type NewComment = { start: number; end: number; body: string; suggestion?: string };
+/** What a new comment points at: a passage of text, a whole block, or a spot in a figure. */
+export type Target = { start: number; end: number } & (
+  | { kind: "text" | "block" }
+  | { kind: "point"; x: number; y: number }
+);
+
+export type NewComment = Target & { body: string; suggestion?: string };
 
 export function useThreads(documentId: string, version: number) {
   const queryClient = useQueryClient();
@@ -20,8 +26,7 @@ export function useThreads(documentId: string, version: number) {
   const done = { onSuccess: refresh };
 
   const comment = useMutation({
-    mutationFn: (input: NewComment) =>
-      postComment({ data: { documentId, version, kind: "text", ...input } }),
+    mutationFn: (input: NewComment) => postComment({ data: { documentId, version, ...input } }),
     ...done,
   });
   const reply = useMutation({

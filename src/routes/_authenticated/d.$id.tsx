@@ -11,6 +11,7 @@ import {
   useComments,
 } from "#/components/comments/comments";
 import { CommentsMargin } from "#/components/comments/margin";
+import { CommentPins } from "#/components/comments/pins";
 import { DocumentBody } from "#/components/document/body";
 import { Contents } from "#/components/document/contents";
 import { VersionsMenu } from "#/components/document/versions-menu";
@@ -103,8 +104,11 @@ function DocumentPage() {
         <PageHeader title={document.title}>
           <VersionsMenu documentId={document.id} versions={versions} shown={version.number} />
         </PageHeader>
-        <div ref={text}>
-          <DocumentBody tree={body.tree} />
+        <div className="document-text">
+          <div ref={text}>
+            <DocumentBody tree={body.tree} />
+          </div>
+          {isOld ? null : <CommentPins />}
         </div>
         {isOld ? null : <CommentsEnd />}
       </Page>

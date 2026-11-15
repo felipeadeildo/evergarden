@@ -1,8 +1,10 @@
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { Manicule } from "#/components/ui/wordmark";
 
 import { DRAFT, SELECTION, ThreadActions, useComments } from "./comments";
+import { sourcePosition } from "./dom";
+import { BLOCKS, FIGURES, lineOf, pinArea } from "./places";
 import { Composer, FoldedThread } from "./thread";
 
 const GAP = 12;
@@ -17,12 +19,15 @@ const GROUPED_GAP = 0;
  */
 export function CommentsMargin() {
   const comments = useComments();
-  const { open, ranges, active, setActive, setHovered, selection, draft, startDraft } = comments;
-  const { cancelDraft, source, root, wide } = comments;
+  const { open, ranges, places, active, setActive, setHovered, selection, draft } = comments;
+  const { startDraft, cancelDraft, source, root, wide } = comments;
   const margin = useRef<HTMLDivElement>(null);
   const leader = useRef<SVGPathElement>(null);
   const focused = draft ? DRAFT : active;
   const gutterButton = useRef<HTMLButtonElement>(null);
+  const block = useHoveredBlock(root, Boolean(selection || draft));
+  const [pinning, setPinning] = useState<HTMLElement | null>(null);
+  usePinning(pinning, setPinning, startDraft);
 
   useLayoutEffect(() => {
     const element = margin.current;
@@ -34,13 +39,20 @@ export function CommentsMargin() {
 
     function place(container: HTMLElement) {
       const origin = container.getBoundingClientRect();
-      const found = ranges();
+      const found = places();
+      const columnEdge = root.current?.getBoundingClientRect().right ?? origin.left;
       const placed = notes
         .map((note) => {
-          const rect = found.get(note.dataset.note ?? "")?.getClientRects()[0];
-          if (!rect) note.style.visibility = "hidden";
-          return rect
-            ? { note, line: rect.top - origin.top, middle: rect.top + rect.height / 2 - origin.top }
+          const spot = found.get(note.dataset.note ?? "");
+          const line = spot && lineOf(spot, columnEdge);
+          if (!line) note.style.visibility = "hidden";
+          return line
+            ? {
+                note,
+                line: line.top - origin.top,
+                middle: line.middle - origin.top,
+                from: line.from - origin.left,
+              }
             : null;
         })
         .filter((item) => item !== null)
@@ -75,25 +87,21 @@ export function CommentsMargin() {
         item.note.style.visibility = "visible";
       });
 
-      const textEdge = (root.current?.getBoundingClientRect().right ?? origin.left) - origin.left;
+      const textEdge = columnEdge - origin.left;
       const target = placed[pivot];
-      const from =
-        leaderStart(
-          target ? found.get(target.note.dataset.note ?? "") : undefined,
-          textEdge + origin.left,
-        ) - origin.left;
       drawLeader(
         leader.current,
         target && target.note.dataset.note === focused
-          ? { from, y: target.middle, to: tops[pivot]! + 14 }
+          ? { from: target.from, y: target.middle, to: tops[pivot]! + 14 }
           : null,
       );
 
-      // The Comment button sits in the gutter beside the selection, out of the notes' way.
+      // The Comment button sits in the gutter beside the selection or the block under the pointer.
       const button = gutterButton.current;
-      const selected = found.get(SELECTION)?.getClientRects()[0];
-      if (button && selected) {
-        button.style.top = `${selected.top + selected.height / 2 - origin.top}px`;
+      const beside = ranges().get(SELECTION)?.getClientRects()[0] ?? block?.getBoundingClientRect();
+      if (button && beside) {
+        const y = Math.min(beside.top + beside.height / 2, beside.top + 16);
+        button.style.top = `${y - origin.top}px`;
         button.style.left = `${textEdge / 2}px`;
       }
     }
@@ -104,7 +112,7 @@ export function CommentsMargin() {
     if (root.current) observer.observe(root.current);
     for (const note of notes) observer.observe(note);
     return () => observer.disconnect();
-  }, [ranges, focused, open, root, wide]);
+  }, [ranges, places, focused, open, root, wide, block]);
 
   if (!wide) return null;
   return (
@@ -112,16 +120,24 @@ export function CommentsMargin() {
       <svg className="comments-leader" aria-hidden focusable={false}>
         <path ref={leader} />
       </svg>
-      {selection && !draft ? (
+      {(selection || block) && !draft ? (
         <button
           ref={gutterButton}
           type="button"
           className="gutter-comment"
-          aria-label="Comment"
-          title="Comment (⌘⌥M)"
+          aria-label={commentLabel(selection !== null, block)}
+          title={selection ? "Comment (⌘⌥M)" : commentLabel(false, block)}
+          aria-pressed={pinning ? true : undefined}
           // Keeps the selection alive until the click lands.
           onPointerDown={(event) => event.preventDefault()}
-          onClick={startDraft}
+          onClick={() => {
+            if (selection) startDraft();
+            else if (block?.matches(FIGURES)) setPinning(pinning ? null : block);
+            else if (block) {
+              const range = sourcePosition(block.querySelector("table") ?? block);
+              if (range) startDraft({ kind: "block", ...range });
+            }
+          }}
         >
           <Manicule className="manicule" pointing="left" />
         </button>
@@ -130,6 +146,7 @@ export function CommentsMargin() {
         <div data-note={DRAFT} className="comments-margin-item">
           <Composer
             passage={source.slice(draft.start, draft.end)}
+            canSuggest={draft.kind === "text"}
             onSubmit={async (input) => {
               const id = await comments.comment.mutateAsync({ ...draft, ...input });
               cancelDraft();
@@ -161,21 +178,6 @@ export function CommentsMargin() {
   );
 }
 
-/**
- * Where the leader leaves the text. A passage that wraps runs to the end of its first line, so
- * the leader starts there; one that ends mid-line starts at the column's edge, clear of the text
- * after it. A line splits into several boxes around links and bold, so its end is the box that
- * reaches furthest right on the passage's first line.
- */
-function leaderStart(range: Range | undefined, columnEdge: number): number {
-  const rects = [...(range?.getClientRects() ?? [])];
-  const first = rects[0];
-  if (!first) return columnEdge;
-  const firstLine = rects.filter((rect) => Math.abs(rect.top - first.top) < 2);
-  if (firstLine.length === rects.length) return columnEdge;
-  return Math.max(...firstLine.map((rect) => rect.right));
-}
-
 function gapAfter(placed: { line: number }[], i: number): number {
   const next = placed[i + 1];
   return next && Math.abs(next.line - placed[i]!.line) < 2 ? GROUPED_GAP : GAP;
@@ -197,4 +199,78 @@ function drawLeader(
   const { from, y, to } = points;
   const bend = -10;
   path.setAttribute("d", `M ${from + 6} ${y} H ${bend} V ${to} H -2`);
+}
+
+function commentLabel(selected: boolean, block: HTMLElement | null): string {
+  if (selected || !block) return "Comment";
+  return block.matches(FIGURES) ? "Comment on a point in this figure" : "Comment on this block";
+}
+
+/**
+ * The block under the pointer, for the gutter's Comment button. It stays after the pointer leaves
+ * the text for the gutter, so the button can be reached; a selection takes its place.
+ */
+function useHoveredBlock(
+  root: React.RefObject<HTMLElement | null>,
+  busy: boolean,
+): HTMLElement | null {
+  const [block, setBlock] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const element = root.current;
+    if (!element) return undefined;
+    function over(event: PointerEvent) {
+      const found =
+        event.target instanceof Element ? event.target.closest<HTMLElement>(BLOCKS) : null;
+      setBlock(found && element!.contains(found) ? found : null);
+    }
+    element.addEventListener("pointerover", over);
+    return () => element.removeEventListener("pointerover", over);
+  }, [root]);
+  return busy ? null : block;
+}
+
+/**
+ * While `figure` is set, the next click inside its drawing starts a comment on that spot.
+ * `Esc` or a click outside cancels.
+ */
+function usePinning(
+  figure: HTMLElement | null,
+  setFigure: (figure: HTMLElement | null) => void,
+  startDraft: ReturnType<typeof useComments>["startDraft"],
+) {
+  useEffect(() => {
+    if (!figure) return undefined;
+    const area = pinArea(figure);
+    figure.setAttribute("data-pinning", "");
+    function click(event: MouseEvent) {
+      if (!(event.target instanceof Node) || !area.contains(event.target)) {
+        setFigure(null);
+        return;
+      }
+      // The click places the pin; it must not also open the diagram full screen.
+      event.preventDefault();
+      event.stopPropagation();
+      const box = area.getBoundingClientRect();
+      const range = sourcePosition(figure!);
+      if (range) {
+        startDraft({
+          kind: "point",
+          ...range,
+          x: (event.clientX - box.left) / box.width,
+          y: (event.clientY - box.top) / box.height,
+        });
+      }
+      setFigure(null);
+    }
+    function key(event: KeyboardEvent) {
+      if (event.key === "Escape") setFigure(null);
+    }
+    window.addEventListener("click", click, true);
+    window.addEventListener("keydown", key);
+    return () => {
+      figure.removeAttribute("data-pinning");
+      window.removeEventListener("click", click, true);
+      window.removeEventListener("keydown", key);
+    };
+  }, [figure, setFigure, startDraft]);
 }
