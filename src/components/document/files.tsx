@@ -1,5 +1,5 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useRouter } from "@tanstack/react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import type { Element } from "hast";
 import {
   type ComponentProps,
@@ -182,48 +182,37 @@ function useDrop(enabled: boolean, send: (files: File[]) => Promise<void>) {
   return [setElement, active] as const;
 }
 
-/** Sends files to the draft through the API, then opens the draft to publish them. */
+type Change = { method: "PUT" | "DELETE"; name: string; file?: File };
+
+/** Sends changes to the draft through the API, one file at a time, then opens the draft. */
 function useUpload() {
   const files = useContext(FilesContext);
   const queryClient = useQueryClient();
-  const router = useRouter();
   const navigate = useNavigate();
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function call(method: "PUT" | "DELETE", name: string, body?: File) {
-    if (!files) return;
-    const url = `/api/v1/documents/${files.documentId}/files/${encodeURIComponent(name)}`;
-    const response = await fetch(url, { method, body });
-    if (!response.ok) {
-      const failure: { message?: string } = await response.json();
-      throw new Error(failure.message ?? `${name} could not be saved.`);
-    }
-  }
-
-  async function run(work: () => Promise<void>) {
-    if (!files) return;
-    setPending(true);
-    setError(null);
-    try {
-      await work();
-      await queryClient.invalidateQueries({ queryKey: ["document", files.documentId] });
+  const change = useMutation({
+    mutationFn: async (changes: Change[]) => {
+      if (!files) return;
+      for (const { method, name, file } of changes) {
+        const url = `/api/v1/documents/${files.documentId}/files/${encodeURIComponent(name)}`;
+        const response = await fetch(url, { method, body: file });
+        if (!response.ok) {
+          const failure: { message?: string } = await response.json();
+          throw new Error(failure.message ?? `${name} could not be saved.`);
+        }
+      }
+    },
+    onSuccess: async () => {
+      if (!files) return;
+      queryClient.removeQueries({ queryKey: ["document", files.documentId] });
       await navigate({ to: "/d/$id", params: { id: files.documentId }, search: { v: "draft" } });
-      await router.invalidate();
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : String(failure));
-    } finally {
-      setPending(false);
-    }
-  }
+    },
+  });
 
   return {
-    pending,
-    error,
+    pending: change.isPending,
+    error: change.error?.message ?? null,
     send: (chosen: File[]) =>
-      run(async () => {
-        for (const file of chosen) await call("PUT", file.name, file);
-      }),
-    remove: (name: string) => run(() => call("DELETE", name)),
+      change.mutateAsync(chosen.map((file) => ({ method: "PUT", name: file.name, file }))),
+    remove: (name: string) => change.mutateAsync([{ method: "DELETE", name }]),
   };
 }

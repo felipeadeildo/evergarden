@@ -77,9 +77,7 @@ export async function attachFile(
 
 export function detachFile(id: string, name: string, author: Author): Promise<Draft> {
   return changeDraft(id, author, 1, (base) => {
-    if (!base.files.some((file) => file.name === name)) {
-      throw new EvergardenError("not_found", `The document has no file named "${name}".`);
-    }
+    if (!base.files.some((file) => file.name === name)) throw noFile(name);
     return { markdown: base.markdown, files: base.files.filter((file) => file.name !== name) };
   });
 }
@@ -93,8 +91,10 @@ export async function openFile(
   const files = version === "draft" ? (await getDraft(id))?.files : (await read(id, version)).files;
   const file = files?.find((entry) => entry.name === name);
   const object = file ? await env.FILES.get(blobKey(file.sha256)) : null;
-  if (!file || !object) {
-    throw new EvergardenError("not_found", `The document has no file named "${name}".`);
-  }
+  if (!file || !object) throw noFile(name);
   return { file, body: object.body };
+}
+
+function noFile(name: string) {
+  return new EvergardenError("not_found", `The document has no file named "${name}".`);
 }

@@ -219,9 +219,8 @@ function DeleteForm({ subject, name, parentId, onDone }: Props & { onDone: () =>
     mutationFn: () => deleteItem({ data: subject }),
     onSuccess: async () => {
       onDone();
-      await (parentId
-        ? navigate({ to: "/f/$id", params: { id: parentId } })
-        : navigate({ to: "/" }));
+      if (parentId) await navigate({ to: "/f/$id", params: { id: parentId } });
+      else await navigate({ to: "/" });
       await queryClient.invalidateQueries();
     },
   });

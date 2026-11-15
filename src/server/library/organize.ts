@@ -12,6 +12,7 @@ import {
   ensureFolder,
   firstDocumentPosition,
   folderPath,
+  type FolderStep,
   lastFolderPosition,
   parseFolderPath,
 } from "./folders";
@@ -99,6 +100,11 @@ export function folderAt(path: string): Promise<string | null> {
   return ensureFolder(parseFolderPath(path));
 }
 
+/** "reports/2026": how the trash remembers where a document was. */
+function pathText(path: FolderStep[]): string {
+  return path.map((step) => step.name).join("/");
+}
+
 /** Stops sharing what goes to the trash, so restoring it never reopens it to anyone. */
 function unshare(kind: "document" | "folder", ids: string[]) {
   return db
@@ -112,7 +118,7 @@ export async function deleteDocument(id: string): Promise<void> {
   await db.batch([
     db
       .update(document)
-      .set({ deletedAt: new Date(), deletedFrom: path.map((step) => step.name).join("/") || null })
+      .set({ deletedAt: new Date(), deletedFrom: pathText(path) || null })
       .where(eq(document.id, id)),
     unshare("document", [id]),
   ]);
@@ -124,7 +130,7 @@ export async function deleteDocument(id: string): Promise<void> {
  */
 export async function deleteFolder(id: string): Promise<void> {
   await getFolder(id);
-  const top = (await folderPath(id)).map((step) => step.name).join("/");
+  const top = pathText(await folderPath(id));
   const subtree = await db.all<{ id: string; path: string }>(sql`
     with recursive down(id, path) as (
       select id, ${top} from folder where id = ${id}
