@@ -153,6 +153,8 @@ A page change should feel instant, and the slow part of a request is the distanc
 | The signed-in person is kept in the Query cache for 5 minutes  | The authenticated layout's `beforeLoad` runs on every navigation, including opening a comment (`?c=`), without asking the server again.                                                                                                                                                                                               |
 | Pages load through TanStack Query (`src/functions/queries.ts`) | A route's loader calls `ensureQueryData` with the same options its component reads with `useSuspenseQuery`. Hovering a link preloads the page into that cache, so the click renders from it; data older than 30 seconds refreshes in the background, as when returning to the tab. Mutations invalidate the query that owns the data. |
 
+Within a request, every query that does not need another query's result runs at once (`Promise.all`), so a page waits for one round trip rather than one per query. Lookups that would otherwise chain, such as a document's folder path, are single queries (a recursive CTE starting from the document id). Writes that need not delay the answer, such as an agent's last-used time, run after the response with `waitUntil`. A page in a region far from D1 costs one crossing, about 120 ms from São Paulo, plus rendering.
+
 D1 read replication would serve reads from a nearby replica, but it needs the Sessions API and gains little once the Worker runs near the primary.
 
 ## Roles
