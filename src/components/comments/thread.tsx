@@ -61,19 +61,42 @@ export function FoldedThread({
   );
 }
 
+/** The resolve, reopen and accept actions belong to the owner; a guest only replies. */
+export type Moderation = { onResolve: () => void; onReopen: () => void; onAccept: () => void };
+
+function StateButton({
+  resolved,
+  busy,
+  moderation,
+}: {
+  resolved: boolean;
+  busy: boolean;
+  moderation: Moderation;
+}) {
+  const label = resolved ? "Reopen" : "Resolve";
+  return (
+    <button
+      type="button"
+      className="icon-button note-state"
+      aria-label={label}
+      title={label}
+      disabled={busy}
+      onClick={resolved ? moderation.onReopen : moderation.onResolve}
+    >
+      {resolved ? <ReopenIcon /> : <CheckIcon />}
+    </button>
+  );
+}
+
 export function OpenThread({
   thread,
   onReply,
-  onResolve,
-  onReopen,
-  onAccept,
+  moderation,
   busy,
 }: {
   thread: Thread;
   onReply: (body: string) => Promise<unknown>;
-  onResolve: () => void;
-  onReopen: () => void;
-  onAccept: () => void;
+  moderation: Moderation | null;
   busy: boolean;
 }) {
   const resolved = thread.status === "resolved";
@@ -81,37 +104,22 @@ export function OpenThread({
     <article className="note note-open" aria-label={`Comment by ${thread.author.name}`}>
       <div className="note-entry note-head">
         <p className="note-body">{thread.body}</p>
-        {resolved ? (
-          <button
-            type="button"
-            className="icon-button note-state"
-            aria-label="Reopen"
-            title="Reopen"
-            disabled={busy}
-            onClick={onReopen}
-          >
-            <ReopenIcon />
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="icon-button note-state"
-            aria-label="Resolve"
-            title="Resolve"
-            disabled={busy}
-            onClick={onResolve}
-          >
-            <CheckIcon />
-          </button>
-        )}
+        {moderation ? (
+          <StateButton resolved={resolved} busy={busy} moderation={moderation} />
+        ) : null}
         <Byline name={thread.author.name} date={thread.createdAt} />
       </div>
       {thread.suggestion !== null ? (
         <div className="note-suggestion">
           <del>{thread.anchor.exact}</del>
           <ins>{thread.suggestion}</ins>
-          {thread.status === "open" ? (
-            <button type="button" className="text-button" disabled={busy} onClick={onAccept}>
+          {moderation && thread.status === "open" ? (
+            <button
+              type="button"
+              className="text-button"
+              disabled={busy}
+              onClick={moderation.onAccept}
+            >
               Accept
             </button>
           ) : null}

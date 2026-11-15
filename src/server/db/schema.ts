@@ -138,35 +138,20 @@ export const reply = sqliteTable(
   (table) => [index("reply_comment_idx").on(table.commentId)],
 );
 
-export const share = sqliteTable(
-  "share",
+/**
+ * Who besides the owner may open a document or a folder, by its usual address. A folder's
+ * setting covers everything inside it; the most open setting that applies wins.
+ */
+export const sharing = sqliteTable(
+  "sharing",
   {
-    id: text("id").primaryKey(),
-    tokenHash: text("token_hash").notNull(),
     targetKind: text("target_kind").$type<ShareTargetKind>().notNull(),
     targetId: text("target_id").notNull(),
-    versionId: text("version_id").references(() => version.id, { onDelete: "cascade" }),
     permission: text("permission").$type<SharePermission>().notNull(),
-    openCount: integer("open_count").notNull().default(0),
     createdAt: createdAt(),
     expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
-    revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
   },
-  (table) => [uniqueIndex("share_token_idx").on(table.tokenHash)],
-);
-
-export const shareMember = sqliteTable(
-  "share_member",
-  {
-    shareId: text("share_id")
-      .notNull()
-      .references(() => share.id, { onDelete: "cascade" }),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    joinedAt: createdAt(),
-  },
-  (table) => [primaryKey({ columns: [table.shareId, table.userId] })],
+  (table) => [primaryKey({ columns: [table.targetKind, table.targetId] })],
 );
 
 export const readMark = sqliteTable(

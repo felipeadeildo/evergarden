@@ -1276,6 +1276,115 @@
     box-shadow: 0 0 0 1px var(--rule);
   }
 
+  /* A segmented control made of radio buttons: see components/ui/choice.tsx */
+  .choice {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .choice legend {
+    margin-bottom: 0.4rem;
+    padding: 0;
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+  }
+
+  .segmented label {
+    padding: 0.25rem 0.7rem;
+    border-radius: 6px;
+    color: var(--ink-soft);
+    font-size: 0.82rem;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .segmented label:hover {
+    color: var(--ink);
+  }
+
+  .segmented label:has(input:checked) {
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: 0 0 0 1px var(--rule);
+  }
+
+  .segmented label:has(input:focus-visible) {
+    outline: 2px solid var(--prussian);
+    outline-offset: 1px;
+  }
+
+  .segmented input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* On a phone, signing in to comment matters more than the shared folder's name. */
+  @media (max-width: 639px) {
+    .top-bar:has(.guest-sign-in) .top-bar-place {
+      display: none;
+    }
+
+    .top-bar:has(.guest-sign-in) .top-bar-actions {
+      margin-left: auto;
+    }
+  }
+
+  .shared-path ol {
+    display: flex;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-style: italic;
+    font-size: 0.92rem;
+  }
+
+  .shared-path li + li::before {
+    content: "/";
+    margin-right: 0.35rem;
+    color: var(--ink-soft);
+  }
+
+  .shared-path a {
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+
+  .shared-path a:hover {
+    color: var(--ink);
+  }
+
+  /* Share */
+
+  .share-form {
+    display: grid;
+    gap: 1.1rem;
+  }
+
+  .share-form h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .share-form .segmented {
+    margin: 0;
+  }
+
+  .share-note {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+  }
+
+  .share-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+  }
+
   .new-key-done {
     margin-top: 1rem;
     font-size: 0.9rem;

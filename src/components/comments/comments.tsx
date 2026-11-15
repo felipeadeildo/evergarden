@@ -45,6 +45,8 @@ type Comments = ReturnType<typeof useThreads> & {
   startDraft: (target?: Target) => void;
   cancelDraft: () => void;
   wide: boolean;
+  /** Whether the reader may resolve comments and accept suggestions: the owner, not a guest. */
+  moderate: boolean;
 };
 
 const CommentsContext = createContext<Comments | null>(null);
@@ -62,6 +64,7 @@ export function CommentsProvider({
   root,
   active,
   setActive,
+  moderate,
   children,
 }: {
   documentId: string;
@@ -70,6 +73,7 @@ export function CommentsProvider({
   root: RefObject<HTMLElement | null>;
   active: string | null;
   setActive: (id: string | null) => void;
+  moderate: boolean;
   children: ReactNode;
 }) {
   const data = useThreads(documentId, version);
@@ -146,6 +150,7 @@ export function CommentsProvider({
       startDraft,
       cancelDraft,
       wide,
+      moderate,
     }),
     [
       data,
@@ -161,6 +166,7 @@ export function CommentsProvider({
       startDraft,
       cancelDraft,
       wide,
+      moderate,
     ],
   );
   return <CommentsContext.Provider value={value}>{children}</CommentsContext.Provider>;
@@ -466,18 +472,24 @@ export function CommentsSheet() {
 
 /** An open thread wired to the server. */
 export function ThreadActions({ thread }: { thread: Thread }) {
-  const { reply, setState, accept, setActive } = useComments();
+  const { reply, setState, accept, setActive, moderate } = useComments();
   return (
     <OpenThread
       thread={thread}
       busy={setState.isPending || accept.isPending}
       onReply={(body) => reply.mutateAsync({ commentId: thread.id, body })}
-      onResolve={() => {
-        setState.mutate({ commentId: thread.id, state: "resolved" });
-        setActive(null);
-      }}
-      onReopen={() => setState.mutate({ commentId: thread.id, state: "open" })}
-      onAccept={() => accept.mutate(thread.id)}
+      moderation={
+        moderate
+          ? {
+              onResolve: () => {
+                setState.mutate({ commentId: thread.id, state: "resolved" });
+                setActive(null);
+              },
+              onReopen: () => setState.mutate({ commentId: thread.id, state: "open" }),
+              onAccept: () => accept.mutate(thread.id),
+            }
+          : null
+      }
     />
   );
 }

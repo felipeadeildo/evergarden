@@ -1,13 +1,11 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
+import { Private } from "#/components/navigation/private";
 import { SearchProvider } from "#/components/navigation/search";
-import { viewerQuery } from "#/functions/queries";
-import { authClient } from "#/lib/auth-client";
 
+/** The owner's library: the home page and settings. Documents and folders decide for themselves. */
 export const Route = createFileRoute("/_authenticated")({
-  // Every navigation runs this, so the answer is kept for a few minutes instead of asked again.
-  beforeLoad: async ({ location, context }) => {
-    const viewer = await context.queryClient.fetchQuery(viewerQuery);
+  beforeLoad: ({ location, context: { viewer } }) => {
     if (!viewer) throw redirect({ to: "/sign-in", search: { next: location.href } });
     return { viewer };
   },
@@ -21,24 +19,5 @@ function LibraryLayout() {
     <SearchProvider>
       <Outlet />
     </SearchProvider>
-  );
-}
-
-function Private({ name }: { name: string }) {
-  return (
-    <main id="main" className="letter">
-      <h1>This library is private</h1>
-      <p>
-        You are signed in as {name}. Only the owner can open this library; someone who shares a
-        document with you sends you a link to it.
-      </p>
-      <button
-        type="button"
-        className="button"
-        onClick={() => void authClient.signOut().then(() => window.location.assign("/sign-in"))}
-      >
-        Sign out
-      </button>
-    </main>
   );
 }

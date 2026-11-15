@@ -12,19 +12,16 @@ import {
   resolve,
   threads,
 } from "#/server/comments";
-import { guestAccess } from "#/server/shares";
+import { guestAccess } from "#/server/sharing";
 
 import { libraryAccess, sessionAccess } from "./middleware";
 
-// Guests reach comments through a share link and send its token; the owner and agents need none.
-const token = z.string().max(64).optional();
-
 export const getThreads = createServerFn({ method: "GET" })
   .middleware([sessionAccess])
-  .validator(z.object({ documentId: z.string(), token }))
+  .validator(z.object({ documentId: z.string() }))
   .handler(async ({ data, context: { principal } }) => {
     setResponseHeader("cache-control", "private, no-store");
-    await guestAccess(principal, data.token, data.documentId, "comment");
+    await guestAccess(principal, { kind: "document", id: data.documentId }, "comment");
     return threads(data.documentId);
   });
 
@@ -34,7 +31,6 @@ export const postComment = createServerFn({ method: "POST" })
     z.intersection(
       z.object({
         documentId: z.string(),
-        token,
         version: z.int().positive(),
         start: z.int().nonnegative(),
         end: z.int().positive(),
@@ -51,16 +47,17 @@ export const postComment = createServerFn({ method: "POST" })
       ]),
     ),
   )
-  .handler(async ({ data: { documentId, token: link, ...input }, context: { principal } }) => {
-    await guestAccess(principal, link, documentId, "comment");
+  .handler(async ({ data: { documentId, ...input }, context: { principal } }) => {
+    await guestAccess(principal, { kind: "document", id: documentId }, "comment");
     return addComment(documentId, input, authorOf(principal!));
   });
 
 export const postReply = createServerFn({ method: "POST" })
   .middleware([sessionAccess])
-  .validator(z.object({ commentId: z.string(), body: z.string().max(10_000), token }))
+  .validator(z.object({ commentId: z.string(), body: z.string().max(10_000) }))
   .handler(async ({ data, context: { principal } }) => {
-    await guestAccess(principal, data.token, await commentDocument(data.commentId), "comment");
+    const documentId = await commentDocument(data.commentId);
+    await guestAccess(principal, { kind: "document", id: documentId }, "comment");
     return addReply(data.commentId, data.body, authorOf(principal!));
   });
 

@@ -16,8 +16,8 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as DotwellKnownSplatRouteImport } from './routes/[.]well-known/$'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
-import { Route as AuthenticatedDIdRouteImport } from './routes/_authenticated/d.$id'
-import { Route as AuthenticatedFIdRouteImport } from './routes/_authenticated/f.$id'
+import { Route as DIdRouteImport } from './routes/d.$id'
+import { Route as FIdRouteImport } from './routes/f.$id'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiV1DocumentsRouteImport } from './routes/api/v1/documents'
 import { Route as ApiV1SearchRouteImport } from './routes/api/v1/search'
@@ -57,15 +57,15 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedDIdRoute = AuthenticatedDIdRouteImport.update({
+const DIdRoute = DIdRouteImport.update({
   id: '/d/$id',
   path: '/d/$id',
-  getParentRoute: () => AuthenticatedRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedFIdRoute = AuthenticatedFIdRouteImport.update({
+const FIdRoute = FIdRouteImport.update({
   id: '/f/$id',
   path: '/f/$id',
-  getParentRoute: () => AuthenticatedRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -95,8 +95,8 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof SignInRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/settings': typeof AuthenticatedSettingsRoute
-  '/d/$id': typeof AuthenticatedDIdRoute
-  '/f/$id': typeof AuthenticatedFIdRoute
+  '/d/$id': typeof DIdRoute
+  '/f/$id': typeof FIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/documents': typeof ApiV1DocumentsRouteWithChildren
   '/api/v1/search': typeof ApiV1SearchRoute
@@ -108,9 +108,9 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/d/$id': typeof DIdRoute
+  '/f/$id': typeof FIdRoute
   '/': typeof AuthenticatedIndexRoute
-  '/d/$id': typeof AuthenticatedDIdRoute
-  '/f/$id': typeof AuthenticatedFIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/documents': typeof ApiV1DocumentsRouteWithChildren
   '/api/v1/search': typeof ApiV1SearchRoute
@@ -124,9 +124,9 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/d/$id': typeof DIdRoute
+  '/f/$id': typeof FIdRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
-  '/_authenticated/d/$id': typeof AuthenticatedDIdRoute
-  '/_authenticated/f/$id': typeof AuthenticatedFIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/v1/documents': typeof ApiV1DocumentsRouteWithChildren
   '/api/v1/search': typeof ApiV1SearchRoute
@@ -154,9 +154,9 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/.well-known/$'
     | '/settings'
-    | '/'
     | '/d/$id'
     | '/f/$id'
+    | '/'
     | '/api/auth/$'
     | '/api/v1/documents'
     | '/api/v1/search'
@@ -169,9 +169,9 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/.well-known/$'
     | '/_authenticated/settings'
+    | '/d/$id'
+    | '/f/$id'
     | '/_authenticated/'
-    | '/_authenticated/d/$id'
-    | '/_authenticated/f/$id'
     | '/api/auth/$'
     | '/api/v1/documents'
     | '/api/v1/search'
@@ -184,6 +184,8 @@ export interface RootRouteChildren {
   McpRoute: typeof McpRoute
   SignInRoute: typeof SignInRoute
   DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
+  DIdRoute: typeof DIdRoute
+  FIdRoute: typeof FIdRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiV1DocumentsRoute: typeof ApiV1DocumentsRouteWithChildren
   ApiV1SearchRoute: typeof ApiV1SearchRoute
@@ -240,19 +242,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/d/$id': {
-      id: '/_authenticated/d/$id'
+    '/d/$id': {
+      id: '/d/$id'
       path: '/d/$id'
       fullPath: '/d/$id'
-      preLoaderRoute: typeof AuthenticatedDIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      preLoaderRoute: typeof DIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/f/$id': {
-      id: '/_authenticated/f/$id'
+    '/f/$id': {
+      id: '/f/$id'
       path: '/f/$id'
       fullPath: '/f/$id'
-      preLoaderRoute: typeof AuthenticatedFIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      preLoaderRoute: typeof FIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
       id: '/api/auth/$'
@@ -288,15 +290,11 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
-  AuthenticatedDIdRoute: typeof AuthenticatedDIdRoute
-  AuthenticatedFIdRoute: typeof AuthenticatedFIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
-  AuthenticatedDIdRoute: AuthenticatedDIdRoute,
-  AuthenticatedFIdRoute: AuthenticatedFIdRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -321,6 +319,8 @@ const rootRouteChildren: RootRouteChildren = {
   McpRoute: McpRoute,
   SignInRoute: SignInRoute,
   DotwellKnownSplatRoute: DotwellKnownSplatRoute,
+  DIdRoute: DIdRoute,
+  FIdRoute: FIdRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiV1DocumentsRoute: ApiV1DocumentsRouteWithChildren,
   ApiV1SearchRoute: ApiV1SearchRoute,

@@ -6,10 +6,14 @@ import { Wordmark } from "#/components/ui/wordmark";
 import { authClient } from "#/lib/auth-client";
 import { textField } from "#/lib/form";
 import { resumeAuthorizeUrl } from "#/lib/oauth-flow";
+import { SHARED_TARGET_HEADER } from "#/lib/shared";
 
 export const Route = createFileRoute("/sign-in")({
   // .loose() keeps the signed OAuth parameters an agent's sign-in arrives with.
-  validateSearch: z.object({ next: z.string().optional() }).loose(),
+  // `shared` names the page a guest signs in from (`document:<id>`), which lets them have a code.
+  validateSearch: z
+    .object({ next: z.string().optional(), shared: z.string().max(80).optional() })
+    .loose(),
   head: () => ({ meta: [{ title: "Sign in to evergarden" }] }),
   component: SignIn,
 });
@@ -29,9 +33,15 @@ function resumeAgentSignIn(): string | null {
   return typeof window === "undefined" ? null : resumeAuthorizeUrl(window.location.search);
 }
 
+/** Sent with every sign-in request from a shared page, so the server lets a guest in. */
+function sharedHeaders(shared: string | undefined) {
+  return shared ? { headers: { [SHARED_TARGET_HEADER]: shared } } : undefined;
+}
+
 function SignIn() {
   const search = Route.useSearch();
   const [email, setEmail] = useState<string | null>(null);
+  const fetchOptions = sharedHeaders(search.shared);
 
   return (
     <main id="main" className="sign-in">
@@ -39,11 +49,12 @@ function SignIn() {
         <Wordmark large />
       </p>
       {email === null ? (
-        <EmailStep onSent={setEmail} />
+        <EmailStep onSent={setEmail} fetchOptions={fetchOptions} guest={Boolean(search.shared)} />
       ) : (
         <CodeStep
           email={email}
           next={resumeAgentSignIn() ?? safeNext(search.next)}
+          fetchOptions={fetchOptions}
           onChangeEmail={() => setEmail(null)}
         />
       )}
@@ -51,7 +62,17 @@ function SignIn() {
   );
 }
 
-function EmailStep({ onSent }: { onSent: (email: string) => void }) {
+type FetchOptions = ReturnType<typeof sharedHeaders>;
+
+function EmailStep({
+  onSent,
+  fetchOptions,
+  guest,
+}: {
+  onSent: (email: string) => void;
+  fetchOptions: FetchOptions;
+  guest: boolean;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -59,7 +80,11 @@ function EmailStep({ onSent }: { onSent: (email: string) => void }) {
     event.preventDefault();
     const email = textField(new FormData(event.currentTarget), "email").trim();
     setPending(true);
-    const result = await authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in" });
+    const result = await authClient.emailOtp.sendVerificationOtp({
+      email,
+      type: "sign-in",
+      fetchOptions,
+    });
     setPending(false);
     if (result.error) {
       setError(result.error.message ?? "The code could not be sent. Try again.");
@@ -70,7 +95,11 @@ function EmailStep({ onSent }: { onSent: (email: string) => void }) {
 
   return (
     <>
-      <h1 className="sign-in-title">Sign in to read and comment on your documents.</h1>
+      <h1 className="sign-in-title">
+        {guest
+          ? "Sign in to comment. We send a code to your email; no password."
+          : "Sign in to read and comment on your documents."}
+      </h1>
       <form className="sign-in-form" onSubmit={(event) => void send(event)}>
         <label className="field">
           <span>Email</span>
@@ -99,10 +128,12 @@ function EmailStep({ onSent }: { onSent: (email: string) => void }) {
 function CodeStep({
   email,
   next,
+  fetchOptions,
   onChangeEmail,
 }: {
   email: string;
   next: string;
+  fetchOptions: FetchOptions;
   onChangeEmail: () => void;
 }) {
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +147,7 @@ function CodeStep({
     event.preventDefault();
     const otp = textField(new FormData(event.currentTarget), "code").replace(/\s/g, "");
     setPending(true);
-    const result = await authClient.signIn.emailOtp({ email, otp });
+    const result = await authClient.signIn.emailOtp({ email, otp, fetchOptions });
     if (result.error) {
       setError("That code did not work. Check it, or send a new one.");
       setPending(false);
@@ -127,7 +158,7 @@ function CodeStep({
 
   async function resend() {
     setError(null);
-    await authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in" });
+    await authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in", fetchOptions });
     setResent(true);
   }
 

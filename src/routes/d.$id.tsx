@@ -1,0 +1,139 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect } from "react";
+import { z } from "zod";
+
+import { DocumentView } from "#/components/document/document-view";
+import { VersionsMenu } from "#/components/document/versions-menu";
+import { FolderPath } from "#/components/navigation/folder-path";
+import { Private } from "#/components/navigation/private";
+import { SearchProvider } from "#/components/navigation/search";
+import { GuestActions } from "#/components/sharing/guest-actions";
+import { ShareButton } from "#/components/sharing/share-dialog";
+import { SharedPath } from "#/components/sharing/shared-path";
+import { markDocumentRead } from "#/functions/library.functions";
+import { documentQuery, threadsQuery } from "#/functions/queries";
+
+import katexCss from "katex/dist/katex.min.css?url";
+
+/**
+ * A document, at the same address for everyone. The owner reads it in the library; anyone else
+ * reads it only when it, or a folder above it, is shared, and comments when it is shared for
+ * comments and they signed in.
+ */
+export const Route = createFileRoute("/d/$id")({
+  validateSearch: z.object({ v: z.int().positive().optional(), c: z.string().optional() }),
+  loaderDeps: ({ search }) => ({ version: search.v }),
+  loader: async ({ params, deps, location, context: { queryClient, viewer } }) => {
+    const owner = viewer?.kind === "owner";
+    const [page] = await Promise.all([
+      queryClient.ensureQueryData(documentQuery(params.id, deps.version)),
+      // The owner always sees comments, so they load alongside the page.
+      owner ? queryClient.ensureQueryData(threadsQuery(params.id)) : null,
+    ]);
+    if (page.state === "private") {
+      if (!viewer) throw redirect({ to: "/sign-in", search: { next: location.href } });
+      return null;
+    }
+    if (!owner && viewer && page.shared?.permission === "comment") {
+      await queryClient.ensureQueryData(threadsQuery(params.id));
+    }
+    return {
+      title: page.document.title,
+      math: page.body.features.math,
+      excerpt: page.source.replace(/^#.*$/m, "").trim().slice(0, 180),
+    };
+  },
+  head: ({ loaderData }) => ({
+    meta: loaderData
+      ? [
+          { title: `${loaderData.title}, evergarden` },
+          { property: "og:title", content: loaderData.title },
+          { property: "og:description", content: loaderData.excerpt },
+          { property: "og:image", content: "/og.png" },
+          { name: "twitter:card", content: "summary_large_image" },
+        ]
+      : [{ title: "evergarden" }],
+    links: loaderData?.math ? [{ rel: "stylesheet", href: katexCss }] : [],
+  }),
+  component: DocumentPage,
+});
+
+function DocumentPage() {
+  const { id } = Route.useParams();
+  const search = Route.useSearch();
+  const { viewer } = Route.useRouteContext();
+  const page = useSuspenseQuery(documentQuery(id, search.v)).data;
+  const navigate = useNavigate({ from: Route.fullPath });
+
+  const setActive = useCallback(
+    (commentId: string | null) =>
+      void navigate({
+        search: (prev) => ({ ...prev, c: commentId ?? undefined }),
+        replace: true,
+        resetScroll: false,
+      }),
+    [navigate],
+  );
+
+  if (page.state === "private") return <Private name={viewer?.name ?? ""} />;
+  const { document, version, versions, folder, shared } = page;
+  const isOld = version.number !== document.version;
+  const byline = (
+    <VersionsMenu documentId={document.id} versions={versions} shown={version.number} />
+  );
+  const notice = isOld ? (
+    <p className="old-version">
+      You are reading version {version.number} of {document.version}.{" "}
+      <Link to="/d/$id" params={{ id: document.id }}>
+        Read the current version
+      </Link>
+    </p>
+  ) : null;
+
+  if (viewer?.kind === "owner") {
+    return (
+      <SearchProvider>
+        <MarkRead id={document.id} version={version.number} />
+        <DocumentView
+          page={page}
+          place={<FolderPath key={document.id} path={folder} documentId={document.id} />}
+          actions={isOld ? null : <ShareButton subject={{ kind: "document", id: document.id }} />}
+          byline={byline}
+          notice={notice}
+          comments={{ active: search.c ?? null, setActive, moderate: true }}
+        />
+      </SearchProvider>
+    );
+  }
+
+  const commenting = shared?.permission === "comment";
+  return (
+    <DocumentView
+      page={page}
+      shared={{ home: shared?.root ? `/f/${shared.root}` : `/d/${id}` }}
+      place={<SharedPath path={folder} />}
+      actions={
+        <GuestActions
+          viewer={viewer}
+          canComment={commenting}
+          path={`/d/${id}`}
+          shared={`document:${id}`}
+        />
+      }
+      byline={byline}
+      notice={notice}
+      comments={
+        commenting && viewer ? { active: search.c ?? null, setActive, moderate: false } : null
+      }
+    />
+  );
+}
+
+/** The owner has read this version once the page shows it; hovering a link loads it too early. */
+function MarkRead({ id, version }: { id: string; version: number }) {
+  useEffect(() => {
+    void markDocumentRead({ data: { id, version } });
+  }, [id, version]);
+  return null;
+}

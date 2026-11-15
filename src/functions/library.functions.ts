@@ -12,8 +12,27 @@ import {
   recent,
   search,
 } from "#/server/library";
+import type { FolderStep } from "#/server/library";
+import { type Shared, guestAccess } from "#/server/sharing";
 
-import { libraryAccess } from "./middleware";
+import { libraryAccess, sessionAccess } from "./middleware";
+
+/** A page someone may not open: they see a sign-in prompt, or that the library is private. */
+const PRIVATE = { state: "private" as const };
+
+/** Guests see only what was shared: the folder path starts at the shared folder. */
+function sharedPath(path: FolderStep[], shared: Shared | null): FolderStep[] {
+  if (!shared) return path;
+  const from = path.findIndex((step) => step.id === shared.root);
+  return from === -1 ? [] : path.slice(from);
+}
+
+function isPrivate(error: unknown): boolean {
+  return (
+    error instanceof EvergardenError &&
+    (error.code === "forbidden" || error.code === "unauthorized")
+  );
+}
 
 export const getLibrary = createServerFn({ method: "GET" })
   .middleware([libraryAccess])
@@ -27,37 +46,56 @@ export const getLibrary = createServerFn({ method: "GET" })
   });
 
 export const getFolderPage = createServerFn({ method: "GET" })
-  .middleware([libraryAccess])
+  .middleware([sessionAccess])
   .validator(z.object({ id: z.string() }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context: { principal } }) => {
     setResponseHeader("cache-control", "private, no-store");
     try {
+      const shared = await guestAccess(principal, { kind: "folder", id: data.id }, "read");
       const [folder, contents] = await Promise.all([folderInfo(data.id), folderContents(data.id)]);
-      return { folder, contents };
+      return {
+        state: "open" as const,
+        folder: { ...folder, path: sharedPath(folder.path, shared) },
+        contents,
+        shared,
+      };
     } catch (error) {
+      if (isPrivate(error)) return PRIVATE;
       if (error instanceof EvergardenError && error.code === "not_found") throw notFound();
       throw error;
     }
   });
 
 export const getFolder = createServerFn({ method: "GET" })
-  .middleware([libraryAccess])
+  .middleware([sessionAccess])
   .validator(z.object({ id: z.string().nullable(), offset: z.int().nonnegative() }))
-  .handler(({ data }) => {
+  .handler(async ({ data, context: { principal } }) => {
     setResponseHeader("cache-control", "private, no-store");
+    if (data.id) await guestAccess(principal, { kind: "folder", id: data.id }, "read");
+    else if (principal?.kind !== "owner" && principal?.kind !== "agent") {
+      throw new EvergardenError("forbidden", "This library is private.");
+    }
     return folderContents(data.id, data.offset);
   });
 
 // The rendered tree is plain JSON, but hast's types allow arbitrary `data`, which the
 // serialization type check rejects.
 export const getDocumentPage = createServerFn({ method: "GET", strict: { output: false } })
-  .middleware([libraryAccess])
+  .middleware([sessionAccess])
   .validator(z.object({ id: z.string(), version: z.int().positive().optional() }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context: { principal } }) => {
     setResponseHeader("cache-control", "private, no-store");
     try {
-      return await documentPage(data.id, data.version);
+      const shared = await guestAccess(principal, { kind: "document", id: data.id }, "read");
+      const page = await documentPage(data.id, data.version);
+      return {
+        state: "open" as const,
+        ...page,
+        folder: sharedPath(page.folder, shared),
+        shared,
+      };
     } catch (error) {
+      if (isPrivate(error)) return PRIVATE;
       if (error instanceof EvergardenError && error.code === "not_found") throw notFound();
       throw error;
     }

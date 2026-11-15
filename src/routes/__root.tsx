@@ -4,9 +4,15 @@ import type { QueryClient } from "@tanstack/react-query";
 import { HeadContent, Link, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { viewerQuery } from "#/functions/queries";
+
 import appCss from "#/styles.css?url";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Every navigation runs this, so the answer is kept for a few minutes instead of asked again.
+  beforeLoad: async ({ context }) => ({
+    viewer: await context.queryClient.fetchQuery(viewerQuery),
+  }),
   head: () => ({
     meta: [
       { charSet: "utf-8" },

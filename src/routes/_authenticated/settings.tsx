@@ -4,6 +4,7 @@ import { TopBar } from "#/components/navigation/top-bar";
 import { Account } from "#/components/settings/account";
 import { ConnectAgent } from "#/components/settings/connect-agent";
 import { ConnectedAgents } from "#/components/settings/connected-agents";
+import { SharedList } from "#/components/settings/shared-list";
 import { Page, PageHeader } from "#/components/ui/page";
 import { getMcpAddress } from "#/functions/session.functions";
 
@@ -33,6 +34,7 @@ function Settings() {
           <h2 id="agents-heading">Connected agents</h2>
           <ConnectedAgents />
         </section>
+        <SharedList />
         <Account name={viewer.name} email={viewer.email} />
       </Page>
     </>

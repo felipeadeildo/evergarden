@@ -36,6 +36,13 @@
       "when": 1794703021558,
       "tag": "0004_name_empty_authors",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1794706087469,
+      "tag": "0005_sharing",
+      "breakpoints": true
     }
   ]
 }
