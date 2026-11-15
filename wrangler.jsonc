@@ -7,6 +7,9 @@
   "observability": { "enabled": true },
   // Variables set in the dashboard survive deploys. Secrets always do.
   "keep_vars": true,
+  // An instance answers on its own domain only: BETTER_AUTH_URL is the one address sign-in accepts.
+  "workers_dev": false,
+  "preview_urls": false,
   // No resource ids: `wrangler deploy` creates the database on first deploy
   // and links them by name afterwards, so every instance gets its own.
   // Sends sign-in codes through Cloudflare Email Service; EMAIL_FROM names the sender.
