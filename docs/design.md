@@ -63,15 +63,18 @@ The Worker renders markdown into a hast tree and stores it, gzipped, beside the 
 
 ```
 markdown
-  → remark: gfm, frontmatter, math ($$x$$, and $x$ by the Pandoc rule)
+  → remark: gfm, frontmatter, directives, math ($$x$$, and $x$ by the Pandoc rule)
   → rehype: raw HTML, sanitize
-  → evergarden: callouts, source offsets, heading ids, title, search text,
-                code highlighted by TanStack Highlight, mermaid drawn by Pele
+  → evergarden: callouts, figures, source offsets, heading ids, title, search text,
+                links to documents, code highlighted by TanStack Highlight,
+                mermaid drawn by Pele
   → katex
   → React, through hast-util-to-jsx-runtime
 ```
 
 Sanitising runs before the evergarden step, so what that step adds is trusted output, not author input.
+
+Directives (`:icon[x]`, `:::tabs`, `::timeline … ::`) are read by `remark-directive`. Any directive evergarden does not know goes back to the text it was written as, so "10:30" and "a:b" stay text. mdxcn closes a block with a `::` line, which markdown would read as part of a list right above it; before parsing, those lines are blanked with spaces, so every source offset still points into the stored text.
 
 Reports are full of prices, so `$x$` follows the Pandoc rule: the opening `$` needs a non-space character after it, and the closing `$` a non-space character before it and no digit after it. In `$0.045 per GB … $950` both stay prices.
 
@@ -102,6 +105,7 @@ Better Auth owns `user`, `session`, `account`, `verification`, `apikey` and the 
 | `comment`   | `id`, `document_id`, `version_id`, `anchor` (JSON), `body`, `suggestion`, `status` (`open`, `resolved`, `detached`), author, `agent_seen_at` |
 | `reply`     | `id`, `comment_id`, `body`, author, `edited_at`                                                                                              |
 | `sharing`   | `target_kind`, `target_id`, `audience` (`link`, `people`), `people` (JSON), `permission`, `versions` (`current`, `all`), `expires_at`        |
+| `draft`     | `document_id`, `base_version`, `markdown`, `edits`, author: the next version an agent is editing                                             |
 | `read_mark` | `user_id`, `document_id`, `version_number`: what the unread dot compares against                                                             |
 | `agent`     | `id`, `name`, `client_id` or `api_key_id`, `last_used_at`                                                                                    |
 | `search`    | FTS5 over the title and plain text of each document's current version                                                                        |
@@ -120,12 +124,12 @@ The slow part of a request is the distance to D1, which lives in one region. Eac
 
 ## Roles
 
-| Role   | Signs in with                                             | Can                                                          |
-| ------ | --------------------------------------------------------- | ------------------------------------------------------------ |
-| Owner  | The account whose email equals `OWNER_EMAIL`              | Everything                                                   |
-| Agent  | An OAuth client the owner approved, or a key              | Publish, update, read, list, search, comment, reply, resolve |
-| Guest  | An email code, on a page shared with them or for comments | Read what is shared with them, comment where it allows       |
-| Reader | No sign-in                                                | Read what is shared by link                                  |
+| Role   | Signs in with                                             | Can                                                               |
+| ------ | --------------------------------------------------------- | ----------------------------------------------------------------- |
+| Owner  | The account whose email equals `OWNER_EMAIL`              | Everything                                                        |
+| Agent  | An OAuth client the owner approved, or a key              | Publish, edit, read, list, search, share, comment, reply, resolve |
+| Guest  | An email code, on a page shared with them or for comments | Read what is shared with them, comment where it allows            |
+| Reader | No sign-in                                                | Read what is shared by link                                       |
 
 Access is checked on the server in every server function, API route and MCP tool. Route guards only shape the UI.
 
@@ -136,7 +140,10 @@ Access is checked on the server in every server function, API route and MCP tool
 | `guide()`                                  | What evergarden renders and how to work with documents           |
 | `publish(content, title?, folder?, repo?)` | Creates a document; returns its id, version and URL              |
 | `update(id, content, base_version?)`       | Saves a new version and moves open comments onto it              |
-| `read(id, version?)`                       | Returns the markdown                                             |
+| `edit(id, edits)`                          | Replaces passages in the document's draft                        |
+| `publish_draft(id)`, `discard_draft(id)`   | Saves the draft as the next version, or throws it away           |
+| `share(id? \| folder?, who?, …)`           | Reads or sets who else can open a document or folder             |
+| `read(id, version?, draft?)`               | Returns the markdown                                             |
 | `list(folder?, repo?)`                     | Folders and documents, with open comment counts                  |
 | `search(query)`                            | Full-text search; ids, titles and an excerpt                     |
 | `open_comments(id?)`                       | Open comments as markdown, unseen first, and marks them seen     |

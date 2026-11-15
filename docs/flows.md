@@ -31,6 +31,10 @@ The top bar shows the folder the document is in. Clicking it lists what that fol
 
 A diagram takes the width of the text. Clicking it opens it full screen, where you scroll, drag and pinch to zoom.
 
+Agents can write more than markdown: figures such as timelines, decisions and boards in mdxcn's grammar, tabs, folded details, and Phosphor icons inline. A link to another document shows its current title, or a card when it stands alone; a reader who may not open it sees plain text. `guide()` lists all of it for agents, in `src/server/guide.md`.
+
+The **⋯** button copies the markdown, downloads it as a `.md` file, or prints the document, which is also how it becomes a PDF: the print stylesheet leaves out the bars, the margin and the comments.
+
 ## You comment on it
 
 A comment is posted when you save it, as in Google Docs, and the agent can read it right away.
@@ -67,7 +71,9 @@ Then it replies with `reply(comment_id, body)`, accepts a suggestion with `accep
 
 ## The agent updates the document
 
-`update` saves version 2. Saving the same content twice returns the existing version, so a retry does no harm. With `base_version`, the call fails if someone saved a version in between, instead of overwriting it.
+To change a few passages, the agent calls `edit(id, [{ old, new }])`. Each `old` must appear exactly once. Edits collect in a draft that only you see, as the first entry of the versions menu, with **Publish** and **Discard**. `publish_draft` turns the draft into one version, credited to the agent that wrote it; it fails if someone saved a version since the draft began.
+
+`update` replaces the whole text and saves version 2. Saving the same content twice returns the existing version, so a retry does no harm. With `base_version`, the call fails if someone saved a version in between, instead of overwriting it.
 
 Each open comment follows its passage into the new text, even when the paragraph moved. A comment whose passage was rewritten beyond recognition leaves the margin for "1 on changed text", above it, quoting the old text.
 
