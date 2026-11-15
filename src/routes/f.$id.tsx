@@ -37,7 +37,13 @@ function FolderPage() {
   const { id } = Route.useParams();
   const { viewer } = Route.useRouteContext();
   const page = useSuspenseQuery(folderPageQuery(id)).data;
-  if (page.state === "private") return <Private name={viewer?.name ?? ""} />;
+  if (page.state === "private")
+    return (
+      <Private
+        email={viewer?.email ?? ""}
+        retry={`/sign-in?${new URLSearchParams({ next: `/f/${id}`, shared: `folder:${id}` })}`}
+      />
+    );
   const owner = viewer?.kind === "owner";
   const content = (
     <FolderContent

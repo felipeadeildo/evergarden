@@ -1691,6 +1691,10 @@
 
   /* A page of plain text: not-found and private notices */
 
+  .letter > .button {
+    margin-top: 1rem;
+  }
+
   .letter {
     max-width: var(--measure);
     margin-inline: auto;

@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 function LibraryLayout() {
   const { viewer } = Route.useRouteContext();
-  if (viewer.kind === "guest") return <Private name={viewer.name} />;
+  if (viewer.kind === "guest") return <Private email={viewer.email} />;
   return (
     <SearchProvider>
       <Outlet />

@@ -89,7 +89,13 @@ function DocumentPage() {
     [navigate],
   );
 
-  if (page.state === "private") return <Private name={viewer?.name ?? ""} />;
+  if (page.state === "private")
+    return (
+      <Private
+        email={viewer?.email ?? ""}
+        retry={`/sign-in?${new URLSearchParams({ next: `/d/${id}`, shared: `document:${id}` })}`}
+      />
+    );
   const { document, version, versions, folder, shared, draft, showsDraft } = page;
   const isOld = version.number !== document.version;
   const byline = (

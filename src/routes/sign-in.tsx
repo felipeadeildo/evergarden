@@ -55,6 +55,7 @@ function SignIn() {
           email={email}
           next={resumeAgentSignIn() ?? safeNext(search.next)}
           fetchOptions={fetchOptions}
+          guest={Boolean(search.shared)}
           onChangeEmail={() => setEmail(null)}
         />
       )}
@@ -97,7 +98,7 @@ function EmailStep({
     <>
       <h1 className="sign-in-title">
         {guest
-          ? "Sign in to open what was shared with you. We send a code to your email; no password."
+          ? "Sign in with the email address this was shared with. We send a code to it; no password."
           : "Sign in to read and comment on your documents."}
       </h1>
       <form className="sign-in-form" onSubmit={(event) => void send(event)}>
@@ -129,11 +130,13 @@ function CodeStep({
   email,
   next,
   fetchOptions,
+  guest,
   onChangeEmail,
 }: {
   email: string;
   next: string;
   fetchOptions: FetchOptions;
+  guest: boolean;
   onChangeEmail: () => void;
 }) {
   const [error, setError] = useState<string | null>(null);
@@ -190,6 +193,12 @@ function CodeStep({
           </p>
         ) : null}
       </form>
+      {guest ? (
+        <p className="sign-in-help">
+          No code after a minute? This address may not have access; ask whoever sent you the link
+          which one to use.
+        </p>
+      ) : null}
       <p className="sign-in-help">
         {resent ? "Sent another code. " : null}
         <button type="button" className="link-button" onClick={() => void resend()}>
