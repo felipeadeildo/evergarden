@@ -96,16 +96,7 @@ export function DocumentView({
         {place}
       </TopBar>
       <Page
-        aside={
-          hasContents || inFolder ? (
-            <>
-              {inFolder ? (
-                <FolderNav folder={inFolder} siblings={page.siblings} current={document.id} />
-              ) : null}
-              {hasContents ? <Contents headings={body.headings} /> : null}
-            </>
-          ) : null
-        }
+        aside={hasContents ? <Contents headings={body.headings} /> : null}
         margin={commenting ? <CommentsMargin /> : null}
       >
         {notice}
@@ -134,9 +125,16 @@ export function DocumentView({
           <FileList editable={canAttach} />
         </FilesProvider>
         {commenting ? <CommentsEnd /> : null}
-        {inFolder ? <FolderPager siblings={page.siblings} current={document.id} /> : null}
+        {inFolder ? (
+          // The rest of the folder waits until the text is read, rather than competing with it.
+          <div className="folder-end">
+            <FolderPager siblings={page.siblings} current={document.id} />
+            <FolderNav folder={inFolder} siblings={page.siblings} current={document.id} />
+          </div>
+        ) : null}
       </Page>
       <Sheet open={contentsOpen} onClose={closeContents} label="Contents">
+        {hasContents ? <Contents headings={body.headings} onNavigate={closeContents} /> : null}
         {inFolder ? (
           <FolderNav
             folder={inFolder}
@@ -145,7 +143,6 @@ export function DocumentView({
             onNavigate={closeContents}
           />
         ) : null}
-        {hasContents ? <Contents headings={body.headings} onNavigate={closeContents} /> : null}
       </Sheet>
       {commenting && writable ? <SelectionBar /> : null}
       {commenting ? <CommentsSheet /> : null}

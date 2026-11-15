@@ -466,15 +466,19 @@
     );
   }
 
-  /* The folder's documents above the contents: see components/document/folder-nav.tsx */
-  .page-aside .folder-nav {
-    position: static;
-    max-height: none;
-    overflow: visible;
+  /* The folder's documents after the text, and under the contents on a phone: see
+     components/document/folder-nav.tsx */
+  .folder-end {
+    margin-top: 4rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--rule);
   }
 
-  .page-aside .folder-nav + .toc,
-  .sheet .folder-nav + .toc {
+  .folder-end .folder-nav {
+    margin-top: 1.6rem;
+  }
+
+  .sheet .toc + .folder-nav {
     margin-top: 2rem;
   }
 
@@ -1867,14 +1871,11 @@
     white-space: nowrap;
   }
 
-  /* Previous and next in the folder, after the text. */
+  /* Previous and next in the folder, at the top of .folder-end. */
   .folder-pager {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
-    margin-top: 4rem;
-    padding-top: 1.2rem;
-    border-top: 1px solid var(--rule);
   }
 
   .folder-pager a {
