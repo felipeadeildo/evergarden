@@ -1971,22 +1971,51 @@
 /* Comments: see components/comments */
 
 ::highlight(comment) {
-  background-color: color-mix(in srgb, var(--emerald) 12%, transparent);
-  text-decoration: underline 1.5px color-mix(in srgb, var(--emerald) 70%, transparent);
-  text-underline-offset: 0.22em;
+  background-color: color-mix(in srgb, var(--emerald) 11%, transparent);
+  text-decoration: underline 1.5px color-mix(in srgb, var(--emerald) 55%, transparent);
+  text-underline-offset: 0.24em;
 }
 
 ::highlight(comment-active) {
-  background-color: color-mix(in srgb, var(--emerald) 26%, transparent);
+  background-color: color-mix(in srgb, var(--emerald) 24%, transparent);
   text-decoration: underline 2px var(--emerald);
-  text-underline-offset: 0.22em;
+  text-underline-offset: 0.24em;
 }
 
 @layer components {
-  .button-small {
-    min-height: 2rem;
-    padding: 0.3rem 0.8rem;
+  /* A button that is only its words: Comment, Reply, Accept. */
+  .text-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.35rem;
+    border: 0;
+    border-radius: 5px;
+    background: none;
+    color: var(--emerald);
+    font: inherit;
     font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .text-button.quiet {
+    color: var(--ink-soft);
+    font-weight: 450;
+  }
+
+  .text-button:hover:not(:disabled) {
+    background: color-mix(in srgb, currentColor 9%, transparent);
+  }
+
+  .text-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .manicule {
+    width: 1.7em;
+    height: auto;
   }
 
   .page-margin {
@@ -1998,11 +2027,26 @@
     height: 100%;
   }
 
+  .comments-leader {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .comments-leader path {
+    fill: none;
+    stroke: var(--emerald);
+    stroke-width: 1;
+  }
+
   .comments-margin-item {
     position: absolute;
     left: 0;
     right: 0;
-    max-width: 20rem;
+    max-width: 19rem;
     visibility: hidden;
     transition: top 180ms var(--ease);
   }
@@ -2013,23 +2057,55 @@
     }
   }
 
+  .gutter-comment {
+    position: absolute;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border: 0;
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--emerald);
+    cursor: pointer;
+    translate: -50% -50%;
+  }
+
+  .gutter-comment:hover,
+  .gutter-comment:focus-visible {
+    background: var(--sheet);
+  }
+
+  .gutter-comment .manicule {
+    width: 1.55rem;
+  }
+
+  /* A note: folded to one line, or open with its thread */
+
   .note {
     display: grid;
-    gap: 0.35rem;
-    font-size: 0.92rem;
+    font-size: 0.9rem;
     line-height: 1.45;
     color: var(--ink);
   }
 
   .note-folded {
     width: 100%;
-    padding: 0.15rem 0;
+    gap: 0.05rem;
+    padding: 0.1rem 0 0.1rem 0.75rem;
     border: 0;
+    border-left: 1px solid var(--rule);
     background: none;
     font: inherit;
-    font-size: 0.92rem;
+    font-size: 0.9rem;
     text-align: left;
     cursor: pointer;
+  }
+
+  .note-folded:hover,
+  .note-folded:focus-visible {
+    border-left-color: var(--emerald);
   }
 
   .note-line {
@@ -2040,16 +2116,43 @@
     text-overflow: ellipsis;
   }
 
-  .note-folded:hover .note-line {
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
+  .note-open {
+    padding: 0.65rem 0.75rem 0.55rem;
+    border-left: 2px solid var(--emerald);
+    border-radius: 0 6px 6px 0;
+    background: var(--sheet);
   }
 
-  .note-open {
-    padding: 0.8rem 0.9rem 0.7rem;
-    border-left: 2px solid var(--emerald);
-    border-radius: 0 8px 8px 0;
-    background: var(--sheet);
+  .note-entry {
+    display: grid;
+    gap: 0.1rem;
+    padding: 0.45rem 0;
+  }
+
+  .note-entry + .note-entry,
+  .note-suggestion + .note-entry {
+    border-top: 1px solid var(--rule);
+  }
+
+  .note-head {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding-top: 0;
+  }
+
+  .note-head .note-byline {
+    grid-column: 1;
+  }
+
+  .note-state {
+    grid-row: 1;
+    grid-column: 2;
+    align-self: start;
+    margin: -0.3rem -0.4rem 0 0.25rem;
+    color: var(--ink-soft);
+  }
+
+  .note-state:hover {
+    color: var(--emerald);
   }
 
   .note-body {
@@ -2059,35 +2162,25 @@
   }
 
   .note-byline {
-    font-size: 0.8rem;
-    color: var(--ink-soft);
-  }
-
-  .note-reply {
-    display: grid;
-    gap: 0.2rem;
-    margin-top: 0.35rem;
-    padding-top: 0.55rem;
-    border-top: 1px solid var(--rule);
-  }
-
-  .note-suggestion {
-    display: grid;
-    gap: 0.25rem;
-    margin: 0.2rem 0;
-    padding: 0.5rem 0.6rem;
-    border-radius: 6px;
-    background: var(--paper);
-    font-size: 0.88rem;
-  }
-
-  .note-suggestion-label {
+    margin: 0;
     font-size: 0.78rem;
     color: var(--ink-soft);
   }
 
+  .note-suggestion {
+    display: grid;
+    justify-items: start;
+    gap: 0.15rem;
+    margin: 0.1rem 0 0.4rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: 5px;
+    background: var(--paper);
+    font-size: 0.86rem;
+  }
+
   .note-suggestion del {
     color: var(--alizarin);
+    text-decoration-thickness: 1px;
   }
 
   .note-suggestion ins {
@@ -2095,65 +2188,65 @@
     text-decoration: none;
   }
 
-  .note textarea {
+  .note-suggestion .text-button {
+    margin: 0.1rem 0 0 -0.35rem;
+  }
+
+  /* Fields have no box: writing in a note looks like writing on it. */
+  .note-field {
     width: 100%;
-    min-height: 2.4rem;
-    padding: 0.45rem 0.6rem;
-    border: 1px solid var(--rule);
-    border-radius: 6px;
-    background: var(--paper);
+    padding: 0.35rem 0;
+    border: 0;
+    background: none;
     color: var(--ink);
     font: inherit;
-    resize: vertical;
+    resize: none;
     field-sizing: content;
   }
 
-  .note textarea:focus-visible {
-    outline: 2px solid var(--prussian);
-    outline-offset: 1px;
-  }
-
-  .note-form {
-    margin-top: 0.4rem;
-  }
-
-  .note-toggle {
-    justify-self: start;
-    margin-left: -0.4rem;
-    font-size: 0.82rem;
-  }
-
-  .note-field {
-    display: grid;
-    gap: 0.25rem;
-    font-size: 0.8rem;
+  .note-field::placeholder {
     color: var(--ink-soft);
+  }
+
+  .note-field:focus-visible {
+    outline: none;
+  }
+
+  .note-reply {
+    border-top: 1px solid var(--rule);
+  }
+
+  .note-composer:focus-within,
+  .note-reply:focus-within {
+    border-color: var(--emerald);
+  }
+
+  .note-suggestion-edit .note-field {
+    padding: 0;
+    color: var(--emerald);
   }
 
   .note-actions {
     display: flex;
-    align-items: center;
-    gap: 0.15rem;
-    margin-left: -0.4rem;
+    justify-content: flex-end;
+    gap: 0.1rem;
+    margin-right: -0.35rem;
   }
 
-  .note-primary {
-    margin-left: auto;
+  .note-toggle {
+    margin-right: auto;
+    margin-left: -0.35rem;
   }
 
-  .note-actions .quiet-button {
-    font-size: 0.82rem;
+  .note-toggle[aria-pressed="true"] {
+    color: var(--emerald);
   }
 
-  .selection-action {
-    position: fixed;
-    z-index: 30;
-    translate: -50% 0;
+  .note-composer .note-actions {
+    margin-top: 0.2rem;
   }
 
-  .selection-action .button {
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 18%, transparent);
-  }
+  /* Phones: the selection bar and the comments sheet */
 
   .selection-bar {
     position: fixed;
@@ -2161,15 +2254,16 @@
     z-index: 30;
     display: flex;
     justify-content: center;
-    padding: 0.6rem max(1rem, env(safe-area-inset-right)) max(0.8rem, env(safe-area-inset-bottom))
+    padding: 0.4rem max(1rem, env(safe-area-inset-right)) max(0.5rem, env(safe-area-inset-bottom))
       max(1rem, env(safe-area-inset-left));
     border-top: 1px solid var(--rule);
-    background: var(--sheet);
+    background: var(--paper);
   }
 
-  .selection-bar .button {
-    width: 100%;
+  .selection-bar .text-button {
     min-height: 2.75rem;
+    padding-inline: 1rem;
+    font-size: 1rem;
   }
 
   .comments-sheet::backdrop {
@@ -2177,9 +2271,9 @@
   }
 
   .comments-sheet .note-open {
+    padding: 0.2rem 0 0;
     border-left: 0;
     border-radius: 0;
-    padding: 0.4rem 0 0;
     background: none;
   }
 
@@ -2187,9 +2281,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    margin-bottom: 0.3rem;
     font-size: 0.85rem;
     color: var(--ink-soft);
   }
+
+  /* After the text: comments on rewritten passages, and resolved ones */
 
   .comments-end {
     display: grid;
@@ -2205,15 +2302,14 @@
     cursor: pointer;
   }
 
-  .comments-end-quote {
+  .comments-end-thread {
     display: grid;
-    gap: 0.6rem;
-    margin: 1rem 0 0;
-    padding: 0;
-    border: 0;
+    gap: 0.5rem;
+    max-width: 30rem;
+    margin-top: 1.1rem;
   }
 
-  .comments-end-quote > p {
+  .comments-end-thread blockquote {
     margin: 0;
     padding-left: 0.8rem;
     border-left: 2px solid var(--rule);
