@@ -39,46 +39,103 @@ export function selectedSource(root: Element, source: string): SourceRange | nul
   if (!selection || selection.isCollapsed || selection.rangeCount === 0) return null;
   const range = selection.getRangeAt(0);
   if (!root.contains(range.commonAncestorContainer)) return null;
-  const container = range.commonAncestorContainer;
-  const element = container instanceof Element ? container : container.parentElement;
-  const block = element?.closest("[data-sourcepos]");
-  const position = block && root.contains(block) ? sourcePosition(block) : null;
-  if (!block || !position) return null;
 
-  const nodes = textNodes(block);
-  const text = nodes.map((node) => node.data).join("");
-  const from = offsetOf(nodes, range.startContainer, range.startOffset);
-  const to = offsetOf(nodes, range.endContainer, range.endOffset);
-  return to > from ? sourceRange(source, position, text, from, to) : null;
+  const shared = blockOf(root, range.commonAncestorContainer);
+  if (shared) {
+    const from = sourceAt(source, shared, range.startContainer, range.startOffset, "start");
+    const to = sourceAt(source, shared, range.endContainer, range.endOffset, "end");
+    return from !== null && to !== null && to > from ? { start: from, end: to } : null;
+  }
+  // A selection across paragraphs: from where it starts in the first to where it ends in the last.
+  const first = blockOf(root, range.startContainer);
+  const last = blockOf(root, range.endContainer);
+  const from = first && sourceAt(source, first, range.startContainer, range.startOffset, "start");
+  const to = last && sourceAt(source, last, range.endContainer, range.endOffset, "end");
+  return typeof from === "number" && typeof to === "number" && to > from
+    ? { start: from, end: to }
+    : null;
 }
 
-/** The DOM range that shows a markdown range, in the innermost block that holds all of it. */
+function blockOf(root: Element, node: Node): Element | null {
+  const element = node instanceof Element ? node : node.parentElement;
+  const block = element?.closest("[data-sourcepos]");
+  return block && root.contains(block) ? block : null;
+}
+
+/** The markdown offset of a DOM point inside `block`, as the start or the end of a range. */
+function sourceAt(
+  source: string,
+  block: Element,
+  container: Node,
+  offset: number,
+  edge: "start" | "end",
+): number | null {
+  const position = sourcePosition(block);
+  if (!position) return null;
+  const nodes = textNodes(block);
+  const text = nodes.map((node) => node.data).join("");
+  const at = offsetOf(nodes, container, offset);
+  const range =
+    edge === "start"
+      ? sourceRange(source, position, text, at, text.length)
+      : sourceRange(source, position, text, 0, at);
+  if (!range) return null;
+  return edge === "start" ? range.start : range.end;
+}
+
+/**
+ * The DOM range that shows a markdown range: inside the innermost block that holds all of it, or
+ * from the block where it starts to the block where it ends.
+ */
 export function domRange(root: Element, source: string, target: SourceRange): Range | null {
-  let block: Element | null = null;
+  const holding = innermost(
+    root,
+    (block) => block.start <= target.start && block.end >= target.end,
+  );
+  const first =
+    holding ?? innermost(root, (block) => block.start <= target.start && block.end > target.start);
+  const last =
+    holding ?? innermost(root, (block) => block.start < target.end && block.end >= target.end);
+  const start = first && pointAt(source, first, target, "start");
+  const end = last && pointAt(source, last, target, "end");
+  if (!start || !end) return null;
+  const range = document.createRange();
+  range.setStart(start.node, start.offset);
+  range.setEnd(end.node, end.offset);
+  return range;
+}
+
+/** The last match in document order, which is the innermost, as blocks nest. */
+function innermost(root: Element, test: (block: SourceRange) => boolean): Element | null {
+  let found: Element | null = null;
   for (const candidate of root.querySelectorAll("[data-sourcepos]")) {
     const position = sourcePosition(candidate);
-    if (position && position.start <= target.start && position.end >= target.end) block = candidate;
+    if (position && test(position)) found = candidate;
   }
-  const position = block && sourcePosition(block);
-  if (!block || !position) return null;
+  return found;
+}
 
+/** Where the part of `target` inside `block` starts or ends, as a text node and an offset. */
+function pointAt(
+  source: string,
+  block: Element,
+  target: SourceRange,
+  edge: "start" | "end",
+): { node: Text; offset: number } | null {
+  const position = sourcePosition(block);
+  if (!position) return null;
   const nodes = textNodes(block);
-  const shown = textRange(source, position, nodes.map((node) => node.data).join(""), target);
+  const inside = {
+    start: Math.max(target.start, position.start),
+    end: Math.min(target.end, position.end),
+  };
+  const shown = textRange(source, position, nodes.map((node) => node.data).join(""), inside);
   if (!shown) return null;
-
-  const range = document.createRange();
+  const index = edge === "start" ? shown.from : shown.to;
   let total = 0;
-  let started = false;
   for (const node of nodes) {
     const next = total + node.data.length;
-    if (!started && shown.from < next) {
-      range.setStart(node, shown.from - total);
-      started = true;
-    }
-    if (started && shown.to <= next) {
-      range.setEnd(node, shown.to - total);
-      return range;
-    }
+    if (edge === "start" ? index < next : index <= next) return { node, offset: index - total };
     total = next;
   }
   return null;
