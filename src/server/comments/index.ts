@@ -44,13 +44,22 @@ export type NewComment = {
 
 /** Every thread of a document, open ones first in the order they appear in the text. */
 export async function threads(documentId: string): Promise<Thread[]> {
-  const rows = await db
-    .select({ comment, versionNumber: version.number })
-    .from(comment)
-    .innerJoin(version, eq(version.id, comment.versionId))
-    .where(eq(comment.documentId, documentId))
-    .all();
-  const replies = await repliesOf(rows.map((row) => row.comment.id));
+  const [rows, replyRows] = await Promise.all([
+    db
+      .select({ comment, versionNumber: version.number })
+      .from(comment)
+      .innerJoin(version, eq(version.id, comment.versionId))
+      .where(eq(comment.documentId, documentId))
+      .all(),
+    db
+      .select({ reply })
+      .from(reply)
+      .innerJoin(comment, eq(comment.id, reply.commentId))
+      .where(eq(comment.documentId, documentId))
+      .orderBy(asc(reply.createdAt))
+      .all(),
+  ]);
+  const replies = groupReplies(replyRows.map((row) => row.reply));
   const order: Record<CommentStatus, number> = { open: 0, detached: 1, resolved: 2 };
   return rows
     .map(({ comment: row, versionNumber }) => ({
@@ -310,14 +319,19 @@ async function getComment(id: string) {
 }
 
 async function repliesOf(commentIds: string[]): Promise<Map<string, Reply[]>> {
+  if (commentIds.length === 0) return new Map();
+  return groupReplies(
+    await db
+      .select()
+      .from(reply)
+      .where(inArray(reply.commentId, commentIds))
+      .orderBy(asc(reply.createdAt))
+      .all(),
+  );
+}
+
+function groupReplies(rows: (typeof reply.$inferSelect)[]): Map<string, Reply[]> {
   const byComment = new Map<string, Reply[]>();
-  if (commentIds.length === 0) return byComment;
-  const rows = await db
-    .select()
-    .from(reply)
-    .where(inArray(reply.commentId, commentIds))
-    .orderBy(asc(reply.createdAt))
-    .all();
   for (const row of rows) {
     const list = byComment.get(row.commentId) ?? [];
     list.push({
