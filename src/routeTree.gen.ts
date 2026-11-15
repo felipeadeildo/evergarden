@@ -22,6 +22,8 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiV1DocumentsRouteImport } from './routes/api/v1/documents'
 import { Route as ApiV1SearchRouteImport } from './routes/api/v1/search'
 import { Route as ApiV1DocumentsIdRouteImport } from './routes/api/v1/documents.$id'
+import { Route as DIdFilesNameRouteImport } from './routes/d.$id_.files.$name'
+import { Route as ApiV1DocumentsIdFilesNameRouteImport } from './routes/api/v1/documents.$id_.files.$name'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -87,6 +89,17 @@ const ApiV1DocumentsIdRoute = ApiV1DocumentsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiV1DocumentsRoute,
 } as any)
+const DIdFilesNameRoute = DIdFilesNameRouteImport.update({
+  id: '/d/$id_/files/$name',
+  path: '/d/$id/files/$name',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1DocumentsIdFilesNameRoute =
+  ApiV1DocumentsIdFilesNameRouteImport.update({
+    id: '/$id_/files/$name',
+    path: '/$id/files/$name',
+    getParentRoute: () => ApiV1DocumentsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -101,6 +114,8 @@ export interface FileRoutesByFullPath {
   '/api/v1/documents': typeof ApiV1DocumentsRouteWithChildren
   '/api/v1/search': typeof ApiV1SearchRoute
   '/api/v1/documents/$id': typeof ApiV1DocumentsIdRoute
+  '/d/$id/files/$name': typeof DIdFilesNameRoute
+  '/api/v1/documents/$id/files/$name': typeof ApiV1DocumentsIdFilesNameRoute
 }
 export interface FileRoutesByTo {
   '/connect': typeof ConnectRoute
@@ -115,6 +130,8 @@ export interface FileRoutesByTo {
   '/api/v1/documents': typeof ApiV1DocumentsRouteWithChildren
   '/api/v1/search': typeof ApiV1SearchRoute
   '/api/v1/documents/$id': typeof ApiV1DocumentsIdRoute
+  '/d/$id/files/$name': typeof DIdFilesNameRoute
+  '/api/v1/documents/$id/files/$name': typeof ApiV1DocumentsIdFilesNameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -131,6 +148,8 @@ export interface FileRoutesById {
   '/api/v1/documents': typeof ApiV1DocumentsRouteWithChildren
   '/api/v1/search': typeof ApiV1SearchRoute
   '/api/v1/documents/$id': typeof ApiV1DocumentsIdRoute
+  '/d/$id_/files/$name': typeof DIdFilesNameRoute
+  '/api/v1/documents/$id_/files/$name': typeof ApiV1DocumentsIdFilesNameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -147,6 +166,8 @@ export interface FileRouteTypes {
     | '/api/v1/documents'
     | '/api/v1/search'
     | '/api/v1/documents/$id'
+    | '/d/$id/files/$name'
+    | '/api/v1/documents/$id/files/$name'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/connect'
@@ -161,6 +182,8 @@ export interface FileRouteTypes {
     | '/api/v1/documents'
     | '/api/v1/search'
     | '/api/v1/documents/$id'
+    | '/d/$id/files/$name'
+    | '/api/v1/documents/$id/files/$name'
   id:
     | '__root__'
     | '/_authenticated'
@@ -176,6 +199,8 @@ export interface FileRouteTypes {
     | '/api/v1/documents'
     | '/api/v1/search'
     | '/api/v1/documents/$id'
+    | '/d/$id_/files/$name'
+    | '/api/v1/documents/$id_/files/$name'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -189,6 +214,7 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiV1DocumentsRoute: typeof ApiV1DocumentsRouteWithChildren
   ApiV1SearchRoute: typeof ApiV1SearchRoute
+  DIdFilesNameRoute: typeof DIdFilesNameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -284,6 +310,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1DocumentsIdRouteImport
       parentRoute: typeof ApiV1DocumentsRoute
     }
+    '/d/$id_/files/$name': {
+      id: '/d/$id_/files/$name'
+      path: '/d/$id/files/$name'
+      fullPath: '/d/$id/files/$name'
+      preLoaderRoute: typeof DIdFilesNameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/documents/$id_/files/$name': {
+      id: '/api/v1/documents/$id_/files/$name'
+      path: '/$id/files/$name'
+      fullPath: '/api/v1/documents/$id/files/$name'
+      preLoaderRoute: typeof ApiV1DocumentsIdFilesNameRouteImport
+      parentRoute: typeof ApiV1DocumentsRoute
+    }
   }
 }
 
@@ -303,10 +343,12 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 interface ApiV1DocumentsRouteChildren {
   ApiV1DocumentsIdRoute: typeof ApiV1DocumentsIdRoute
+  ApiV1DocumentsIdFilesNameRoute: typeof ApiV1DocumentsIdFilesNameRoute
 }
 
 const ApiV1DocumentsRouteChildren: ApiV1DocumentsRouteChildren = {
   ApiV1DocumentsIdRoute: ApiV1DocumentsIdRoute,
+  ApiV1DocumentsIdFilesNameRoute: ApiV1DocumentsIdFilesNameRoute,
 }
 
 const ApiV1DocumentsRouteWithChildren = ApiV1DocumentsRoute._addFileChildren(
@@ -324,6 +366,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiV1DocumentsRoute: ApiV1DocumentsRouteWithChildren,
   ApiV1SearchRoute: ApiV1SearchRoute,
+  DIdFilesNameRoute: DIdFilesNameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
