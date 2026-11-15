@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 
-import { BackIcon, ForwardIcon } from "#/components/ui/icons";
+import { ForwardIcon } from "#/components/ui/icons";
 import type { FolderStep, Sibling } from "#/server/library";
 
 /** How many of a folder's documents the side list shows around the one open. */
@@ -56,21 +56,24 @@ export function FolderNav({ folder, siblings, current, onNavigate }: Props) {
 }
 
 /**
- * The end of a document in a folder: where it sits in the reading order, the documents before and
- * after it with their summaries, and the whole folder, numbered.
+ * The end of a document in a folder: the next one to read, then the whole folder, numbered, with
+ * this one marked. `[` and `]` open the documents before and after it.
  */
 export function FolderEnd({ folder, siblings, current }: Omit<Props, "onNavigate">) {
   const index = siblings.findIndex((entry) => entry.id === current);
+  const next = index >= 0 ? siblings[index + 1] : undefined;
   const shown = siblings.slice(0, MAX_LISTED);
+  useNeighbourKeys(siblings[index - 1], next);
+
   return (
     <nav aria-label={`In ${folder.name}`} className="folder-end">
+      {next ? <NextCard entry={next} /> : null}
       <p className="folder-end-place">
-        {index + 1} of {siblings.length} in{" "}
         <Link to="/f/$id" params={{ id: folder.id }}>
           {folder.name}
         </Link>
+        , {index + 1} of {siblings.length}
       </p>
-      <FolderPager siblings={siblings} current={current} />
       <ol className="folder-end-list">
         {shown.map((entry, position) => (
           <li key={entry.id}>
@@ -94,13 +97,8 @@ export function FolderEnd({ folder, siblings, current }: Omit<Props, "onNavigate
   );
 }
 
-/** The documents before and after this one in its folder, also reached with [ and ]. */
-function FolderPager({ siblings, current }: { siblings: Sibling[]; current: string }) {
+function useNeighbourKeys(previous: Sibling | undefined, next: Sibling | undefined) {
   const navigate = useNavigate();
-  const index = siblings.findIndex((entry) => entry.id === current);
-  const previous = index > 0 ? siblings[index - 1] : undefined;
-  const next = index >= 0 ? siblings[index + 1] : undefined;
-
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -114,33 +112,23 @@ function FolderPager({ siblings, current }: { siblings: Sibling[]; current: stri
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [navigate, previous, next]);
-
-  if (!previous && !next) return null;
-  return (
-    <div className="folder-pager">
-      {previous ? <PagerCard entry={previous} rel="prev" /> : <span />}
-      {next ? <PagerCard entry={next} rel="next" /> : null}
-    </div>
-  );
 }
 
-function PagerCard({ entry, rel }: { entry: Sibling; rel: "prev" | "next" }) {
-  const Icon = rel === "prev" ? BackIcon : ForwardIcon;
+function NextCard({ entry }: { entry: Sibling }) {
   return (
     <Link
       to="/d/$id"
       params={{ id: entry.id }}
-      rel={rel}
-      aria-keyshortcuts={rel === "prev" ? "[" : "]"}
-      className="pager-card"
+      rel="next"
+      aria-keyshortcuts="]"
+      className="next-card"
     >
-      <span className="pager-card-label">
-        {rel === "prev" ? <Icon /> : null}
-        {rel === "prev" ? "Previous" : "Next"}
-        {rel === "next" ? <Icon /> : null}
+      <span className="next-card-label">
+        Next
+        <ForwardIcon />
       </span>
-      <span className="pager-card-title">{entry.title}</span>
-      {entry.summary ? <span className="pager-card-summary">{entry.summary}</span> : null}
+      <span className="next-card-title">{entry.title}</span>
+      {entry.summary ? <span className="next-card-summary">{entry.summary}</span> : null}
     </Link>
   );
 }
