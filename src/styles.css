@@ -608,7 +608,7 @@
     text-wrap: pretty;
   }
 
-  .tool-row button {
+  .tool-row > button {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
@@ -622,8 +622,8 @@
     cursor: pointer;
   }
 
-  .tool-row button:hover,
-  .tool-row button:focus-visible {
+  .tool-row > button:hover,
+  .tool-row > button:focus-visible {
     background: var(--sheet);
     color: var(--ink);
   }
