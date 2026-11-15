@@ -71,18 +71,37 @@ export function remarkFrontmatterFields() {
   return (tree: MdastRoot, file: VFile) => {
     const yaml = tree.children.find((node) => node.type === "yaml");
     if (!yaml) return;
-    try {
-      const parsed: unknown = parseYaml(yaml.value);
-      if (!parsed || typeof parsed !== "object") return;
-      const title = "title" in parsed ? String(parsed.title).trim() : "";
-      const summary = "summary" in parsed ? String(parsed.summary).trim() : "";
-      if (title) data(file).frontmatterTitle = title;
-      if (summary) data(file).summary = summary;
-      if ("index" in parsed && parsed.index === true) data(file).entry = true;
-    } catch {
-      // Malformed frontmatter is left out of the page rather than failing the render.
-    }
+    const fields = frontmatterFields(yaml.value);
+    const title = plainText(fields.title);
+    const summary = plainText(fields.summary);
+    if (title) data(file).frontmatterTitle = title;
+    if (summary) data(file).summary = summary;
+    if (fields.index === true || fields.index === "true") data(file).entry = true;
   };
+}
+
+/** A field's text, such as a title that YAML read as a number; anything else counts as empty. */
+function plainText(value: unknown): string {
+  return typeof value === "string" || typeof value === "number" ? String(value).trim() : "";
+}
+
+/**
+ * The frontmatter as YAML, or else line by line: `summary: Mari: the short version` is invalid
+ * YAML for its second colon, yet plainly what its writer meant.
+ */
+function frontmatterFields(source: string): Record<string, unknown> {
+  try {
+    const parsed: unknown = parseYaml(source);
+    if (parsed && typeof parsed === "object") return { ...parsed };
+    return {};
+  } catch {
+    const fields: Record<string, string> = {};
+    for (const line of source.split("\n")) {
+      const match = /^([A-Za-z_][\w-]*):\s+(.+)$/.exec(line);
+      if (match?.[1] && match[2]) fields[match[1]] = match[2].replace(/^(["'])(.*)\1$/, "$2");
+    }
+    return fields;
+  }
 }
 
 /** Runs after sanitising, so it only adds trusted structure. */

@@ -339,3 +339,14 @@ describe("retitle", () => {
     expect((await render("---\nsummary: One line.\n---\n# T\n")).summary).toBe("One line.");
   });
 });
+
+describe("frontmatter", () => {
+  it("reads fields line by line when a colon makes the YAML invalid", async () => {
+    const result = await render(
+      "---\ntitle: Mari: the short version\nsummary: Who she is: in five parts.\nindex: true\n---\nText.",
+    );
+    expect(result.title).toBe("Mari: the short version");
+    expect(result.summary).toBe("Who she is: in five parts.");
+    expect(result.entry).toBe(true);
+  });
+});
