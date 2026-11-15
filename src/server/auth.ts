@@ -32,7 +32,8 @@ export const auth = betterAuth({
           if (!isOwner(user.email)) {
             throw new APIError("FORBIDDEN", { message: "This library is private." });
           }
-          return { data: user };
+          // A code sign-in creates the account with an empty name; settings can change this one.
+          return { data: { ...user, name: user.name || user.email.split("@")[0] } };
         },
       },
     },
