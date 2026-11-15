@@ -42,7 +42,7 @@ function parentIs(parentId: string | null) {
   return parentId ? eq(folder.parentId, parentId) : isNull(folder.parentId);
 }
 
-async function lastFolderPosition(parentId: string | null): Promise<string | null> {
+export async function lastFolderPosition(parentId: string | null): Promise<string | null> {
   const last = await db
     .select({ position: folder.position })
     .from(folder)
@@ -52,7 +52,10 @@ async function lastFolderPosition(parentId: string | null): Promise<string | nul
   return last?.position ?? null;
 }
 
-async function childFolder(parentId: string | null, name: string): Promise<string | undefined> {
+export async function childFolder(
+  parentId: string | null,
+  name: string,
+): Promise<string | undefined> {
   const found = await db
     .select({ id: folder.id })
     .from(folder)

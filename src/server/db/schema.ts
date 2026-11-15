@@ -73,7 +73,11 @@ export const document = sqliteTable(
     currentVersion: integer("current_version").notNull(),
     createdAt: createdAt(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+    /** From frontmatter `summary`: one sentence under the title and in link cards. */
+    summary: text("summary"),
     deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
+    /** The folder path a document was deleted from, so restoring it can bring the folders back. */
+    deletedFrom: text("deleted_from"),
   },
   (table) => [
     index("document_folder_idx").on(table.folderId, table.position),

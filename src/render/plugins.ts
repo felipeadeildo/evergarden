@@ -17,6 +17,7 @@ export type Heading = { depth: 2 | 3; text: string; id: string };
 export type RenderData = {
   frontmatterTitle?: string;
   title?: string;
+  summary?: string;
   headings?: Heading[];
   text?: string;
   features?: { math: boolean; diagram: boolean };
@@ -62,16 +63,18 @@ function data(file: VFile): RenderData {
   return file.data.evergarden;
 }
 
-export function remarkFrontmatterTitle() {
+/** Reads `title` and `summary`; other fields stay in the source and out of the page. */
+export function remarkFrontmatterFields() {
   return (tree: MdastRoot, file: VFile) => {
     const yaml = tree.children.find((node) => node.type === "yaml");
     if (!yaml) return;
     try {
       const parsed: unknown = parseYaml(yaml.value);
-      if (parsed && typeof parsed === "object" && "title" in parsed) {
-        const title = String(parsed.title).trim();
-        if (title) data(file).frontmatterTitle = title;
-      }
+      if (!parsed || typeof parsed !== "object") return;
+      const title = "title" in parsed ? String(parsed.title).trim() : "";
+      const summary = "summary" in parsed ? String(parsed.summary).trim() : "";
+      if (title) data(file).frontmatterTitle = title;
+      if (summary) data(file).summary = summary;
     } catch {
       // Malformed frontmatter is left out of the page rather than failing the render.
     }

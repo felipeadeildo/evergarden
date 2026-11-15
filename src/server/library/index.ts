@@ -181,6 +181,7 @@ export async function publish(
       folderId,
       position: await firstDocumentPosition(folderId),
       title,
+      summary: result.summary,
       currentVersion: 1,
       updatedAt: new Date(),
     }),
@@ -219,7 +220,7 @@ export async function update(
       db.insert(version).values(row),
       db
         .update(document)
-        .set({ currentVersion: number, title, updatedAt: new Date() })
+        .set({ currentVersion: number, title, summary: result.summary, updatedAt: new Date() })
         .where(and(eq(document.id, id), eq(document.currentVersion, current.version))),
       ...indexStatements(id, title, result.text),
     ]);

@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 import { db } from "#/server/db";
@@ -19,6 +19,11 @@ export function indexStatements(id: string, title: string, body: string) {
     db.delete(searchIndex).where(eq(searchIndex.documentId, id)),
     db.insert(searchIndex).values({ documentId: id, title, body }),
   ] as const;
+}
+
+/** Removes documents from the index once they are gone for good. */
+export function unindex(ids: string[]) {
+  return db.delete(searchIndex).where(inArray(searchIndex.documentId, ids));
 }
 
 /**

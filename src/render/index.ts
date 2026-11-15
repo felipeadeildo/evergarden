@@ -17,18 +17,20 @@ import {
   type Heading,
   rehypeEvergarden,
   rehypeStripPositions,
-  remarkFrontmatterTitle,
+  remarkFrontmatterFields,
 } from "./plugins";
 
 export type { Heading };
 
 /** Part of every cache key for rendered trees: bump it whenever the output changes. */
-export const RENDERER_VERSION = 9;
+export const RENDERER_VERSION = 10;
 
 export type Rendered = {
   tree: Root;
   /** From frontmatter `title` or a leading `# heading`; the heading is then removed from `tree`. */
   title: string | null;
+  /** From frontmatter `summary`. */
+  summary: string | null;
   headings: Heading[];
   text: string;
   features: { math: boolean; diagram: boolean };
@@ -53,7 +55,7 @@ export async function render(source: string): Promise<Rendered> {
   const processor = unified()
     .use(remarkParse)
     .use(remarkFrontmatter, ["yaml"])
-    .use(remarkFrontmatterTitle)
+    .use(remarkFrontmatterFields)
     .use(remarkGfm)
     .use(remarkDirective)
     .use(remarkEvergardenDirectives, closers, source)
@@ -75,6 +77,7 @@ export async function render(source: string): Promise<Rendered> {
   return {
     tree,
     title: data.title ?? null,
+    summary: data.summary ?? null,
     headings: data.headings ?? [],
     text: data.text ?? "",
     features: data.features ?? { math: false, diagram: false },

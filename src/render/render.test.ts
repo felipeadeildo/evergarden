@@ -302,3 +302,40 @@ describe("numbers in figures", () => {
     expect(out).toContain('<dd class="stat-value">860</dd>');
   });
 });
+
+describe("retitle", () => {
+  const cases: [string, string, string][] = [
+    ["a leading heading", "# Old\n\nBody.\n", "# New\n\nBody.\n"],
+    [
+      "a frontmatter title, keeping other fields",
+      "---\ntitle: Old\nsummary: Kept.\n---\n\nBody.\n",
+      "---\ntitle: New\nsummary: Kept.\n---\n\nBody.\n",
+    ],
+    [
+      "a frontmatter title shown again as the heading",
+      "---\ntitle: Old\n---\n# Old\n\nBody.\n",
+      "---\ntitle: New\n---\n# New\n\nBody.\n",
+    ],
+    [
+      "a frontmatter title above a different heading",
+      "---\ntitle: Old\n---\n# Intro\n\nBody.\n",
+      "---\ntitle: New\n---\n# Intro\n\nBody.\n",
+    ],
+    ["no title", "Body.\n", "# New\n\nBody.\n"],
+    [
+      "frontmatter without a title",
+      "---\ntags: [a]\n---\nBody.\n",
+      "---\ntags: [a]\n---\n\n# New\n\nBody.\n",
+    ],
+  ];
+
+  it.each(cases)("changes %s", async (_, before, after) => {
+    const { retitle } = await import("./retitle");
+    expect(retitle(before, "  New ")).toBe(after);
+    expect((await render(after)).title).toBe("New");
+  });
+
+  it("reads the summary from frontmatter", async () => {
+    expect((await render("---\nsummary: One line.\n---\n# T\n")).summary).toBe("One line.");
+  });
+});
