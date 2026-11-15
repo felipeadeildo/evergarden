@@ -2,6 +2,30 @@
 @import "@fontsource-variable/literata/opsz.css";
 @import "@fontsource-variable/literata/opsz-italic.css";
 
+/*
+ * Until Literata arrives, the page uses Times New Roman (or Liberation Serif, its metric twin on
+ * Linux) scaled to Literata's width and line height, so nothing moves when the font swaps in.
+ * The numbers come from the two fonts' metrics; see docs/design-language.md.
+ */
+@font-face {
+  font-family: "Literata Fallback";
+  src: local("Times New Roman"), local("Liberation Serif"), local("Tinos");
+  size-adjust: 116.4%;
+  ascent-override: 101.1%;
+  descent-override: 26.5%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "Literata Fallback";
+  font-style: italic;
+  src: local("Times New Roman Italic"), local("Liberation Serif Italic"), local("Tinos Italic");
+  size-adjust: 116.4%;
+  ascent-override: 101.1%;
+  descent-override: 26.5%;
+  line-gap-override: 0%;
+}
+
 @font-face {
   font-family: "Paper Mono";
   src: url("/fonts/paper-mono.woff2") format("woff2");
@@ -30,7 +54,7 @@
     0 8px 24px -8px color-mix(in oklab, var(--ink) 22%, transparent);
 
   /* Michelangelus is used only when installed locally: its licence forbids serving it. */
-  --serif: "Michelangelus", "Literata Variable", Georgia, serif;
+  --serif: "Michelangelus", "Literata Variable", "Literata Fallback", Georgia, serif;
   --mono: "Paper Mono", ui-monospace, monospace;
   /* About 66 characters of Literata at body size. */
   --measure: 34em;
@@ -367,7 +391,8 @@
       display: block;
     }
 
-    .contents-toggle {
+    .contents-toggle,
+    .comments-button {
       display: none;
     }
   }

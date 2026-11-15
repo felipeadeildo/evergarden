@@ -1,3 +1,5 @@
+import literataItalic from "@fontsource-variable/literata/files/literata-latin-opsz-italic.woff2?url";
+import literata from "@fontsource-variable/literata/files/literata-latin-opsz-normal.woff2?url";
 import type { QueryClient } from "@tanstack/react-query";
 import { HeadContent, Link, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -14,13 +16,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "evergarden" },
     ],
     links: [
-      {
+      // Discovered only after the stylesheet otherwise, which leaves the first paint in the fallback.
+      ...[literata, literataItalic].map((href) => ({
         rel: "preload",
-        href: "/fonts/paper-mono.woff2",
+        href,
         as: "font",
         type: "font/woff2",
-        crossOrigin: "anonymous",
-      },
+        crossOrigin: "anonymous" as const,
+      })),
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "manifest", href: "/site.webmanifest" },
