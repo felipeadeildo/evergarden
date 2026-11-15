@@ -1,23 +1,43 @@
-import { type SubmitEvent, useEffect, useId, useRef, useState } from "react";
+import { type SubmitEvent, useEffect, useRef, useState } from "react";
 
+import { CheckIcon, EditIcon, ReopenIcon } from "#/components/ui/icons";
 import { RelativeTime } from "#/components/ui/relative-time";
-import { textField } from "#/lib/form";
 
 import type { Thread } from "./use-threads";
 
 function Byline({ name, date }: { name: string; date: Date }) {
   return (
-    <span className="note-byline">
+    <p className="note-byline">
       {name}, <RelativeTime date={date} />
-    </span>
+    </p>
   );
 }
 
 /** A thread folded to its first line, as it sits in the margin until it is opened. */
-export function FoldedThread({ thread, onOpen }: { thread: Thread; onOpen: () => void }) {
+export function FoldedThread({
+  thread,
+  onOpen,
+  onHover,
+}: {
+  thread: Thread;
+  onOpen: () => void;
+  onHover: (hovered: boolean) => void;
+}) {
   const replies = thread.replies.length;
   return (
-    <button type="button" className="note note-folded" onClick={onOpen}>
+    <button
+      type="button"
+      className="note note-folded"
+      onClick={() => {
+        // The folded note unmounts as it opens, before its pointerleave would fire.
+        onHover(false);
+        onOpen();
+      }}
+      onPointerEnter={() => onHover(true)}
+      onPointerLeave={() => onHover(false)}
+      onFocus={() => onHover(true)}
+      onBlur={() => onHover(false)}
+    >
       <span className="note-line">{thread.body}</span>
       <span className="note-byline">
         {thread.author.name}
@@ -43,75 +63,99 @@ export function OpenThread({
   busy: boolean;
 }) {
   const resolved = thread.status === "resolved";
-  const replyForm = useId();
   return (
     <article className="note note-open" aria-label={`Comment by ${thread.author.name}`}>
-      <p className="note-body">{thread.body}</p>
-      <Byline name={thread.author.name} date={thread.createdAt} />
+      <div className="note-entry note-head">
+        <p className="note-body">{thread.body}</p>
+        {resolved ? (
+          <button
+            type="button"
+            className="icon-button note-state"
+            aria-label="Reopen"
+            title="Reopen"
+            disabled={busy}
+            onClick={onReopen}
+          >
+            <ReopenIcon />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="icon-button note-state"
+            aria-label="Resolve"
+            title="Resolve"
+            disabled={busy}
+            onClick={onResolve}
+          >
+            <CheckIcon />
+          </button>
+        )}
+        <Byline name={thread.author.name} date={thread.createdAt} />
+      </div>
       {thread.suggestion !== null ? (
         <div className="note-suggestion">
-          <span className="note-suggestion-label">Suggested</span>
           <del>{thread.anchor.exact}</del>
           <ins>{thread.suggestion}</ins>
+          {thread.status === "open" ? (
+            <button type="button" className="text-button" disabled={busy} onClick={onAccept}>
+              Accept
+            </button>
+          ) : null}
         </div>
       ) : null}
       {thread.replies.map((reply) => (
-        <div key={reply.id} className="note-reply">
+        <div key={reply.id} className="note-entry">
           <p className="note-body">{reply.body}</p>
           <Byline name={reply.author.name} date={reply.createdAt} />
         </div>
       ))}
-      {resolved ? null : <ReplyForm id={replyForm} onReply={onReply} />}
-      <div className="note-actions">
-        {resolved ? (
-          <button type="button" className="quiet-button" disabled={busy} onClick={onReopen}>
-            Reopen
-          </button>
-        ) : (
-          <button type="button" className="quiet-button" disabled={busy} onClick={onResolve}>
-            Resolve
-          </button>
-        )}
-        {thread.suggestion !== null && thread.status === "open" ? (
-          <button type="button" className="quiet-button" disabled={busy} onClick={onAccept}>
-            Accept
-          </button>
-        ) : null}
-        {resolved ? null : (
-          <button type="submit" form={replyForm} className="button button-small note-primary">
-            Reply
-          </button>
-        )}
-      </div>
+      {resolved ? null : <ReplyBox onReply={onReply} />}
     </article>
   );
 }
 
-function ReplyForm({ id, onReply }: { id: string; onReply: (body: string) => Promise<unknown> }) {
+/** One quiet line that grows into a reply, with its buttons only once there is something to send. */
+function ReplyBox({ onReply }: { onReply: (body: string) => Promise<unknown> }) {
+  const [text, setText] = useState("");
+  const [pending, setPending] = useState(false);
+
   async function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = event.currentTarget;
-    const body = textField(new FormData(form), "body").trim();
+    const body = text.trim();
     if (!body) return;
+    setPending(true);
     await onReply(body);
-    form.reset();
+    setPending(false);
+    setText("");
   }
 
   return (
-    <form id={id} className="note-form" onSubmit={(event) => void submit(event)}>
+    <form className="note-reply" onSubmit={(event) => void submit(event)}>
       <textarea
+        className="note-field"
         name="body"
         rows={1}
-        placeholder="Reply"
+        placeholder="Reply…"
         aria-label="Reply"
-        required
-        onKeyDown={submitOnModEnter}
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onKeyDown={(event) => keys(event, () => setText(""))}
       />
+      {text.trim() ? (
+        <div className="note-actions">
+          <button type="button" className="text-button quiet" onClick={() => setText("")}>
+            Cancel
+          </button>
+          <button type="submit" className="text-button" disabled={pending}>
+            Reply
+          </button>
+        </div>
+      ) : null}
     </form>
   );
 }
 
-/** A new comment on a passage, with an optional rewrite of it. */
+/** A new comment on a passage, with an optional edit of it. */
 export function Composer({
   passage,
   onSubmit,
@@ -122,6 +166,8 @@ export function Composer({
   onCancel: () => void;
 }) {
   const [suggesting, setSuggesting] = useState(false);
+  const [text, setText] = useState("");
+  const [rewrite, setRewrite] = useState(passage);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const body = useRef<HTMLTextAreaElement>(null);
@@ -130,13 +176,10 @@ export function Composer({
 
   async function submit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    if (!text.trim()) return;
     setPending(true);
     try {
-      await onSubmit({
-        body: textField(form, "body"),
-        suggestion: suggesting ? textField(form, "suggestion") : undefined,
-      });
+      await onSubmit({ body: text, suggestion: suggesting ? rewrite : undefined });
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "The comment was not saved.");
       setPending(false);
@@ -147,21 +190,26 @@ export function Composer({
     <form className="note note-open note-composer" onSubmit={(event) => void submit(event)}>
       <textarea
         ref={body}
+        className="note-field"
         name="body"
         rows={2}
-        placeholder="Comment"
+        placeholder="Add a comment…"
         aria-label="Comment"
-        required
-        onKeyDown={(event) => composerKeys(event, onCancel)}
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onKeyDown={(event) => keys(event, onCancel)}
       />
       {suggesting ? (
-        <label className="note-field">
-          <span>Replace the passage with</span>
+        <label className="note-suggestion note-suggestion-edit">
+          <span className="sr-only">Replace the passage with</span>
+          {rewrite === passage ? null : <del>{passage}</del>}
           <textarea
+            className="note-field"
             name="suggestion"
-            rows={3}
-            defaultValue={passage}
-            onKeyDown={(event) => composerKeys(event, onCancel)}
+            rows={1}
+            value={rewrite}
+            onChange={(event) => setRewrite(event.target.value)}
+            onKeyDown={(event) => keys(event, onCancel)}
           />
         </label>
       ) : null}
@@ -170,19 +218,20 @@ export function Composer({
           {error}
         </p>
       ) : null}
-      <button
-        type="button"
-        className="quiet-button note-toggle"
-        aria-pressed={suggesting}
-        onClick={() => setSuggesting(!suggesting)}
-      >
-        {suggesting ? "Keep the passage" : "Suggest a rewrite"}
-      </button>
       <div className="note-actions">
-        <button type="button" className="quiet-button" onClick={onCancel}>
+        <button
+          type="button"
+          className="text-button quiet note-toggle"
+          aria-pressed={suggesting}
+          onClick={() => setSuggesting(!suggesting)}
+        >
+          <EditIcon />
+          Suggest
+        </button>
+        <button type="button" className="text-button quiet" onClick={onCancel}>
           Cancel
         </button>
-        <button type="submit" className="button button-small note-primary" disabled={pending}>
+        <button type="submit" className="text-button" disabled={pending || !text.trim()}>
           Comment
         </button>
       </div>
@@ -190,13 +239,12 @@ export function Composer({
   );
 }
 
-function composerKeys(event: React.KeyboardEvent<HTMLTextAreaElement>, cancel: () => void) {
-  if (event.key === "Escape") cancel();
-  else submitOnModEnter(event);
-}
-
-function submitOnModEnter(event: React.KeyboardEvent<HTMLTextAreaElement>) {
-  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+/** `⌘↵` sends, `Esc` cancels. */
+function keys(event: React.KeyboardEvent<HTMLTextAreaElement>, cancel: () => void) {
+  if (event.key === "Escape") {
+    event.stopPropagation();
+    cancel();
+  } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
     event.preventDefault();
     event.currentTarget.form?.requestSubmit();
   }
