@@ -12,12 +12,14 @@ import {
   openCount,
   resolve,
 } from "#/server/comments";
-import type { AttachedFile } from "#/server/db/schema";
+import { type AttachedFile, FOLDER_SORTS } from "#/server/db/schema";
 import { EvergardenError } from "#/server/errors";
 import { GUIDE_TOPICS, guide } from "#/server/guide";
 import {
   type DocumentEntry,
   type FolderEntry,
+  folderContents,
+  folderInfo,
   getDocument,
   list,
   publish,
@@ -33,6 +35,9 @@ import {
   deleteFolder,
   folderAt,
   moveDocument,
+  orderDocuments,
+  setEntry,
+  sortFolder,
   moveFolder,
   renameDocument,
   renameFolder,
@@ -418,6 +423,51 @@ function mcpServer(principal: Principal, origin: string): McpServer {
         }
         const { version } = await renameDocument(target.id, input.name, author);
         return `Saved version ${version} titled ${input.name.trim()}: ${url(target.id)}`;
+      }),
+  );
+
+  server.registerTool(
+    "order",
+    {
+      description: [
+        "Orders a folder's documents. `by` sets a rule: newest, oldest, title, or manual.",
+        "`ids` puts those documents first in that order, the rest after, and makes the order manual.",
+        '`entry` pins one document first as the folder\'s start; give "" to unpin.',
+        "Publishing a series in reading order needs none of this: new documents go last.",
+        "Call it when your user asks, or right after publishing documents that belong in another order.",
+      ].join(" "),
+      inputSchema: z.object({
+        folder: z
+          .string()
+          .describe('The folder, as a path: "reports/2026"; "" is the top of the library.'),
+        by: z.enum(FOLDER_SORTS).optional(),
+        ids: z.array(z.string()).optional(),
+        entry: z.string().optional(),
+      }),
+    },
+    (input) =>
+      run(async () => {
+        const names = parseFolderPath(input.folder);
+        const folderId = names.length > 0 ? await findFolder(names) : null;
+        if (names.length > 0 && !folderId) {
+          throw new EvergardenError("not_found", `No folder at "${input.folder}".`);
+        }
+        if (!folderId && (input.by || input.entry !== undefined)) {
+          throw new EvergardenError(
+            "invalid",
+            "The top of the library has no rule or entry; give `ids`.",
+          );
+        }
+        if (folderId && input.by) await sortFolder(folderId, input.by);
+        if (input.ids) await orderDocuments(folderId, input.ids);
+        if (folderId && input.entry !== undefined) await setEntry(folderId, input.entry || null);
+
+        const { documents } = await folderContents(folderId);
+        const sort = folderId ? (await folderInfo(folderId)).sort : "manual";
+        return [
+          `Order: ${sort}.`,
+          ...documents.map((entry, index) => `${index + 1}. ${entry.title} (${entry.id})`),
+        ].join("\n");
       }),
   );
 
