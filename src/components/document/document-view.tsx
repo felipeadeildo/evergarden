@@ -11,6 +11,7 @@ import { CommentsMargin } from "#/components/comments/margin";
 import { CommentPins } from "#/components/comments/pins";
 import { DocumentBody } from "#/components/document/body";
 import { Contents } from "#/components/document/contents";
+import { ExportMenu } from "#/components/document/export-menu";
 import { type DocumentLinks, LinksProvider } from "#/components/document/links";
 import { TopBar } from "#/components/navigation/top-bar";
 import { CommentIcon, ContentsIcon } from "#/components/ui/icons";
@@ -74,6 +75,7 @@ export function DocumentView({
             {commenting ? <CommentsButton /> : null}
             {contentsButton}
             {actions}
+            <ExportMenu title={document.title} source={source} />
           </>
         }
       >

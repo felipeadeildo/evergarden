@@ -736,6 +736,14 @@
     margin-inline-start: calc(0.45rem - 0.4rem - 0.55rem - 1px);
   }
 
+  .export-menu {
+    width: min(15rem, calc(100vw - 1.5rem));
+  }
+
+  .export-menu .menu-item {
+    grid-template-columns: 1.15em minmax(0, 1fr);
+  }
+
   .versions-menu .menu-item {
     grid-template-columns: 1.15em minmax(0, 1fr) auto;
     column-gap: 0.4rem;
@@ -2786,5 +2794,90 @@ figure[data-pinning]::after {
   .comments-end .other-threads {
     max-width: 30rem;
     margin-top: 1.1rem;
+  }
+}
+
+/* Printing, which is also how a document is saved as PDF. Unlayered, so it wins over the screen. */
+@media print {
+  :root {
+    color-scheme: light;
+    --paper: #fff;
+    --sheet: #f3f2ed;
+    --rule: #d8d6cc;
+    --ink: #1c2230;
+    --ink-soft: #5b6172;
+    --prussian: #23395b;
+    --emerald: #0d7a5a;
+    --alizarin: #a3243b;
+    --ochre: #8a5b12;
+  }
+
+  @page {
+    margin: 18mm 17mm 20mm;
+  }
+
+  html {
+    font-size: 10.5pt;
+  }
+
+  .skip-link,
+  .top-bar,
+  .page-aside,
+  .page-margin,
+  .old-version,
+  .selection-bar,
+  .comments-end,
+  .comment-pins,
+  .gutter-comment,
+  .heading-link,
+  .code-copy,
+  .diagram-expand,
+  .byline-caret {
+    display: none;
+  }
+
+  .page {
+    display: block;
+    padding: 0;
+  }
+
+  .page-header {
+    padding: 0 0 1.2rem;
+  }
+
+  .byline-button {
+    pointer-events: none;
+  }
+
+  .prose [data-commented] {
+    outline: none;
+    box-shadow: none;
+  }
+
+  ::highlight(comment),
+  ::highlight(comment-active) {
+    background: none;
+  }
+
+  .prose :is(h2, h3, h4) {
+    break-after: avoid;
+  }
+
+  .prose :is(figure, pre, table, aside, img, .document-card, .katex-display) {
+    break-inside: avoid;
+  }
+
+  .prose p {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .table-scroll,
+  .prose pre {
+    overflow: visible;
+  }
+
+  .prose pre {
+    white-space: pre-wrap;
   }
 }
