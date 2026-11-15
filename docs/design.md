@@ -142,6 +142,19 @@ D1, through Drizzle. Better Auth owns `user`, `session`, `account`, `verificatio
 
 `position` is a fractional index (a string that sorts between its neighbours), so moving one item rewrites one row. `agent_seen_at` on a comment, or on its newest reply, is what puts unseen comments first in `open_comments()`.
 
+## Speed
+
+A page change should feel instant, and the slow part of a request is the distance to D1, which lives in one region. Each choice below removes round trips to it.
+
+| Choice                                                         | Effect                                                                                                                                                                                                                                                                                                                                |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Smart Placement (`placement.mode` in `wrangler.jsonc`)         | The Worker runs near D1, so a page's 8 to 10 queries cost about a millisecond each; only the trip from the reader to the Worker stays long. Static assets are still served from the nearest location.                                                                                                                                 |
+| Session cookie cache (`session.cookieCache`, 5 minutes)        | Most requests check the session from a signed cookie instead of the database. A session revoked on another device stays valid there for up to 5 minutes.                                                                                                                                                                              |
+| The signed-in person is kept in the Query cache for 5 minutes  | The authenticated layout's `beforeLoad` runs on every navigation, including opening a comment (`?c=`), without asking the server again.                                                                                                                                                                                               |
+| Pages load through TanStack Query (`src/functions/queries.ts`) | A route's loader calls `ensureQueryData` with the same options its component reads with `useSuspenseQuery`. Hovering a link preloads the page into that cache, so the click renders from it; data older than 30 seconds refreshes in the background, as when returning to the tab. Mutations invalidate the query that owns the data. |
+
+D1 read replication would serve reads from a nearby replica, but it needs the Sessions API and gains little once the Worker runs near the primary.
+
 ## Roles
 
 | Role   | Signs in with                                     | Can                                                                           |
