@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 
 import { db } from "#/server/db";
-import { draft } from "#/server/db/schema";
+import { type AttachedFile, draft } from "#/server/db/schema";
 import { EvergardenError } from "#/server/errors";
 
 import { type Author, checkContent, read, type Updated, update } from "./index";
@@ -12,6 +12,7 @@ export type Edit = { old: string; new: string; all?: boolean };
 export type Draft = {
   baseVersion: number;
   markdown: string;
+  files: AttachedFile[];
   edits: number;
   authorName: string;
   updatedAt: Date;
@@ -41,6 +42,7 @@ export async function getDraft(id: string): Promise<Draft | null> {
     .select({
       baseVersion: draft.baseVersion,
       markdown: draft.markdown,
+      files: draft.files,
       edits: draft.edits,
       authorName: draft.authorName,
       updatedAt: draft.updatedAt,
@@ -51,16 +53,27 @@ export async function getDraft(id: string): Promise<Draft | null> {
   return row ?? null;
 }
 
-/** Edits the document's draft, starting one from the current version when there is none. */
-export async function editDraft(id: string, edits: Edit[], author: Author): Promise<Draft> {
+type Contents = { markdown: string; files: AttachedFile[] };
+
+/**
+ * Changes the document's draft, starting one from the current version when there is none.
+ * `changes` counts what the draft holds, for the notice the owner sees.
+ */
+export async function changeDraft(
+  id: string,
+  author: Author,
+  changes: number,
+  change: (base: Contents) => Contents | Promise<Contents>,
+): Promise<Draft> {
   const existing = await getDraft(id);
   const base = existing ?? (await startingPoint(id));
-  const markdown = checkContent(applyEdits(base.markdown, edits));
+  const next = await change(base);
   const row = {
     documentId: id,
     baseVersion: base.baseVersion,
-    markdown,
-    edits: (existing?.edits ?? 0) + edits.length,
+    markdown: checkContent(next.markdown),
+    files: next.files,
+    edits: (existing?.edits ?? 0) + changes,
     authorKind: author.kind,
     authorId: author.id,
     authorName: author.name,
@@ -68,6 +81,13 @@ export async function editDraft(id: string, edits: Edit[], author: Author): Prom
   };
   await db.insert(draft).values(row).onConflictDoUpdate({ target: draft.documentId, set: row });
   return row;
+}
+
+export function editDraft(id: string, edits: Edit[], author: Author): Promise<Draft> {
+  return changeDraft(id, author, edits.length, (base) => ({
+    markdown: applyEdits(base.markdown, edits),
+    files: base.files,
+  }));
 }
 
 /**
@@ -80,7 +100,7 @@ export async function publishDraft(id: string): Promise<Updated> {
   const author = { kind: current.authorKind, id: current.authorId, name: current.authorName };
   const result = await update(
     id,
-    { content: current.markdown, baseVersion: current.baseVersion },
+    { content: current.markdown, baseVersion: current.baseVersion, files: current.files },
     author,
   );
   await discardDraft(id);
@@ -93,5 +113,5 @@ export async function discardDraft(id: string): Promise<void> {
 
 async function startingPoint(id: string) {
   const current = await read(id);
-  return { baseVersion: current.document.version, markdown: current.source };
+  return { baseVersion: current.document.version, markdown: current.source, files: current.files };
 }

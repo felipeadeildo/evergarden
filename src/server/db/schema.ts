@@ -94,6 +94,10 @@ export const version = sqliteTable(
       .references(() => document.id, { onDelete: "cascade" }),
     number: integer("number").notNull(),
     sha256: text("sha256").notNull(),
+    files: text("files", { mode: "json" })
+      .$type<AttachedFile[]>()
+      .notNull()
+      .default(sql`'[]'`),
     authorKind: text("author_kind").$type<AuthorKind>().notNull(),
     authorId: text("author_id").notNull(),
     // Kept on the row so a deleted API key or account still shows who wrote it.
@@ -104,12 +108,19 @@ export const version = sqliteTable(
 );
 
 /** The next version of a document, which an agent edits in place before publishing it. */
+/** A file attached to a version, by the name the markdown uses; the bytes live in R2 by hash. */
+export type AttachedFile = { name: string; sha256: string; size: number; type: string };
+
 export const draft = sqliteTable("draft", {
   documentId: text("document_id")
     .primaryKey()
     .references(() => document.id, { onDelete: "cascade" }),
   baseVersion: integer("base_version").notNull(),
   markdown: text("markdown").notNull(),
+  files: text("files", { mode: "json" })
+    .$type<AttachedFile[]>()
+    .notNull()
+    .default(sql`'[]'`),
   edits: integer("edits").notNull(),
   authorKind: text("author_kind").$type<AuthorKind>().notNull(),
   authorId: text("author_id").notNull(),

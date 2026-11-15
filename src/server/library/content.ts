@@ -4,8 +4,9 @@ import { type Rendered, RENDERER_VERSION, render } from "#/render";
 import { db } from "#/server/db";
 import { content } from "#/server/db/schema";
 
-export async function sha256(text: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+export async function sha256(value: string | ArrayBuffer): Promise<string> {
+  const bytes = typeof value === "string" ? new TextEncoder().encode(value) : value;
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 

@@ -17,6 +17,7 @@ import { type Rendered, render } from "#/render";
 import { relocateComments } from "#/server/comments/relocate";
 import { db } from "#/server/db";
 import {
+  type AttachedFile,
   type AuthorKind,
   type ShareAudience,
   content as contentTable,
@@ -195,10 +196,13 @@ export async function publish(
 
 export type Updated = { id: string; version: number; changed: boolean };
 
-/** With `baseVersion`, fails when someone saved a version since, instead of overwriting it. */
+/**
+ * With `baseVersion`, fails when someone saved a version since, instead of overwriting it.
+ * Without `files`, the new version keeps the current one's.
+ */
 export async function update(
   id: string,
-  input: { content: string; baseVersion?: number },
+  input: { content: string; baseVersion?: number; files?: AttachedFile[] },
   author: Author,
 ): Promise<Updated> {
   const content = checkContent(input.content);
@@ -209,14 +213,17 @@ export async function update(
 
   const sha = await sha256(content);
   const currentRow = await versionByNumber(id, current.version);
-  if (currentRow.sha256 === sha) return { id, version: current.version, changed: false };
+  const files = input.files ?? currentRow.files;
+  const sameFiles = JSON.stringify(files) === JSON.stringify(currentRow.files);
+  if (currentRow.sha256 === sha && sameFiles)
+    return { id, version: current.version, changed: false };
 
   const result = await render(content);
   const title = result.title ?? current.title;
   const number = current.version + 1;
 
   await store(sha, content, result);
-  const row = versionRow(id, number, sha, author);
+  const row = versionRow(id, number, sha, author, files);
   try {
     await db.batch([
       db.insert(version).values(row),
@@ -239,11 +246,12 @@ export type Read = {
   document: DocumentEntry;
   version: VersionEntry & { id: string; sha256: string };
   source: string;
+  files: AttachedFile[];
 };
 
 export async function read(id: string, versionNumber?: number): Promise<Read> {
   const [found, shown] = await Promise.all([getDocument(id), shownVersion(id, versionNumber)]);
-  return { document: found, version: shown.version, source: shown.markdown };
+  return { document: found, version: shown.version, source: shown.markdown, files: shown.files };
 }
 
 export type DocumentPage = Read & {
@@ -290,6 +298,7 @@ export async function documentPage(id: string, versionNumber?: number): Promise<
     document: found,
     version: shown.version,
     source: shown.markdown,
+    files: shown.files,
     versions: history,
     folder: path,
     siblings,
@@ -307,6 +316,7 @@ async function shownVersion(id: string, number?: number) {
       authorName: version.authorName,
       createdAt: version.createdAt,
       sha256: version.sha256,
+      files: version.files,
       markdown: contentTable.markdown,
       rendered: contentTable.rendered,
       rendererVersion: contentTable.rendererVersion,
@@ -330,8 +340,8 @@ async function shownVersion(id: string, number?: number) {
       number ? `Document "${id}" has no version ${number}.` : `No document with id "${id}".`,
     );
   }
-  const { markdown, rendered, rendererVersion, ...shown } = row;
-  return { version: shown, markdown, cache: { rendered, rendererVersion } };
+  const { markdown, files, rendered, rendererVersion, ...shown } = row;
+  return { version: shown, markdown, files, cache: { rendered, rendererVersion } };
 }
 
 export async function versions(id: string): Promise<VersionEntry[]> {
@@ -509,12 +519,19 @@ const folderColumns = {
   shared: sharedColumn("folder", folder.id),
 };
 
-function versionRow(documentId: string, number: number, sha: string, author: Author) {
+function versionRow(
+  documentId: string,
+  number: number,
+  sha: string,
+  author: Author,
+  files: AttachedFile[] = [],
+) {
   return {
     id: newId(),
     documentId,
     number,
     sha256: sha,
+    files,
     authorKind: author.kind,
     authorId: author.id,
     authorName: author.name,

@@ -19,4 +19,6 @@
   "d1_databases": [
     { "binding": "DB", "database_name": "evergarden", "migrations_dir": "migrations" },
   ],
+  // Files attached to documents, stored once by their hash. No bucket name: deploy creates one.
+  "r2_buckets": [{ "binding": "FILES" }],
 }

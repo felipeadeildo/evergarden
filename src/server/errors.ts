@@ -4,6 +4,7 @@ const STATUS = {
   forbidden: 403,
   not_found: 404,
   conflict: 409,
+  too_large: 413,
 } as const;
 
 export type ErrorCode = keyof typeof STATUS;
