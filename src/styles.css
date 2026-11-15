@@ -1457,9 +1457,21 @@
 
   /* Share */
 
+  /* One column as wide as the sheet: a long address scrolls inside its line, not the sheet. */
   .share-form {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 1.1rem;
+  }
+
+  .share-form .choice {
+    min-inline-size: 0;
+  }
+
+  @media (max-width: 420px) {
+    .share-form .segmented label {
+      padding-inline: 0.5rem;
+    }
   }
 
   .share-form h2 {
