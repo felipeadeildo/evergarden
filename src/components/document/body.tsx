@@ -10,6 +10,7 @@ import { ICON_NAMES, type IconName } from "#/render/icons";
 
 import { CodeBlock } from "./code-block";
 import { Diagram } from "./diagram";
+import { FileImage } from "./files";
 import { Anchor, Paragraph } from "./links";
 import { Tabs } from "./tabs";
 
@@ -90,6 +91,7 @@ function sectionHeading(Tag: "h2" | "h3" | "h4") {
 
 const components = {
   a: Anchor,
+  img: FileImage,
   p: Paragraph,
   span: Span,
   aside: Aside,

@@ -12,6 +12,7 @@ import { CommentPins } from "#/components/comments/pins";
 import { DocumentBody } from "#/components/document/body";
 import { Contents } from "#/components/document/contents";
 import { ExportTools } from "#/components/document/export-tools";
+import { FileList, FilesProvider } from "#/components/document/files";
 import { FolderNav, FolderPager } from "#/components/document/folder-nav";
 import { type DocumentLinks, LinksProvider } from "#/components/document/links";
 import { TopBar } from "#/components/navigation/top-bar";
@@ -32,6 +33,8 @@ export function DocumentView({
   byline,
   notice,
   tools,
+  filesAt,
+  canAttach = false,
   comments,
 }: {
   page: DocumentPage & { links?: DocumentLinks };
@@ -43,6 +46,10 @@ export function DocumentView({
   byline: ReactNode;
   /** The owner's tools beside the export ones, such as rename and move. */
   tools?: ReactNode;
+  /** Whose files the text points at: the version shown, or the owner's draft. */
+  filesAt?: number | "draft";
+  /** Whether the reader may attach files, which go to the draft. */
+  canAttach?: boolean;
   /** Shown above the title, such as the note on an older version. */
   notice?: ReactNode;
   /** Comments show only when given; new ones go on the current version alone. */
@@ -111,14 +118,21 @@ export function DocumentView({
             </div>
           </div>
         </PageHeader>
-        <div className="document-text">
-          <div ref={text}>
-            <LinksProvider links={page.links}>
-              <DocumentBody tree={body.tree} />
-            </LinksProvider>
+        <FilesProvider
+          documentId={document.id}
+          version={filesAt ?? version.number}
+          files={page.files}
+        >
+          <div className="document-text">
+            <div ref={text}>
+              <LinksProvider links={page.links}>
+                <DocumentBody tree={body.tree} />
+              </LinksProvider>
+            </div>
+            {commenting ? <CommentPins /> : null}
           </div>
-          {commenting ? <CommentPins /> : null}
-        </div>
+          <FileList editable={canAttach} />
+        </FilesProvider>
         {commenting ? <CommentsEnd /> : null}
         {inFolder ? <FolderPager siblings={page.siblings} current={document.id} /> : null}
       </Page>

@@ -137,6 +137,8 @@ function DocumentPage() {
           }
           byline={byline}
           notice={notice}
+          filesAt={showsDraft ? "draft" : version.number}
+          canAttach={!isOld}
           tools={
             isOld || showsDraft ? null : (
               <OrganizeTools
@@ -192,7 +194,8 @@ function DraftNotice({
       await run({ data: { id } });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["document", id] });
+      // Refetching the draft now would fail, as it is gone: drop it and load the current version.
+      queryClient.removeQueries({ queryKey: ["document", id] });
       await navigate({ to: "/d/$id", params: { id }, search: {} });
     },
   });

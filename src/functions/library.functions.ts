@@ -135,7 +135,11 @@ export const getDocumentPage = createServerFn({ method: "GET", strict: { output:
       ]);
       if (showDraft) {
         if (!draft) throw notFound();
-        Object.assign(page, { source: draft.markdown, body: await render(draft.markdown) });
+        Object.assign(page, {
+          source: draft.markdown,
+          files: draft.files,
+          body: await render(draft.markdown),
+        });
       }
       const links = await linksFor(page.body.links, principal);
       // A document shared at its current version only keeps its history from guests.

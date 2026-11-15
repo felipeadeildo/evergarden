@@ -1640,6 +1640,97 @@
     gap: 0.6rem;
   }
 
+  /* A document's files: see components/document/files.tsx */
+  .prose .file-link {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    padding: 0.05rem 0.5rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .prose .file-link:hover {
+    border-color: var(--prussian);
+  }
+
+  .prose .file-link svg {
+    align-self: center;
+  }
+
+  .file-size {
+    color: var(--ink-soft);
+    font-size: 0.8em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .file-list {
+    margin-top: 3rem;
+    padding: 1rem 1.1rem;
+    border: 1px dashed transparent;
+    border-radius: 10px;
+    background: var(--sheet);
+    transition: border-color 150ms var(--ease);
+  }
+
+  .file-list[data-over] {
+    border-color: var(--prussian);
+  }
+
+  .file-list h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .file-list ul {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .file-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+    font-size: 0.92rem;
+  }
+
+  .file-list li a {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--prussian);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .file-list li .row-action {
+    margin-left: auto;
+  }
+
+  .file-attach {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.2rem 0.6rem;
+    margin: 0.6rem 0 0;
+    color: var(--ink-soft);
+    font-size: 0.84rem;
+  }
+
+  .file-attach .quiet-button {
+    margin-left: -0.55rem;
+  }
+
+  .file-attach code {
+    white-space: nowrap;
+  }
+
   /* Previous and next in the folder, after the text. */
   .folder-pager {
     display: grid;

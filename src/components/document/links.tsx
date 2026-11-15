@@ -7,6 +7,8 @@ import { RelativeTime } from "#/components/ui/relative-time";
 import { stringProperty } from "#/lib/hast";
 import type { LinkedDocument } from "#/server/library";
 
+import { FileLink } from "./files";
+
 /** The documents a page links to that its reader may open, and the ids of those they may not. */
 export type DocumentLinks = { open: LinkedDocument[]; hidden: string[] };
 
@@ -33,6 +35,13 @@ type Props<T extends "a" | "p"> = ComponentProps<T> & { node?: Element };
  */
 export function Anchor({ node, children, ...props }: Props<"a">) {
   const { open, hidden } = useContext(LinksContext);
+  if (node && stringProperty(node, "dataFile")) {
+    return (
+      <FileLink node={node} {...props}>
+        {children}
+      </FileLink>
+    );
+  }
   const id = node && stringProperty(node, "dataDocument");
   if (!id) return <a {...props}>{children}</a>;
   if (hidden.has(id)) return <span>{children}</span>;
