@@ -19,7 +19,7 @@
   "d1_databases": [
     { "binding": "DB", "database_name": "evergarden", "migrations_dir": "migrations" },
   ],
-  // Files attached to documents, stored once by their hash. Deploy creates the bucket when it is
-  // missing; without a name, Wrangler tries to inherit a binding the previous version never had.
+  // Files attached to documents, stored once by their hash. The build creates the bucket when it
+  // is missing (`files:bucket`): Wrangler's own provisioning fails for a binding new to a Worker.
   "r2_buckets": [{ "binding": "FILES", "bucket_name": "evergarden-files" }],
 }

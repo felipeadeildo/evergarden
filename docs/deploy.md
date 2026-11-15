@@ -67,9 +67,9 @@ An instance answers only on a custom domain: `wrangler.jsonc` turns off the `*.w
 
 A deploy replaces the code and the bindings declared in `wrangler.jsonc`. It does not touch secrets, and because the configuration sets `keep_vars: true`, it does not touch plain variables set in the dashboard either. Anything that differs between instances (the owner, the sender address, the public URL) therefore lives in the dashboard, never in the repository.
 
-## Migrations run in the build
+## Migrations and the files bucket come from the build
 
-On Workers Builds, where `WORKERS_CI` is `1`, `bun run build` applies pending D1 migrations before the deploy command uploads the new code. A local build never touches a database. The Deploy to Cloudflare button copies the build command from `package.json`, so its instances migrate the same way.
+On Workers Builds, where `WORKERS_CI` is `1`, `bun run build` applies pending D1 migrations and creates the `evergarden-files` R2 bucket if it is missing, before the deploy command uploads the new code. A local build never touches a database. The Deploy to Cloudflare button copies the build command from `package.json`, so its instances migrate the same way.
 
 The first deploy from your machine (option 2) is the exception: the database exists only after `wrangler deploy` creates it, so `bun run deploy` migrates after deploying.
 
