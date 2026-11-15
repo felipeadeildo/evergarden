@@ -11,7 +11,7 @@ import { CommentsMargin } from "#/components/comments/margin";
 import { CommentPins } from "#/components/comments/pins";
 import { DocumentBody } from "#/components/document/body";
 import { Contents } from "#/components/document/contents";
-import { ExportMenu } from "#/components/document/export-menu";
+import { ExportTools } from "#/components/document/export-tools";
 import { type DocumentLinks, LinksProvider } from "#/components/document/links";
 import { TopBar } from "#/components/navigation/top-bar";
 import { CommentIcon, ContentsIcon } from "#/components/ui/icons";
@@ -75,7 +75,6 @@ export function DocumentView({
             {commenting ? <CommentsButton /> : null}
             {contentsButton}
             {actions}
-            <ExportMenu title={document.title} source={source} />
           </>
         }
       >
@@ -86,7 +85,12 @@ export function DocumentView({
         margin={commenting ? <CommentsMargin /> : null}
       >
         {notice}
-        <PageHeader title={document.title}>{byline}</PageHeader>
+        <PageHeader title={document.title}>
+          <div className="document-meta">
+            {byline}
+            <ExportTools title={document.title} source={source} />
+          </div>
+        </PageHeader>
         <div className="document-text">
           <div ref={text}>
             <LinksProvider links={page.links}>

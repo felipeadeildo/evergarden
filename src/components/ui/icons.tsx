@@ -10,7 +10,6 @@ import { ChatCircleTextIcon } from "@phosphor-icons/react/dist/ssr/ChatCircleTex
 import { CheckIcon as PhosphorCheck } from "@phosphor-icons/react/dist/ssr/Check";
 import { ClockCounterClockwiseIcon } from "@phosphor-icons/react/dist/ssr/ClockCounterClockwise";
 import { CopyIcon as PhosphorCopy } from "@phosphor-icons/react/dist/ssr/Copy";
-import { DotsThreeIcon } from "@phosphor-icons/react/dist/ssr/DotsThree";
 import { DownloadSimpleIcon } from "@phosphor-icons/react/dist/ssr/DownloadSimple";
 import { FileTextIcon } from "@phosphor-icons/react/dist/ssr/FileText";
 import { FolderIcon as PhosphorFolder } from "@phosphor-icons/react/dist/ssr/Folder";
@@ -88,6 +87,5 @@ export const CalloutIcons = {
   caution: icon(WarningOctagonIcon),
 };
 export const DraftIcon = icon(NotePencilIcon);
-export const MoreIcon = icon(DotsThreeIcon);
 export const DownloadIcon = icon(DownloadSimpleIcon);
 export const PrintIcon = icon(PrinterIcon);
