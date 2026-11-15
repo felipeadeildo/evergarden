@@ -139,12 +139,12 @@ function DocumentPage() {
 
 /** On a phone, where there is no margin, opens the first open comment. */
 function CommentsButton() {
-  const { open, setActive, wide } = useComments();
-  if (wide || open.length === 0) return null;
+  const { open, setActive } = useComments();
+  if (open.length === 0) return null;
   return (
     <button
       type="button"
-      className="quiet-button"
+      className="quiet-button comments-button"
       aria-label={`${open.length} open comments`}
       onClick={() => setActive(open[0]!.id)}
     >
