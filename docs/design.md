@@ -26,13 +26,13 @@ This page explains the decisions and the parts. What people and agents do with i
 
 ## Concepts
 
-| Term     | Meaning                                                                                                                                 |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Document | Markdown with an id, a title, and a place in a folder. Its content changes only by creating a new version                               |
-| Version  | One immutable content of a document, numbered from 1, with an author (an agent's key or a person)                                       |
-| Folder   | A node in the library tree, with a manual order and an optional linked repository such as `github.com/ranqia/ada`                       |
-| Comment  | A note attached to a passage, a block or a point in a figure of one version, with replies. It may carry a suggestion: replacement text  |
-| Share    | A link token for one document or one folder, either pinned to a version or following the current one, granting read or read-and-comment |
+| Term     | Meaning                                                                                                                                                                                                                                   |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Document | Markdown with an id, a title, and a place in a folder. Its content changes only by creating a new version                                                                                                                                 |
+| Version  | One immutable content of a document, numbered from 1, with an author (an agent's key or a person)                                                                                                                                         |
+| Folder   | A node in the library tree, with a manual order and an optional linked repository such as `github.com/ranqia/ada`                                                                                                                         |
+| Comment  | A note attached to a passage, a block or a point in a figure of one version, with replies. It may carry a suggestion: replacement text                                                                                                    |
+| Sharing  | A setting on one document or folder: who besides the owner may open it at its usual address, to read or to read and comment, until an optional date. A folder's setting covers what is inside it; the most open setting that applies wins |
 
 ## Modules
 
@@ -44,7 +44,8 @@ The code is organised around five modules with small interfaces. Server function
 | `src/anchor`          | `anchorFrom(source, selection)`, `relocate(anchor, before, after) → Anchor \| null`    | Prefix and suffix capture, block fingerprints, diff mapping, fuzzy search                        |
 | `src/server/library`  | `publish`, `update`, `read`, `list`, `search`, `versions`, `move`, `arrange`, `remove` | Ids, hashing, stored text, version numbering, conflict checks, titles, folders, the search index |
 | `src/server/comments` | `comment`, `reply`, `resolve`, `acceptSuggestion`, `openComments`, `relocateAll`       | Re-anchoring after an update, what the agent has seen, the agent-facing markdown format          |
-| `src/server/access`   | `principalFrom(request)`, `authorize(principal, action, target)`                       | Sessions, API keys, share tokens, guest membership, the owner rule                               |
+| `src/server/access`   | `principalFrom(request)`, `authorize(principal)`                                       | Sessions, API keys, OAuth tokens, the owner rule                                                 |
+| `src/server/sharing`  | `setSharing`, `sharedAs(target)`, `guestAccess(principal, target, need)`               | What is shared, inheritance through folders, expiry, who may get a guest sign-in code            |
 
 `render` and `anchor` are pure and run in both the Worker and the browser, which is what keeps a selection in the browser and an anchor on the server in agreement.
 
@@ -128,17 +129,16 @@ When a new version is saved, `relocateAll` moves every open comment: first by ma
 
 D1, through Drizzle. Better Auth owns `user`, `session`, `account`, `verification` and `apikey`. Every id is 10 random characters from `0-9a-z`, made with `crypto.getRandomValues`.
 
-| Table          | Main columns                                                                                                                                                                     |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `folder`       | `id`, `parent_id`, `name`, `position`, `repo` (unique when set)                                                                                                                  |
-| `document`     | `id`, `folder_id`, `position`, `title`, `current_version`, `created_at`, `updated_at`, `deleted_at`                                                                              |
-| `version`      | `id`, `document_id`, `number`, `sha256`, `author_kind` (`agent`, `user`), `author_id`, `created_at`                                                                              |
-| `comment`      | `id`, `document_id`, `version_id`, `anchor` (JSON), `body`, `suggestion`, `status` (`open`, `resolved`, `detached`), `author_kind`, `author_id`, `agent_seen_at`                 |
-| `reply`        | `id`, `comment_id`, `body`, `author_kind`, `author_id`, `created_at`, `edited_at`                                                                                                |
-| `share`        | `id`, `token_hash`, `target_kind` (`document`, `folder`), `target_id`, `version_id` (null follows the current one), `permission` (`read`, `comment`), `expires_at`, `revoked_at` |
-| `share_member` | `share_id`, `user_id`, `joined_at`: a guest who signed in through a share                                                                                                        |
-| `read_mark`    | `user_id`, `document_id`, `version_number`, `read_at`: what "New for you" compares against                                                                                       |
-| `search`       | An FTS5 table over the title and the plain text of each document's current version, written by `publish` and `update`                                                            |
+| Table       | Main columns                                                                                                                                                     |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `folder`    | `id`, `parent_id`, `name`, `position`, `repo` (unique when set)                                                                                                  |
+| `document`  | `id`, `folder_id`, `position`, `title`, `current_version`, `created_at`, `updated_at`, `deleted_at`                                                              |
+| `version`   | `id`, `document_id`, `number`, `sha256`, `author_kind` (`agent`, `user`), `author_id`, `created_at`                                                              |
+| `comment`   | `id`, `document_id`, `version_id`, `anchor` (JSON), `body`, `suggestion`, `status` (`open`, `resolved`, `detached`), `author_kind`, `author_id`, `agent_seen_at` |
+| `reply`     | `id`, `comment_id`, `body`, `author_kind`, `author_id`, `created_at`, `edited_at`                                                                                |
+| `sharing`   | `target_kind` (`document`, `folder`), `target_id`, `permission` (`read`, `comment`), `created_at`, `expires_at`; one row per shared document or folder           |
+| `read_mark` | `user_id`, `document_id`, `version_number`, `read_at`: what "New for you" compares against                                                                       |
+| `search`    | An FTS5 table over the title and the plain text of each document's current version, written by `publish` and `update`                                            |
 
 `position` is a fractional index (a string that sorts between its neighbours), so moving one item rewrites one row. `agent_seen_at` on a comment, or on its newest reply, is what puts unseen comments first in `open_comments()`.
 
@@ -163,8 +163,8 @@ D1 read replication would serve reads from a nearby replica, but it needs the Se
 | ------ | ------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Owner  | The account whose email equals `OWNER_EMAIL`      | Everything                                                                    |
 | Agent  | An OAuth client the owner approved, or an API key | Publish, update, read, list, search, move, reply, resolve, accept suggestions |
-| Guest  | An email code, arriving through a comment share   | Read the share's target, comment, suggest and reply on it                     |
-| Reader | A share link, no sign-in                          | Read the share's target                                                       |
+| Guest  | An email code, from a page shared for comments    | Read what is shared, comment, suggest and reply on it                         |
+| Reader | No sign-in                                        | Read what is shared                                                           |
 
 `authorize` runs in every server function, API route and MCP tool that touches a document. Route guards only shape the UI.
 
@@ -193,8 +193,8 @@ The CLI (`evergarden push`, `pull`, `ls`, aliased `eg`) calls `/api/v1` with the
 - `rehype-sanitize` runs after every other plugin, so raw HTML in a document never reaches the page.
 - Mockups run in an iframe with a null origin and a CSP that blocks the network, except the Tailwind CDN.
 - `/mcp` accepts an OAuth access token bound to `<BETTER_AUTH_URL>/mcp`, checked against the signing keys in-process, or an API key. Either way it then loads the agent's row, so revoking an agent takes effect on its next request.
-- Share tokens and API keys are stored as hashes.
-- Responses that depend on a session send `Cache-Control: private, no-store`. Only a read share pinned to a version is cached publicly.
+- API keys are stored as hashes. Shared pages are found by their ids: ten random characters, about 51 bits.
+- Responses that depend on a session send `Cache-Control: private, no-store`. Nothing is cached publicly.
 - Better Auth reads the client IP from `cf-connecting-ip`, so rate limits apply per visitor.
 
 ## Open questions

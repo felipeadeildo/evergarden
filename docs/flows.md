@@ -126,25 +126,25 @@ The line under the title says "Updated 2 hours ago by pi". Its menu lists the ve
 
 ## You share it
 
-**Share** opens a dialog:
+A document has one address, `https://evergarden.adeildo.dev/d/k7q2mxa9pt`, and so does a folder. Sharing changes who may open that address; it never makes a new one. **Share**, in the top bar of a document or folder, sets:
 
-| Choice        | Options                                      | Default            |
-| ------------- | -------------------------------------------- | ------------------ |
-| What          | This document, or a folder (`ranqia/ada`)    | This document      |
-| Which version | Always the current one, or this version only | Always the current |
-| Access        | Read, or read and comment                    | Read               |
-| Expires       | Never, 7 days, 30 days                       | Never              |
+| Choice          | Options                                                                            | Default  |
+| --------------- | ---------------------------------------------------------------------------------- | -------- |
+| Who can open it | Only you; anyone with the link can read; anyone with the link can read and comment | Only you |
+| Stops working   | Never, in 7 days, in 30 days                                                       | Never    |
 
-It creates a link like `https://docs.example.com/s/q9w3…`. The settings page lists every link, how often each was opened, and lets you revoke any of them.
+Each choice applies at once, and the dialog shows the address to copy. Sharing a folder shares everything inside it, at any depth, including what agents publish there later. A document inside a shared folder says so ("The folder team is shared"), and its own setting can only open it further. Settings lists everything shared, with **Stop sharing** on each.
+
+To send one version, add `?v=3` to the address: anyone who may read the document may read its versions.
 
 ## Someone opens your link
 
-A colleague opens the link on their phone, from a chat app. The chat app's preview already showed the report's title and first sentence.
+A colleague opens the address on their phone, from a chat app. The chat app's preview already showed the report's title and first sentence.
 
-- **Read**: they see the document, with no sign-in, and no comments. A folder link shows that folder's tree and nothing else from your library.
-- **Read and comment**: same, plus **Sign in to comment**. They sign in with a code sent to their email and land back on the same passage. From then on they comment, suggest and reply exactly as you do, and see every comment, yours included.
+- **Shared to read**: they read the document with no sign-in. The top bar has no search and no settings; its folder path starts at the shared folder, so nothing above it shows. Anything else in the library sends them to sign in, and then tells them the library is private.
+- **Shared to comment**: the same, plus **Sign in to comment**. They get a code by email, come back to the page, and comment and reply exactly as you do, seeing every comment, yours included. Resolving and accepting suggestions stay with you and your agents.
 
-Their comments reach the agent like yours, with their name on each. Anyone who signs in without a link sees "This library is private" and nothing else.
+Their comments reach the agent like yours, with their name on each. Codes go only to the owner and to people signing in from a page shared for comments; anyone else who tries gets no email.
 
 ## You manage access
 
@@ -155,8 +155,8 @@ Agents sign in over OAuth, the way MCP clients expect. You give pi only the addr
 Under it:
 
 - **Connected agents**: every agent, however it connected, with how (signed in, or API key), when it last reached the library, and a revoke button that asks once. Revoking deletes the key, or the OAuth consent and tokens, and the agent's row, which `/mcp` checks on every request, so even an unexpired access token stops working at once.
-- **Links**: every share, with revoke.
-- **People**: everyone who signed in through a link, the documents they commented on, and a button to remove their access.
+- **Shared**: every document and folder you shared, how, until when, and **Stop sharing**.
+- **People**: everyone who signed in to comment, with **Remove**, which signs them out; their comments stay.
 - **Authoring guide**: the document that `guide()` hands to agents.
 
 ## What's left out on purpose
