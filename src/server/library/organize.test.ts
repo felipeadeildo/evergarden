@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { setSharing, sharingOf } from "#/server/sharing";
 
 import { findFolder, folderPath } from "./folders";
-import { getDocument, publish, read } from "./index";
+import { folderContents, folderInfo, getDocument, publish, read } from "./index";
 import {
   deleteDocument,
   deleteFolder,
@@ -11,9 +11,13 @@ import {
   folderAt,
   moveDocument,
   moveFolder,
+  orderDocuments,
+  placeDocument,
   renameDocument,
   renameFolder,
   restoreDocument,
+  setEntry,
+  sortFolder,
   trash,
 } from "./organize";
 
@@ -103,5 +107,68 @@ describe("folders", () => {
     expect(await pathOf(doc)).toBe("old/project/notes");
     const restored = await findFolder(["old", "project"]);
     expect((await sharingOf({ kind: "folder", id: restored! })).own).toBeNull();
+  });
+});
+
+async function titles(folderId: string | null) {
+  const { documents } = await folderContents(folderId);
+  return documents.map((entry) => entry.title);
+}
+
+/** Three documents published in order; the path in the text keeps `publish` from reusing others. */
+async function series(path: string) {
+  const ids: string[] = [];
+  for (const name of ["One", "Two", "Three"]) {
+    ids.push((await publish({ content: `# ${name}\n\nIn ${path}.`, folder: path }, pi)).id);
+  }
+  return { folderId: await findFolder(path.split("/")), ids };
+}
+
+describe("order", () => {
+  it("keeps a series in the order it was published", async () => {
+    const { folderId } = await series("order/series");
+    expect(await titles(folderId)).toEqual(["One", "Two", "Three"]);
+  });
+
+  it("sorts by a rule, and manual keeps what was on screen", async () => {
+    const { folderId } = await series("order/rules");
+    await sortFolder(folderId!, "title");
+    expect(await titles(folderId)).toEqual(["One", "Three", "Two"]);
+    await sortFolder(folderId!, "newest");
+    expect(await titles(folderId)).toEqual(["Three", "Two", "One"]);
+    await sortFolder(folderId!, "manual");
+    expect(await titles(folderId)).toEqual(["Three", "Two", "One"]);
+  });
+
+  it("places a dragged document, turning a rule into manual order", async () => {
+    const { folderId, ids } = await series("order/drag");
+    await sortFolder(folderId!, "newest");
+    await placeDocument(ids[2]!, null);
+    expect(await titles(folderId)).toEqual(["Two", "One", "Three"]);
+    await placeDocument(ids[0]!, ids[1]!);
+    expect(await titles(folderId)).toEqual(["One", "Two", "Three"]);
+    expect((await folderInfo(folderId!)).sort).toBe("manual");
+  });
+
+  it("orders by a list, and pins an entry first whatever the rule", async () => {
+    const { folderId, ids } = await series("order/list");
+    await orderDocuments(folderId, [ids[2]!]);
+    expect(await titles(folderId)).toEqual(["Three", "One", "Two"]);
+    await setEntry(folderId!, ids[1]!);
+    await sortFolder(folderId!, "title");
+    expect(await titles(folderId)).toEqual(["Two", "One", "Three"]);
+    await expect(orderDocuments(folderId, ["elsewhere"])).rejects.toThrow(/Not in this folder/);
+  });
+
+  it("takes the entry from frontmatter, and loses it when the document moves away", async () => {
+    const { id } = await publish(
+      { content: "---\nindex: true\n---\n# Start here", folder: "order/fm" },
+      pi,
+    );
+    await publish({ content: "# Later", folder: "order/fm" }, pi);
+    const folderId = await findFolder(["order", "fm"]);
+    expect((await folderInfo(folderId!)).entryId).toBe(id);
+    await moveDocument(id, null);
+    expect((await folderInfo(folderId!)).entryId).toBeNull();
   });
 });

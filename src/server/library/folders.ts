@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull, type SQL, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, type SQL, sql } from "drizzle-orm";
 import { generateKeyBetween } from "fractional-indexing";
 
 import { newId } from "#/lib/id";
@@ -153,13 +153,13 @@ function pathFrom(start: SQL): Promise<FolderStep[]> {
   `);
 }
 
-/** New documents go to the top of their folder. */
-export async function firstDocumentPosition(folderId: string | null): Promise<string> {
-  const first = await db
+/** New and moved documents go to the end of their folder, so a series keeps the order it came in. */
+export async function lastDocumentPosition(folderId: string | null): Promise<string> {
+  const last = await db
     .select({ position: document.position })
     .from(document)
     .where(folderId ? eq(document.folderId, folderId) : isNull(document.folderId))
-    .orderBy(asc(document.position))
+    .orderBy(desc(document.position))
     .get();
-  return generateKeyBetween(null, first?.position ?? null);
+  return generateKeyBetween(last?.position ?? null, null);
 }

@@ -19,6 +19,7 @@ import { db } from "#/server/db";
 import {
   type AttachedFile,
   type AuthorKind,
+  type FolderSort,
   type ShareAudience,
   content as contentTable,
   document,
@@ -34,7 +35,7 @@ import {
   findFolder,
   folderPath,
   type FolderStep,
-  firstDocumentPosition,
+  lastDocumentPosition,
   normaliseRepo,
   parseFolderPath,
   resolveTarget,
@@ -55,6 +56,7 @@ export type DocumentEntry = {
   folderId: string | null;
   position: string;
   title: string;
+  summary: string | null;
   version: number;
   updatedAt: Date;
   updatedBy: string;
@@ -68,6 +70,9 @@ export type FolderEntry = {
   name: string;
   position: string;
   repo: string | null;
+  sort: FolderSort;
+  /** The document readers start with, pinned first. */
+  entryId: string | null;
   shared: ShareAudience | null;
 };
 
@@ -96,6 +101,7 @@ const documentEntry = {
   folderId: document.folderId,
   position: document.position,
   title: document.title,
+  summary: document.summary,
   version: document.currentVersion,
   updatedAt: document.updatedAt,
   updatedBy: version.authorName,
@@ -182,7 +188,7 @@ export async function publish(
     db.insert(document).values({
       id,
       folderId,
-      position: await firstDocumentPosition(folderId),
+      position: await lastDocumentPosition(folderId),
       title,
       summary: result.summary,
       currentVersion: 1,
@@ -190,6 +196,7 @@ export async function publish(
     }),
     db.insert(version).values(versionRow(id, 1, sha, author)),
     ...indexStatements(id, title, result.text),
+    ...entryStatements(id, folderId, result.entry),
   ]);
   return { id, version: 1, created: true };
 }
@@ -232,6 +239,7 @@ export async function update(
         .set({ currentVersion: number, title, summary: result.summary, updatedAt: new Date() })
         .where(and(eq(document.id, id), eq(document.currentVersion, current.version))),
       ...indexStatements(id, title, result.text),
+      ...entryStatements(id, current.folderId, result.entry),
     ]);
   } catch (error) {
     // Two updates raced: the unique (document, number) index rejected the second.
@@ -277,7 +285,7 @@ function siblingsOf(documentId: string): Promise<Sibling[]> {
         sql`${document.folderId} = (select folder_id from document where id = ${documentId})`,
       ),
     )
-    .orderBy(asc(document.position))
+    .orderBy(...documentOrder(document.folderId))
     .limit(MAX_SIBLINGS)
     .all();
 }
@@ -362,8 +370,14 @@ export type Library = { folders: FolderEntry[]; documents: DocumentEntry[] };
 
 export async function list(filter: { folder?: string; repo?: string } = {}): Promise<Library> {
   const [folders, documents] = await Promise.all([
-    db.select(folderColumns).from(folder).all(),
-    liveDocuments().all(),
+    db
+      .select(folderColumns)
+      .from(folder)
+      .orderBy(...folderOrder(folder.parentId))
+      .all(),
+    liveDocuments()
+      .orderBy(...documentOrder(document.folderId))
+      .all(),
   ]);
 
   let rootId: string | null | undefined;
@@ -398,7 +412,7 @@ export async function folderContents(folderId: string | null, offset = 0): Promi
   const [folders, documents, total] = await Promise.all([
     offset > 0 ? [] : childFolders(folderId),
     liveDocuments(inFolder)
-      .orderBy(asc(document.position))
+      .orderBy(...documentOrder(sql`${folderId}`))
       .limit(FOLDER_PAGE_SIZE)
       .offset(offset)
       .all(),
@@ -417,7 +431,7 @@ async function childFolders(parentId: string | null): Promise<FolderSummary[]> {
       .select(folderColumns)
       .from(folder)
       .where(parentId ? eq(folder.parentId, parentId) : isNull(folder.parentId))
-      .orderBy(asc(folder.position))
+      .orderBy(...folderOrder(sql`${parentId}`))
       .all(),
     countDocuments(parentId ? sql`parent_id = ${parentId}` : sql`parent_id is null`),
   ]);
@@ -516,8 +530,42 @@ const folderColumns = {
   name: folder.name,
   position: folder.position,
   repo: folder.repo,
+  sort: folder.sort,
+  entryId: folder.entryId,
   shared: sharedColumn("folder", folder.id),
 };
+
+/**
+ * The order of documents in a folder: its entry first, then by the folder's `sort`, ending on
+ * the manual position. `folderId` may be a column, so one query orders many folders at once.
+ */
+export function documentOrder(folderId: SQL | AnyColumn): SQL[] {
+  const sort = sql`(select sort from folder where id = ${folderId})`;
+  return [
+    sql`${document.id} is (select entry_id from folder where id = ${folderId}) desc`,
+    sql`case when ${sort} = 'title' then ${document.title} end collate nocase`,
+    sql`case when ${sort} = 'oldest' then ${document.createdAt} end`,
+    sql`case when ${sort} = 'newest' then ${document.createdAt} end desc`,
+    asc(document.position),
+  ];
+}
+
+/** Subfolders follow the same `sort` as the documents beside them. */
+function folderOrder(parentId: SQL | AnyColumn): SQL[] {
+  const sort = sql`(select sort from folder as parent where parent.id = ${parentId})`;
+  return [
+    sql`case when ${sort} = 'title' then ${folder.name} end collate nocase`,
+    sql`case when ${sort} = 'oldest' then ${folder.createdAt} end`,
+    sql`case when ${sort} = 'newest' then ${folder.createdAt} end desc`,
+    asc(folder.position),
+  ];
+}
+
+/** A document whose frontmatter says `index: true` becomes its folder's entry. */
+function entryStatements(id: string, folderId: string | null, entry: boolean) {
+  if (!entry || !folderId) return [];
+  return [db.update(folder).set({ entryId: id }).where(eq(folder.id, folderId))];
+}
 
 function versionRow(
   documentId: string,

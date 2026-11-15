@@ -1,22 +1,22 @@
 import { and, desc, eq, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
-import { generateKeyBetween } from "fractional-indexing";
+import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
 
 import { retitle } from "#/render/retitle";
 import { db } from "#/server/db";
-import { document, folder, sharing } from "#/server/db/schema";
+import { document, folder, type FolderSort, sharing } from "#/server/db/schema";
 import { EvergardenError } from "#/server/errors";
 
 import {
   childFolder,
   documentFolderPath,
   ensureFolder,
-  firstDocumentPosition,
+  lastDocumentPosition,
   folderPath,
   type FolderStep,
   lastFolderPosition,
   parseFolderPath,
 } from "./folders";
-import { type Author, getDocument, read, type Updated, update } from "./index";
+import { type Author, documentOrder, getDocument, read, type Updated, update } from "./index";
 import { unindex } from "./search";
 
 /** How long deleted documents wait in the trash before they are gone for good. */
@@ -24,14 +24,86 @@ export const TRASH_DAYS = 30;
 
 const MAX_TITLE_LENGTH = 200;
 
-/** Moves a document to the top of another folder, or of the library with `null`. */
+/** Moves a document to the end of another folder, or of the library with `null`. */
 export async function moveDocument(id: string, folderId: string | null): Promise<void> {
   await getDocument(id);
   if (folderId) await getFolder(folderId);
-  await db
-    .update(document)
-    .set({ folderId, position: await firstDocumentPosition(folderId) })
-    .where(eq(document.id, id));
+  await db.batch([
+    // A document is the entry only of the folder it is in.
+    db.update(folder).set({ entryId: null }).where(eq(folder.entryId, id)),
+    db
+      .update(document)
+      .set({ folderId, position: await lastDocumentPosition(folderId) })
+      .where(eq(document.id, id)),
+  ]);
+}
+
+/** A folder's documents as readers see them; `null` is the top of the library. */
+export async function documentsInOrder(folderId: string | null): Promise<string[]> {
+  const rows = await db
+    .select({ id: document.id })
+    .from(document)
+    .where(
+      and(
+        folderId ? eq(document.folderId, folderId) : isNull(document.folderId),
+        isNull(document.deletedAt),
+      ),
+    )
+    .orderBy(...documentOrder(sql`${folderId}`))
+    .all();
+  return rows.map((row) => row.id);
+}
+
+/** Saves `ids` as the folder's manual order; the top of the library has no rule to change. */
+async function saveOrder(folderId: string | null, ids: string[]) {
+  const keys = generateNKeysBetween(null, null, ids.length);
+  const [first, ...rest] = [
+    ...(folderId ? [db.update(folder).set({ sort: "manual" }).where(eq(folder.id, folderId))] : []),
+    ...ids.map((id, index) =>
+      db.update(document).set({ position: keys[index] }).where(eq(document.id, id)),
+    ),
+  ];
+  if (first) await db.batch([first, ...rest]);
+}
+
+/**
+ * Orders a folder by a rule. Choosing "manual" keeps the order on screen, so dragging afterwards
+ * starts from what the reader saw.
+ */
+export async function sortFolder(folderId: string, sort: FolderSort): Promise<void> {
+  await getFolder(folderId);
+  if (sort === "manual") await saveOrder(folderId, await documentsInOrder(folderId));
+  else await db.update(folder).set({ sort }).where(eq(folder.id, folderId));
+}
+
+/** Puts a document just before another in its folder, or last with `before: null`. */
+export async function placeDocument(id: string, before: string | null): Promise<void> {
+  const { folderId } = await getDocument(id);
+  const order = (await documentsInOrder(folderId)).filter((other) => other !== id);
+  const at = before === null ? order.length : order.indexOf(before);
+  if (at === -1) throw new EvergardenError("invalid", `"${before}" is not in the same folder.`);
+  order.splice(at, 0, id);
+  await saveOrder(folderId, order);
+}
+
+/** Puts the listed documents first, in that order; the others follow as they were. */
+export async function orderDocuments(folderId: string | null, ids: string[]): Promise<void> {
+  const current = await documentsInOrder(folderId);
+  const strangers = ids.filter((id) => !current.includes(id));
+  if (strangers.length > 0) {
+    throw new EvergardenError("invalid", `Not in this folder: ${strangers.join(", ")}.`);
+  }
+  const listed = [...new Set(ids)];
+  await saveOrder(folderId, [...listed, ...current.filter((id) => !listed.includes(id))]);
+}
+
+/** Pins a document of the folder first, or unpins with `null`. */
+export async function setEntry(folderId: string, documentId: string | null): Promise<void> {
+  await getFolder(folderId);
+  if (documentId && (await getDocument(documentId)).folderId !== folderId) {
+    throw new EvergardenError("invalid", "The entry must be a document of the folder.");
+  }
+  await db.update(folder).set({ entryId: documentId }).where(eq(folder.id, folderId));
 }
 
 /** Renames a document by saving a version whose markdown carries the new title. */
@@ -207,7 +279,7 @@ export async function restoreDocument(id: string): Promise<void> {
     .update(document)
     .set({
       folderId: target,
-      position: await firstDocumentPosition(target),
+      position: await lastDocumentPosition(target),
       deletedAt: null,
       deletedFrom: null,
     })

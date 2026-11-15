@@ -23,7 +23,7 @@ import {
 export type { Heading };
 
 /** Part of every cache key for rendered trees: bump it whenever the output changes. */
-export const RENDERER_VERSION = 11;
+export const RENDERER_VERSION = 12;
 
 export type Rendered = {
   tree: Root;
@@ -31,6 +31,8 @@ export type Rendered = {
   title: string | null;
   /** From frontmatter `summary`. */
   summary: string | null;
+  /** Frontmatter `index: true`: the document readers of its folder start with. */
+  entry: boolean;
   headings: Heading[];
   text: string;
   features: { math: boolean; diagram: boolean };
@@ -78,6 +80,7 @@ export async function render(source: string): Promise<Rendered> {
     tree,
     title: data.title ?? null,
     summary: data.summary ?? null,
+    entry: data.entry ?? false,
     headings: data.headings ?? [],
     text: data.text ?? "",
     features: data.features ?? { math: false, diagram: false },

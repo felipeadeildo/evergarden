@@ -45,6 +45,9 @@ export const content = sqliteTable("content", {
   rendererVersion: integer("renderer_version"),
 });
 
+export const FOLDER_SORTS = ["manual", "newest", "oldest", "title"] as const;
+export type FolderSort = (typeof FOLDER_SORTS)[number];
+
 export const folder = sqliteTable(
   "folder",
   {
@@ -55,6 +58,12 @@ export const folder = sqliteTable(
     name: text("name").notNull(),
     position: text("position").notNull(),
     repo: text("repo"),
+    /** How its documents and subfolders are ordered; dragging one makes it "manual". */
+    sort: text("sort").$type<FolderSort>().notNull().default("manual"),
+    /** The document readers start with, pinned first. */
+    entryId: text("entry_id").references((): AnySQLiteColumn => document.id, {
+      onDelete: "set null",
+    }),
     createdAt: createdAt(),
   },
   (table) => [
