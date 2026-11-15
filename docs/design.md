@@ -147,6 +147,7 @@ Access is checked on the server in every server function, API route and MCP tool
 | `share(id? \| folder?, who?, …)`           | Reads or sets who else can open a document or folder             |
 | `move(id? \| folder?, to)`                 | Moves a document or folder; creates the target folders           |
 | `rename(id? \| folder?, name)`             | Renames a folder, or retitles a document in a new version        |
+| `delete(id? \| folder?)`                   | Sends a document or folder to the trash, for 30 days             |
 | `read(id, version?, draft?)`               | Returns the markdown                                             |
 | `list(folder?, repo?)`                     | Folders and documents, with open comment counts                  |
 | `search(query)`                            | Full-text search; ids, titles and an excerpt                     |
