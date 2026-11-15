@@ -62,6 +62,19 @@
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
+/* Wide screens give the extra room to the text first; the side columns keep what they need. */
+@media (min-width: 1500px) {
+  :root {
+    --measure: 39em;
+  }
+}
+
+@media (min-width: 1800px) {
+  :root {
+    --measure: 43em;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --paper: #10151e;
@@ -406,6 +419,12 @@
     .contents-toggle,
     .comments-button {
       display: none;
+    }
+  }
+
+  @media (min-width: 1500px) {
+    .page {
+      column-gap: 3rem;
     }
   }
 
