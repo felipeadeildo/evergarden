@@ -11,6 +11,7 @@ const config: UserConfig = {
         "anchor",
         "library",
         "comments",
+        "sharing",
         "access",
         "mcp",
         "api",
