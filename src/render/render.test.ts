@@ -194,3 +194,63 @@ describe("links to documents", () => {
     expect(html).toContain('<a href="https://example.com/d/notanid">');
   });
 });
+
+async function renderHtml(source: string) {
+  return toHtml((await render(source)).tree);
+}
+
+describe("directives and figures", () => {
+  it("keeps colons in ordinary text and unknown directives as written", async () => {
+    const out = await renderHtml("At 10:30, a:b, :icon[nope] and :unknown[x]{y=1}.\n\n::leaf[z]\n");
+    expect(out).toContain("At 10:30, a:b, :icon[nope] and :unknown[x]{y=1}.");
+    expect(out).toContain("::leaf[z]");
+  });
+
+  it("draws a known icon", async () => {
+    expect(await renderHtml("Ship :icon[rocket]")).toContain('<span data-icon="rocket"></span>');
+  });
+
+  it("reads a Comark block up to its closing line, even right after a list", async () => {
+    const out = await renderHtml(
+      '::graph-timeline{title="Night"}\n- 14:02: paged\n- **14:11: rolled back**\n::\n\nAfter.',
+    );
+    expect(out).toContain('<figcaption class="block-title">Night</figcaption>');
+    expect(out).toMatch(/data-state="now"[^>]*><span class="timeline-when">14:11<\/span>/);
+    expect(out).toMatch(/<p data-sourcepos="[^"]+">After.<\/p>/);
+    expect(out).not.toContain("::");
+  });
+
+  it("leaves a block inside a code fence alone", async () => {
+    const out = await renderHtml("```md\n::graph-timeline\n- a: b\n::\n```\n");
+    expect(out).not.toContain("data-block");
+    expect(out).toContain("::graph-timeline");
+  });
+
+  it("keeps source offsets pointing into the source", async () => {
+    const source = "::steps\n1. One\n::\n\nTail text.";
+    const out = await renderHtml(source);
+    const [start, end] = /data-sourcepos="(\d+)-(\d+)">Tail/.exec(out)!.slice(1).map(Number);
+    expect(source.slice(start, end)).toBe("Tail text.");
+  });
+
+  it("splits tabs at their labels and makes details from a label", async () => {
+    const out = await renderHtml(
+      ":::tabs\n::tab[bun]\nOne\n::tab[npm]\nTwo\n:::\n\n:::details[Log]\nLines\n:::",
+    );
+    expect(out).toMatch(/<div data-tab="bun">.*One.*<\/div><div data-tab="npm">.*Two/s);
+    expect(out).toMatch(/<details[^>]*><summary>Log<\/summary>/);
+  });
+
+  it("marks the chosen option and notes in a decision", async () => {
+    const out = await renderHtml(
+      "::decision\n- **Postgres** — we run it\n- *Mongo* — no joins\n::",
+    );
+    expect(out).toMatch(/data-state="chosen"[^>]*>Postgres<span class="block-note">we run it/);
+    expect(out).toMatch(/data-state="rejected"[^>]*>Mongo/);
+  });
+
+  it("keeps figure headings out of the contents", async () => {
+    const { headings } = await render("## Real\n\n::faq\n### A question?\n\nYes.\n::");
+    expect(headings.map((heading) => heading.text)).toEqual(["Real"]);
+  });
+});

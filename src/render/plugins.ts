@@ -9,6 +9,7 @@ import { SKIP, visit } from "unist-util-visit";
 import type { VFile } from "vfile";
 import { parse as parseYaml } from "yaml";
 
+import { figureFrom } from "./figures";
 import { highlighter } from "./highlight";
 
 export type Heading = { depth: 2 | 3; text: string; id: string };
@@ -89,6 +90,18 @@ export function rehypeEvergarden() {
       if (offsets && SOURCEPOS_TAGS.has(node.tagName)) node.properties.dataSourcepos = offsets;
 
       if (node.tagName === "blockquote") toCallout(node);
+
+      const block = node.tagName === "div" ? node.properties.dataBlock : undefined;
+      if (typeof block === "string" && parent && index !== undefined) {
+        if (block === "tabs") {
+          node.tagName = "figure";
+          node.properties = { dataKind: "tabs", dataSourcepos: offsets };
+          return undefined;
+        }
+        // Visits the figure in the div's place, so the blocks inside it are drawn too.
+        parent.children[index] = figureFrom(node, block, sourceOffsets);
+        return index;
+      }
 
       if (node.tagName === "a") {
         const id = documentLink(node);
