@@ -466,6 +466,31 @@
     );
   }
 
+  /* The folder's documents above the contents: see components/document/folder-nav.tsx */
+  .page-aside .folder-nav {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .page-aside .folder-nav + .toc,
+  .sheet .folder-nav + .toc {
+    margin-top: 2rem;
+  }
+
+  .toc .folder-nav-title {
+    display: block;
+    margin-bottom: 0.3rem;
+    padding: 0 0 0 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .toc .folder-nav-all {
+    font-style: italic;
+  }
+
   .toc ol {
     margin: 0;
     padding: 0;
@@ -1613,6 +1638,40 @@
     display: flex;
     justify-content: flex-end;
     gap: 0.6rem;
+  }
+
+  /* Previous and next in the folder, after the text. */
+  .folder-pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 4rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .folder-pager a {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: 8px;
+    color: var(--prussian);
+    text-decoration: none;
+    text-wrap: balance;
+  }
+
+  .folder-pager a:hover {
+    background: var(--sheet);
+  }
+
+  .folder-pager a[rel="next"] {
+    grid-column: 2;
+    text-align: right;
+  }
+
+  .folder-pager-label {
+    color: var(--ink-soft);
+    font-size: 0.8rem;
   }
 
   /* Where Move sends something: see components/library/organize.tsx */
@@ -3512,6 +3571,7 @@ figure[data-pinning]::after {
   .code-copy,
   .diagram-expand,
   .byline-caret,
+  .folder-pager,
   .tool-row {
     display: none;
   }

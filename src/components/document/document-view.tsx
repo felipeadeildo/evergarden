@@ -12,6 +12,7 @@ import { CommentPins } from "#/components/comments/pins";
 import { DocumentBody } from "#/components/document/body";
 import { Contents } from "#/components/document/contents";
 import { ExportTools } from "#/components/document/export-tools";
+import { FolderNav, FolderPager } from "#/components/document/folder-nav";
 import { type DocumentLinks, LinksProvider } from "#/components/document/links";
 import { TopBar } from "#/components/navigation/top-bar";
 import { CommentIcon, ContentsIcon } from "#/components/ui/icons";
@@ -55,19 +56,23 @@ export function DocumentView({
   const [contentsOpen, setContentsOpen] = useState(false);
   const text = useRef<HTMLDivElement>(null);
   const hasContents = body.headings.length > 1;
+  const folder = page.folder.at(-1);
+  const inFolder = folder && page.siblings.length > 1 ? folder : null;
+  const closeContents = () => setContentsOpen(false);
   const commenting = Boolean(comments);
   const writable = version.number === document.version;
 
-  const contentsButton = hasContents ? (
-    <button
-      type="button"
-      className="quiet-button contents-toggle"
-      onClick={() => setContentsOpen(true)}
-    >
-      <ContentsIcon />
-      <span className="label">Contents</span>
-    </button>
-  ) : null;
+  const contentsButton =
+    hasContents || inFolder ? (
+      <button
+        type="button"
+        className="quiet-button contents-toggle"
+        onClick={() => setContentsOpen(true)}
+      >
+        <ContentsIcon />
+        <span className="label">Contents</span>
+      </button>
+    ) : null;
 
   const view = (
     <>
@@ -84,7 +89,16 @@ export function DocumentView({
         {place}
       </TopBar>
       <Page
-        aside={hasContents ? <Contents headings={body.headings} /> : null}
+        aside={
+          hasContents || inFolder ? (
+            <>
+              {inFolder ? (
+                <FolderNav folder={inFolder} siblings={page.siblings} current={document.id} />
+              ) : null}
+              {hasContents ? <Contents headings={body.headings} /> : null}
+            </>
+          ) : null
+        }
         margin={commenting ? <CommentsMargin /> : null}
       >
         {notice}
@@ -106,9 +120,18 @@ export function DocumentView({
           {commenting ? <CommentPins /> : null}
         </div>
         {commenting ? <CommentsEnd /> : null}
+        {inFolder ? <FolderPager siblings={page.siblings} current={document.id} /> : null}
       </Page>
-      <Sheet open={contentsOpen} onClose={() => setContentsOpen(false)} label="Contents">
-        <Contents headings={body.headings} onNavigate={() => setContentsOpen(false)} />
+      <Sheet open={contentsOpen} onClose={closeContents} label="Contents">
+        {inFolder ? (
+          <FolderNav
+            folder={inFolder}
+            siblings={page.siblings}
+            current={document.id}
+            onNavigate={closeContents}
+          />
+        ) : null}
+        {hasContents ? <Contents headings={body.headings} onNavigate={closeContents} /> : null}
       </Sheet>
       {commenting && writable ? <SelectionBar /> : null}
       {commenting ? <CommentsSheet /> : null}
