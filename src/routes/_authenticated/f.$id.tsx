@@ -1,3 +1,4 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { DocumentRow, FolderRow, LoadMore, RepositoryLink } from "#/components/library/rows";
@@ -5,11 +6,11 @@ import { type FolderView, useFolder } from "#/components/library/use-folder";
 import { FolderPath } from "#/components/navigation/folder-path";
 import { TopBar } from "#/components/navigation/top-bar";
 import { Page, PageHeader } from "#/components/ui/page";
-import { getFolderPage } from "#/functions/library.functions";
+import { folderPageQuery } from "#/functions/queries";
 import { plural } from "#/lib/text";
 
 export const Route = createFileRoute("/_authenticated/f/$id")({
-  loader: ({ params }) => getFolderPage({ data: { id: params.id } }),
+  loader: ({ params, context }) => context.queryClient.ensureQueryData(folderPageQuery(params.id)),
   head: ({ loaderData }) => ({
     meta: [{ title: loaderData ? `${loaderData.folder.name}, evergarden` : "evergarden" }],
   }),
@@ -17,7 +18,8 @@ export const Route = createFileRoute("/_authenticated/f/$id")({
 });
 
 function FolderPage() {
-  const { folder, contents } = Route.useLoaderData();
+  const { id } = Route.useParams();
+  const { folder, contents } = useSuspenseQuery(folderPageQuery(id)).data;
   const listing = useFolder(folder.id, contents);
 
   return (

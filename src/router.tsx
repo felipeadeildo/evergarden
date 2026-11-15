@@ -5,7 +5,8 @@ import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query
 import { routeTree } from "./routeTree.gen";
 
 export function getRouter() {
-  const queryClient = new QueryClient();
+  // Data read within 30 seconds is not fetched again; older data refreshes in the background.
+  const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000 } } });
   const router = createRouter({
     routeTree,
     context: { queryClient },

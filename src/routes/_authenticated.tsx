@@ -1,17 +1,13 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 import { SearchProvider } from "#/components/navigation/search";
-import { getViewer } from "#/functions/session.functions";
+import { viewerQuery } from "#/functions/queries";
 import { authClient } from "#/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated")({
   // Every navigation runs this, so the answer is kept for a few minutes instead of asked again.
   beforeLoad: async ({ location, context }) => {
-    const viewer = await context.queryClient.fetchQuery({
-      queryKey: ["viewer"],
-      queryFn: () => getViewer(),
-      staleTime: 5 * 60_000,
-    });
+    const viewer = await context.queryClient.fetchQuery(viewerQuery);
     if (!viewer) throw redirect({ to: "/sign-in", search: { next: location.href } });
     return { viewer };
   },

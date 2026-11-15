@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { type SubmitEvent, useEffect, useRef, useState } from "react";
 
+import { viewerQuery } from "#/functions/queries";
 import { renameMe } from "#/functions/session.functions";
 import { authClient } from "#/lib/auth-client";
 import { textField } from "#/lib/form";
@@ -24,7 +25,8 @@ export function Account({ name, email }: { name: string; email: string }) {
       await renameMe({ data: { name: textField(new FormData(event.currentTarget), "name") } });
       setEditing(false);
       setError(null);
-      await queryClient.invalidateQueries({ queryKey: ["viewer"] });
+      // The name lives in the viewer query and in the route context built from it.
+      await queryClient.invalidateQueries({ queryKey: viewerQuery.queryKey });
       await router.invalidate();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "The name was not saved.");

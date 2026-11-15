@@ -1,3 +1,4 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
@@ -18,26 +19,34 @@ import { TopBar } from "#/components/navigation/top-bar";
 import { CommentIcon, ContentsIcon } from "#/components/ui/icons";
 import { Page, PageHeader } from "#/components/ui/page";
 import { Sheet } from "#/components/ui/sheet";
-import { getDocumentPage, markDocumentRead } from "#/functions/library.functions";
+import { markDocumentRead } from "#/functions/library.functions";
+import { documentQuery, threadsQuery } from "#/functions/queries";
 
 import katexCss from "katex/dist/katex.min.css?url";
 
 export const Route = createFileRoute("/_authenticated/d/$id")({
   validateSearch: z.object({ v: z.int().positive().optional(), c: z.string().optional() }),
   loaderDeps: ({ search }) => ({ version: search.v }),
-  loader: ({ params, deps }) => getDocumentPage({ data: { id: params.id, version: deps.version } }),
-  // Opening a comment only changes `?c=`; the document reloads when it is opened again.
-  shouldReload: ({ cause }) => cause !== "stay",
+  loader: async ({ params, deps, context: { queryClient } }) => {
+    const [page] = await Promise.all([
+      queryClient.ensureQueryData(documentQuery(params.id, deps.version)),
+      queryClient.ensureQueryData(threadsQuery(params.id)),
+    ]);
+    return { title: page.document.title, math: page.body.features.math };
+  },
   head: ({ loaderData }) => ({
-    meta: [{ title: loaderData ? `${loaderData.document.title}, evergarden` : "evergarden" }],
-    links: loaderData?.body.features.math ? [{ rel: "stylesheet", href: katexCss }] : [],
+    meta: [{ title: loaderData ? `${loaderData.title}, evergarden` : "evergarden" }],
+    links: loaderData?.math ? [{ rel: "stylesheet", href: katexCss }] : [],
   }),
   component: DocumentPage,
 });
 
 function DocumentPage() {
-  const { document, version, versions, body, folder, source } = Route.useLoaderData();
+  const { id } = Route.useParams();
   const search = Route.useSearch();
+  const { document, version, versions, body, folder, source } = useSuspenseQuery(
+    documentQuery(id, search.v),
+  ).data;
   const navigate = useNavigate({ from: Route.fullPath });
   const [contentsOpen, setContentsOpen] = useState(false);
   const text = useRef<HTMLDivElement>(null);
@@ -49,9 +58,9 @@ function DocumentPage() {
   }, [document.id, version.number]);
 
   const setActive = useCallback(
-    (id: string | null) =>
+    (commentId: string | null) =>
       void navigate({
-        search: (prev) => ({ ...prev, c: id ?? undefined }),
+        search: (prev) => ({ ...prev, c: commentId ?? undefined }),
         replace: true,
         resetScroll: false,
       }),

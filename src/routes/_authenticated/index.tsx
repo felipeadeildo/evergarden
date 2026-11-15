@@ -1,19 +1,20 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { DocumentRow, FolderRow } from "#/components/library/rows";
 import { TopBar } from "#/components/navigation/top-bar";
 import { Page, PageHeader } from "#/components/ui/page";
-import { getLibrary } from "#/functions/library.functions";
+import { libraryQuery } from "#/functions/queries";
 import { plural } from "#/lib/text";
 
 export const Route = createFileRoute("/_authenticated/")({
-  loader: () => getLibrary(),
+  loader: ({ context }) => context.queryClient.ensureQueryData(libraryQuery),
   head: () => ({ meta: [{ title: "Library, evergarden" }] }),
   component: Library,
 });
 
 function Library() {
-  const { latest, top } = Route.useLoaderData();
+  const { latest, top } = useSuspenseQuery(libraryQuery).data;
   const documents =
     top.folders.reduce((sum, entry) => sum + entry.documents, 0) + top.documents.length + top.more;
 
