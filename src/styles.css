@@ -1245,11 +1245,35 @@
     color: var(--ink-soft);
   }
 
-  .signed-in {
+  .account {
     margin-top: 3rem;
     padding-top: 1rem;
     border-top: 1px solid var(--rule);
     font-size: 0.85rem;
+  }
+
+  .account p {
+    margin: 0;
+  }
+
+  .account-name {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .account-name input {
+    padding: 0.2rem 0;
+    border: 0;
+    border-bottom: 1px solid var(--emerald);
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.95rem;
+  }
+
+  .account-name input:focus-visible {
+    outline: none;
   }
 
   /* Sign-in */
