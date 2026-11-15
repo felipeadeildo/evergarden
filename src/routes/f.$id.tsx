@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
+import { EntryCard, OrderedDocuments, OrderSelect } from "#/components/library/ordering";
 import { OrganizeTools } from "#/components/library/organize";
 import { DocumentRow, FolderRow, LoadMore, RepositoryLink } from "#/components/library/rows";
 import { type FolderView, useFolder } from "#/components/library/use-folder";
@@ -109,45 +110,65 @@ function FolderContent({
               {folder.repo ? <RepositoryLink repo={folder.repo} /> : null}
             </p>
             {owner ? (
-              <OrganizeTools
-                key={folder.id}
-                subject={{ kind: "folder", id: folder.id }}
-                name={folder.name}
-                // The path ends with the folder itself.
-                parentId={folder.path.at(-2)?.id ?? null}
-              />
+              <div className="page-tools">
+                <OrderSelect folderId={folder.id} sort={folder.sort} />
+                <OrganizeTools
+                  key={folder.id}
+                  subject={{ kind: "folder", id: folder.id }}
+                  name={folder.name}
+                  // The path ends with the folder itself.
+                  parentId={folder.path.at(-2)?.id ?? null}
+                />
+              </div>
             ) : null}
           </div>
         </PageHeader>
-        <FolderListing listing={listing} path={folder.path.map((step) => step.name).join("/")} />
+        <FolderListing listing={listing} folder={folder} owner={owner} />
       </Page>
     </>
   );
 }
 
-function FolderListing({ listing, path }: { listing: FolderView; path: string }) {
+function FolderListing({
+  listing,
+  folder,
+  owner,
+}: {
+  listing: FolderView;
+  folder: FolderPageData["folder"];
+  owner: boolean;
+}) {
   if (listing.state !== "ready") return null;
   if (listing.folders.length + listing.documents.length === 0) {
     return (
       <p className="page-note">
         Nothing here yet. An agent files a document here by publishing it with the folder{" "}
-        <code>{path}</code>.
+        <code>{folder.path.map((step) => step.name).join("/")}</code>.
       </p>
     );
   }
+  const entry = listing.documents.find((document) => document.id === folder.entryId);
+  const documents = listing.documents.filter((document) => document !== entry);
   return (
-    <ul className="rows">
-      {listing.folders.map((entry) => (
-        <FolderRow key={entry.id} entry={entry} />
-      ))}
-      {listing.documents.map((entry) => (
-        <DocumentRow key={entry.id} entry={entry} />
-      ))}
-      {listing.more > 0 ? (
-        <li className="rows-more">
-          <LoadMore folder={listing} />
-        </li>
+    <>
+      {entry ? <EntryCard entry={entry} folderId={owner ? folder.id : undefined} /> : null}
+      {listing.folders.length > 0 ? (
+        <ul className="rows">
+          {listing.folders.map((child) => (
+            <FolderRow key={child.id} entry={child} />
+          ))}
+        </ul>
       ) : null}
-    </ul>
+      {owner ? (
+        <OrderedDocuments folderId={folder.id} documents={documents} entryId={folder.entryId} />
+      ) : (
+        <ul className="rows">
+          {documents.map((document) => (
+            <DocumentRow key={document.id} entry={document} />
+          ))}
+        </ul>
+      )}
+      {listing.more > 0 ? <LoadMore folder={listing} /> : null}
+    </>
   );
 }

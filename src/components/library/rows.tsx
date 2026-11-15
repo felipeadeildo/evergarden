@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 
 import {
   DocumentIcon,
@@ -19,13 +20,16 @@ export function DocumentRow({
   entry,
   place,
   unread = false,
+  handle,
 }: {
   entry: DocumentEntry;
   place?: string | null;
   unread?: boolean;
+  /** The owner's handle for reordering, beside the link. */
+  handle?: ReactNode;
 }) {
   return (
-    <li>
+    <li data-id={entry.id}>
       <Link
         to="/d/$id"
         params={{ id: entry.id }}
@@ -42,6 +46,7 @@ export function DocumentRow({
           <RelativeTime date={entry.updatedAt} short />
         </span>
       </Link>
+      {handle}
     </li>
   );
 }

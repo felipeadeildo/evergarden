@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { authorOf } from "#/server/access";
 import { db } from "#/server/db";
-import { folder } from "#/server/db/schema";
+import { folder, FOLDER_SORTS } from "#/server/db/schema";
 import {
   deleteDocument,
   deleteFolder,
@@ -14,8 +14,11 @@ import {
   moveDocument,
   moveFolder,
   renameDocument,
+  placeDocument,
   renameFolder,
   restoreDocument,
+  setEntry,
+  sortFolder,
   trash,
 } from "#/server/library/organize";
 
@@ -68,6 +71,22 @@ export const deleteItem = createServerFn({ method: "POST" })
   .handler(({ data }) =>
     data.kind === "document" ? deleteDocument(data.id) : deleteFolder(data.id),
   );
+
+export const sortItems = createServerFn({ method: "POST" })
+  .middleware([ownerAccess])
+  .validator(z.object({ folderId: z.string(), sort: z.enum(FOLDER_SORTS) }))
+  .handler(({ data }) => sortFolder(data.folderId, data.sort));
+
+/** Drops a document just before another of its folder, or last with `before: null`. */
+export const placeItem = createServerFn({ method: "POST" })
+  .middleware([ownerAccess])
+  .validator(z.object({ id: z.string(), before: z.string().nullable() }))
+  .handler(({ data }) => placeDocument(data.id, data.before));
+
+export const pinEntry = createServerFn({ method: "POST" })
+  .middleware([ownerAccess])
+  .validator(z.object({ folderId: z.string(), documentId: z.string().nullable() }))
+  .handler(({ data }) => setEntry(data.folderId, data.documentId));
 
 export const getTrash = createServerFn({ method: "GET" })
   .middleware([ownerAccess])

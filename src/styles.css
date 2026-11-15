@@ -609,7 +609,8 @@
 
   /* A rule between export and organizing, where both fit on one line. */
   @media (min-width: 641px) {
-    .page-tools .tool-row + .tool-row {
+    .page-tools .tool-row + .tool-row,
+    .page-tools .order-select + .tool-row {
       margin-left: 0.4rem;
       padding-left: 0.4rem;
       border-left: 1px solid var(--rule);
@@ -1244,6 +1245,137 @@
     .row-end {
       grid-column: 3;
     }
+  }
+
+  /* The owner's handles for reordering: see components/library/ordering.tsx */
+  .rows[data-ordering] {
+    position: relative;
+    grid-template-columns: 1.25rem minmax(0, 1fr) minmax(0, auto) auto 1.75rem;
+  }
+
+  .rows[data-ordering] .row {
+    grid-column: 1 / 5;
+  }
+
+  @media (max-width: 639px) {
+    .rows[data-ordering] {
+      grid-template-columns: 1.25rem minmax(0, 1fr) auto 1.75rem;
+    }
+
+    .rows[data-ordering] .row {
+      grid-column: 1 / 4;
+    }
+  }
+
+  .row-handle {
+    display: grid;
+    place-items: center;
+    align-self: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-right: -0.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--ink-soft);
+    opacity: 0.55;
+    cursor: grab;
+  }
+
+  .rows > li:hover .row-handle,
+  .row-handle:focus-visible,
+  .row-handle:popover-open {
+    opacity: 1;
+  }
+
+  .row-handle:hover {
+    background: var(--sheet);
+  }
+
+  .drop-line {
+    grid-column: 1 / -1;
+    align-self: start;
+    height: 2px;
+    margin-top: -1px;
+    border-radius: 2px;
+    background: var(--prussian);
+    pointer-events: none;
+  }
+
+  .row-menu {
+    width: 13rem;
+  }
+
+  .order-select {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.7rem;
+    padding: 0 0.45rem;
+    border-radius: 6px;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+  }
+
+  .order-select:hover,
+  .order-select:focus-within {
+    background: var(--sheet);
+    color: var(--ink);
+  }
+
+  .order-select select {
+    field-sizing: content;
+    padding: 0.2rem 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  /* The document a folder starts with. */
+  .folder-entry {
+    display: flex;
+    align-items: start;
+    gap: 1rem;
+    margin: 0 -0.6rem 1.4rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+  }
+
+  .folder-entry:has(a:hover) {
+    border-color: var(--prussian);
+  }
+
+  .folder-entry a {
+    display: grid;
+    flex: 1;
+    gap: 0.2rem;
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .folder-entry-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--prussian);
+    font-size: 0.8rem;
+  }
+
+  .folder-entry-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    text-wrap: balance;
+  }
+
+  .folder-entry-summary {
+    color: var(--ink-soft);
+    font-style: italic;
+    text-wrap: pretty;
   }
 
   .rows-more {

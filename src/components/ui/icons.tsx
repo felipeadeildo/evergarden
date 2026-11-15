@@ -1,9 +1,11 @@
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { ArrowBendUpRightIcon } from "@phosphor-icons/react/dist/ssr/ArrowBendUpRight";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react/dist/ssr/ArrowCounterClockwise";
+import { ArrowsDownUpIcon } from "@phosphor-icons/react/dist/ssr/ArrowsDownUp";
 import { ArrowsInIcon } from "@phosphor-icons/react/dist/ssr/ArrowsIn";
 import { ArrowsOutSimpleIcon } from "@phosphor-icons/react/dist/ssr/ArrowsOutSimple";
 import { BookmarkSimpleIcon } from "@phosphor-icons/react/dist/ssr/BookmarkSimple";
+import { BookOpenIcon } from "@phosphor-icons/react/dist/ssr/BookOpen";
 import { CaretDownIcon } from "@phosphor-icons/react/dist/ssr/CaretDown";
 import { CaretLeftIcon } from "@phosphor-icons/react/dist/ssr/CaretLeft";
 import { CaretRightIcon } from "@phosphor-icons/react/dist/ssr/CaretRight";
@@ -11,6 +13,7 @@ import { ChatCircleTextIcon } from "@phosphor-icons/react/dist/ssr/ChatCircleTex
 import { CheckIcon as PhosphorCheck } from "@phosphor-icons/react/dist/ssr/Check";
 import { ClockCounterClockwiseIcon } from "@phosphor-icons/react/dist/ssr/ClockCounterClockwise";
 import { CopyIcon as PhosphorCopy } from "@phosphor-icons/react/dist/ssr/Copy";
+import { DotsSixVerticalIcon } from "@phosphor-icons/react/dist/ssr/DotsSixVertical";
 import { DownloadSimpleIcon } from "@phosphor-icons/react/dist/ssr/DownloadSimple";
 import { FileIcon as PhosphorFile } from "@phosphor-icons/react/dist/ssr/File";
 import { FileTextIcon } from "@phosphor-icons/react/dist/ssr/FileText";
@@ -97,3 +100,6 @@ export const MoveIcon = icon(ArrowBendUpRightIcon);
 export const TrashIcon = icon(PhosphorTrash);
 export const AttachIcon = icon(PaperclipIcon);
 export const FileIcon = icon(PhosphorFile);
+export const HandleIcon = icon(DotsSixVerticalIcon);
+export const SortIcon = icon(ArrowsDownUpIcon);
+export const EntryIcon = icon(BookOpenIcon);
