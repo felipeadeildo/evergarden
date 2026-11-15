@@ -48,3 +48,4 @@ Each of these has its syntax and examples behind `guide(topic)`. Call it when th
 | A process, calls between services, a schema, a chart over time, parts of a whole                             | `guide("diagrams")` |
 | A query, alert rule or code that computes a number                                                           | `guide("formulas")` |
 | A heading or status that an icon would make easier to scan                                                   | `guide("icons")`    |
+| An image, a dataset, a PDF or anything else to show or hand over beside the text                             | `guide("files")`    |

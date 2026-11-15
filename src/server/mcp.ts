@@ -1,6 +1,7 @@
 import { type CallToolResult, createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
+import { formatSize, MAX_FILE_BYTES } from "#/lib/files";
 import { sentence } from "#/lib/sharing";
 import { authorOf, type Principal } from "#/server/access";
 import {
@@ -11,6 +12,7 @@ import {
   openCount,
   resolve,
 } from "#/server/comments";
+import type { AttachedFile } from "#/server/db/schema";
 import { EvergardenError } from "#/server/errors";
 import { GUIDE_TOPICS, guide } from "#/server/guide";
 import {
@@ -24,6 +26,7 @@ import {
   update,
 } from "#/server/library";
 import { discardDraft, editDraft, getDraft, publishDraft } from "#/server/library/drafts";
+import { attachFile, detachFile } from "#/server/library/files";
 import { findFolder, parseFolderPath } from "#/server/library/folders";
 import {
   folderAt,
@@ -62,7 +65,7 @@ function mcpServer(principal: Principal, origin: string): McpServer {
         "returns the essentials and what else you can write. Then call it with a topic when you",
         "need one: figures (timelines, decisions, checklists, boards, stats), diagrams (which",
         "Mermaid diagram fits, charts with legends), formulas (what a query computes, beside its",
-        "code) or icons (inline icon names).",
+        "code), icons (inline icon names) or files (images and downloads beside the text).",
       ].join(" "),
       inputSchema: {
         topic: z
@@ -164,6 +167,37 @@ function mcpServer(principal: Principal, origin: string): McpServer {
   );
 
   server.registerTool(
+    "attach",
+    {
+      description: `Attaches a file to the document's draft, replacing one with the same name; publish_draft makes it part of the next version. Reference it in the markdown by name: ![chart](chart.png) shows an image, [the data](data.csv) offers a download. Up to ${formatSize(MAX_FILE_BYTES)} per file. For larger files or from a shell, PUT the bytes to \`/api/v1/documents/<id>/files/<name>\` with your API key.`,
+      inputSchema: z.object({
+        id: z.string(),
+        name: z.string().describe('The file name the markdown uses, such as "chart.png".'),
+        content_base64: z.string().describe("The file's bytes, base64-encoded."),
+      }),
+    },
+    ({ id, name, content_base64 }) =>
+      run(async () => {
+        const bytes = Uint8Array.from(atob(content_base64), (char) => char.charCodeAt(0));
+        const draft = await attachFile(id, name, bytes.buffer, author);
+        return `Attached ${name} to the draft of ${id}${filesNote(draft.files)}. Call publish_draft when it is ready.`;
+      }),
+  );
+
+  server.registerTool(
+    "detach",
+    {
+      description: "Removes a file from the document's draft; publish_draft makes it a version.",
+      inputSchema: z.object({ id: z.string(), name: z.string() }),
+    },
+    ({ id, name }) =>
+      run(async () => {
+        const draft = await detachFile(id, name, author);
+        return `Removed ${name} from the draft of ${id}${filesNote(draft.files)}.`;
+      }),
+  );
+
+  server.registerTool(
     "publish_draft",
     {
       description:
@@ -210,13 +244,13 @@ function mcpServer(principal: Principal, origin: string): McpServer {
         if (draft) {
           const current = await getDraft(id);
           if (!current) return `${id} has no draft. Call edit to start one.`;
-          return `<!-- evergarden ${id}, draft on version ${current.baseVersion}, ${current.edits} edits -->\n${current.markdown}`;
+          return `<!-- evergarden ${id}, draft on version ${current.baseVersion}, ${current.edits} edits${filesNote(current.files)} -->\n${current.markdown}`;
         }
         const [result, open] = await Promise.all([read(id, version), openCount(id)]);
         const comments = open
           ? `, ${open} open comment${open === 1 ? "" : "s"} (call open_comments)`
           : "";
-        const header = `<!-- evergarden ${id}, version ${result.version.number} of ${result.document.version}${comments}, ${url(id)} -->`;
+        const header = `<!-- evergarden ${id}, version ${result.version.number} of ${result.document.version}${comments}${filesNote(result.files)}, ${url(id)} -->`;
         return `${header}\n${result.source}`;
       }),
   );
@@ -425,6 +459,11 @@ async function targetOf(id?: string, path?: string) {
   if (!folderId)
     throw new EvergardenError("not_found", "Give a document id or an existing folder path.");
   return { kind: "folder" as const, id: folderId };
+}
+
+function filesNote(files: AttachedFile[]): string {
+  if (files.length === 0) return "";
+  return `, files: ${files.map((file) => `${file.name} (${formatSize(file.size)})`).join(", ")}`;
 }
 
 function text(value: string): CallToolResult {
