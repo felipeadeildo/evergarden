@@ -106,6 +106,8 @@ function ShareSettingsForm({
   const [draft, setDraft] = useState(() => draftOf(state?.own ?? null));
   const inherited = state?.inherited[0] ?? null;
   const save = useMutation({
+    // Choices apply as they are clicked; saving them one after another keeps the last one.
+    scope: { id: `sharing:${subject.id}` },
     mutationFn: (next: Draft) =>
       updateSharing({
         data: {
