@@ -1551,10 +1551,21 @@
     font-size: 0.84em;
   }
 
-  /* Inside a commented passage the highlight carries the colour, so the box gives way to it. */
+  /*
+   * Inline code inside a commented passage: see the highlight rules below. Its box grows to the
+   * height of the highlight on the text around it, Literata's ascent and descent at the body size,
+   * from Paper Mono's at 0.84em. Vertical padding on an inline box does not move the lines.
+   */
   .prose :not(pre) > code[data-marked] {
-    padding-inline: 0;
-    background: none;
+    padding-block: 0.446em 0.122em;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--emerald) 20%, transparent);
+    box-shadow: inset 0 -1.5px color-mix(in srgb, var(--emerald) 55%, transparent);
+  }
+
+  .prose :not(pre) > code[data-marked="strong"] {
+    background: color-mix(in srgb, var(--emerald) 34%, transparent);
+    box-shadow: inset 0 -2px var(--emerald);
   }
 
   .prose blockquote {

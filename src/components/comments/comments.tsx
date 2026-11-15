@@ -187,17 +187,31 @@ function useHighlights(
     const found = ranges();
     const strong = new Set([active, hovered]);
     const marked = [...found].filter(([id]) => id !== SELECTION);
-    CSS.highlights.set(
+    // A highlight paints only over glyphs, which leaves gaps at inline code's padding. Code that
+    // sits wholly inside a passage is left out of the highlight and tints its own box instead.
+    const codes: HTMLElement[] = [];
+    const paint = (name: string, entries: typeof marked, mark: string) => {
+      const pieces: AbstractRange[] = [];
+      for (const [, range] of entries) {
+        const inside = inlineCodeIn(range);
+        for (const code of inside) {
+          code.dataset.marked = mark;
+          codes.push(code);
+        }
+        pieces.push(...around(range, inside));
+      }
+      CSS.highlights.set(name, new Highlight(...pieces));
+    };
+    paint(
       "comment",
-      new Highlight(...marked.filter(([id]) => !strong.has(id)).map(([, range]) => range)),
+      marked.filter(([id]) => !strong.has(id)),
+      "",
     );
-    CSS.highlights.set(
+    paint(
       "comment-active",
-      new Highlight(...marked.filter(([id]) => strong.has(id)).map(([, range]) => range)),
+      marked.filter(([id]) => strong.has(id)),
+      "strong",
     );
-    // A highlight paints only over text, so inline code drops its own box inside one.
-    const codes = marked.flatMap(([, range]) => inlineCodeIn(range));
-    for (const code of codes) code.dataset.marked = "";
     return () => {
       CSS.highlights.delete("comment");
       CSS.highlights.delete("comment-active");
@@ -206,15 +220,33 @@ function useHighlights(
   }, [ranges, active, hovered]);
 }
 
+/** Inline code elements that lie wholly inside `range`. */
 function inlineCodeIn(range: Range): HTMLElement[] {
   const scope = range.commonAncestorContainer;
   const root = scope instanceof Element ? scope : scope.parentElement;
   if (!root) return [];
-  const inside = root.closest(":not(pre) > code");
-  if (inside instanceof HTMLElement) return [inside];
-  return [...root.querySelectorAll<HTMLElement>(":not(pre) > code")].filter((code) =>
-    range.intersectsNode(code),
-  );
+  return [...root.querySelectorAll<HTMLElement>(":not(pre) > code")].filter((code) => {
+    const whole = document.createRange();
+    whole.selectNodeContents(code);
+    return (
+      range.compareBoundaryPoints(Range.START_TO_START, whole) <= 0 &&
+      range.compareBoundaryPoints(Range.END_TO_END, whole) >= 0
+    );
+  });
+}
+
+/** `range` split around `holes`, which lie inside it in document order. */
+function around(range: Range, holes: HTMLElement[]): Range[] {
+  const pieces: Range[] = [];
+  let piece = range.cloneRange();
+  for (const hole of holes) {
+    piece.setEndBefore(hole);
+    pieces.push(piece);
+    piece = range.cloneRange();
+    piece.setStartAfter(hole);
+  }
+  pieces.push(piece);
+  return pieces.filter((part) => !part.collapsed);
 }
 
 function useClickToOpen(
