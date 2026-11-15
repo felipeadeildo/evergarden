@@ -3,6 +3,7 @@ import { and, asc, count, desc, eq, isNull, type SQL, sql } from "drizzle-orm";
 import { newId } from "#/lib/id";
 import { FOLDER_PAGE_SIZE } from "#/lib/text";
 import { render } from "#/render";
+import { relocateComments } from "#/server/comments/relocate";
 import { db } from "#/server/db";
 import { type AuthorKind, document, folder, readMark, version } from "#/server/db/schema";
 import { EvergardenError } from "#/server/errors";
@@ -154,9 +155,10 @@ export async function update(
   const number = current.version + 1;
 
   await store(sha, content, result);
+  const row = versionRow(id, number, sha, author);
   try {
     await db.batch([
-      db.insert(version).values(versionRow(id, number, sha, author)),
+      db.insert(version).values(row),
       db
         .update(document)
         .set({ currentVersion: number, title, updatedAt: new Date() })
@@ -168,12 +170,13 @@ export async function update(
     if (String(error).includes("UNIQUE constraint failed")) throw conflict(id, number);
     throw error;
   }
+  await relocateComments(id, row.id, content);
   return { id, version: number, changed: true };
 }
 
 export type Read = {
   document: DocumentEntry;
-  version: VersionEntry & { sha256: string };
+  version: VersionEntry & { id: string; sha256: string };
   source: string;
 };
 
@@ -183,6 +186,7 @@ export async function read(id: string, versionNumber?: number): Promise<Read> {
   return {
     document: found,
     version: {
+      id: row.id,
       number: row.number,
       authorKind: row.authorKind,
       authorName: row.authorName,
