@@ -23,6 +23,7 @@ import {
   search,
   update,
 } from "#/server/library";
+import { discardDraft, editDraft, getDraft, publishDraft } from "#/server/library/drafts";
 import { findFolder, parseFolderPath } from "#/server/library/folders";
 import { setSharing, sharingOf } from "#/server/sharing";
 
@@ -96,7 +97,9 @@ function mcpServer(principal: Principal, origin: string): McpServer {
         "Saves a new version of a document. Comments stay attached to the text they point at.",
       inputSchema: z.object({
         id: z.string(),
-        content: z.string().describe("The complete new markdown, not a patch."),
+        content: z
+          .string()
+          .describe("The complete new markdown. To change a few passages, use `edit` instead."),
         base_version: z
           .int()
           .positive()
@@ -116,14 +119,81 @@ function mcpServer(principal: Principal, origin: string): McpServer {
   );
 
   server.registerTool(
+    "edit",
+    {
+      description:
+        "Replaces passages in a document's draft, starting the draft from the current version if there is none. Readers see nothing until `publish_draft`. Each `old` must appear exactly once, unless `all` is set.",
+      inputSchema: z.object({
+        id: z.string(),
+        edits: z
+          .array(
+            z.object({
+              old: z
+                .string()
+                .describe("The exact text to replace, with enough around it to be unique."),
+              new: z.string(),
+              all: z.boolean().optional().describe("Replace every occurrence."),
+            }),
+          )
+          .min(1),
+      }),
+    },
+    ({ id, edits }) =>
+      run(async () => {
+        const draft = await editDraft(id, edits, author);
+        return `Draft of ${id} on version ${draft.baseVersion}: ${draft.edits} edits so far. Call publish_draft when it is ready.`;
+      }),
+  );
+
+  server.registerTool(
+    "publish_draft",
+    {
+      description:
+        "Saves the draft as the document's next version and moves open comments onto it.",
+      inputSchema: z.object({ id: z.string() }),
+    },
+    ({ id }) =>
+      run(async () => {
+        const result = await publishDraft(id);
+        return result.changed
+          ? `Saved version ${result.version} of ${id}: ${url(id)}`
+          : `The draft matched version ${result.version}; nothing changed.`;
+      }),
+  );
+
+  server.registerTool(
+    "discard_draft",
+    {
+      description: "Throws away a document's draft.",
+      inputSchema: z.object({ id: z.string() }),
+      annotations: { destructiveHint: true },
+    },
+    ({ id }) =>
+      run(async () => {
+        await discardDraft(id);
+        return `Discarded the draft of ${id}.`;
+      }),
+  );
+
+  server.registerTool(
     "read",
     {
-      description: "Returns a document's markdown, the current version unless `version` is given.",
-      inputSchema: z.object({ id: z.string(), version: z.int().positive().optional() }),
+      description:
+        "Returns a document's markdown: the current version, an older `version`, or your `draft`.",
+      inputSchema: z.object({
+        id: z.string(),
+        version: z.int().positive().optional(),
+        draft: z.boolean().optional(),
+      }),
       annotations: { readOnlyHint: true },
     },
-    ({ id, version }) =>
+    ({ id, version, draft }) =>
       run(async () => {
+        if (draft) {
+          const current = await getDraft(id);
+          if (!current) return `${id} has no draft. Call edit to start one.`;
+          return `<!-- evergarden ${id}, draft on version ${current.baseVersion}, ${current.edits} edits -->\n${current.markdown}`;
+        }
         const [result, open] = await Promise.all([read(id, version), openCount(id)]);
         const comments = open
           ? `, ${open} open comment${open === 1 ? "" : "s"} (call open_comments)`

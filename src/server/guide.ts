@@ -33,8 +33,11 @@ Raw HTML is sanitised: no scripts, styles or event handlers.
 
 ## Working with documents
 
-- Call \`publish\` once per document. Keep the id it returns and call \`update\` for every later
-  change, so comments and links stay attached to the same document.
+- Call \`publish\` once per document. Keep the id it returns, so comments and links stay attached
+  to the same document.
+- To change a few passages, call \`edit\` with the exact text to replace. Edits collect in a draft
+  that readers do not see; call \`publish_draft\` once the change is whole, so it becomes one
+  version. Call \`update\` only to replace the whole text.
 - When working inside a git repository, pass \`repo\` with its remote URL. The document is filed in
   the folder linked to that repository, and \`list(repo)\` finds everything written about it.
 - Pass \`base_version\` to \`update\` when the owner may have edited the document since you read it.
