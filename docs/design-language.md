@@ -90,8 +90,8 @@ The mark is a manicule, the pointing hand that readers drew in book margins to p
 | `public/favicon.svg`                                          | The hand alone, with a thicker stroke so it reads at 16 px; light blue in the dark theme                                 |
 | `public/icon.svg`                                             | The app icon: the hand pointing at the emerald line among three, on paper, inside the safe zone of iOS and Android masks |
 | `public/apple-touch-icon.png`, `icon-192.png`, `icon-512.png` | Rendered from `icon.svg`                                                                                                 |
-| `brand/banner.html`                                           | The README banner and the link preview: a real passage, marked and answered in the margin                                |
-| `brand/banner.png`, `public/og.png`                           | Rendered from `banner.html` at 1280 × 640 and 1200 × 630                                                                 |
+| `brand/banner.html`                                           | The link preview: a real passage, marked and answered in the margin                                                      |
+| `public/og.png`                                               | Rendered from `banner.html` at 1200 × 630                                                                                |
 
 The wordmark is the hand followed by "evergarden" in Literata italic, as in the top bar (`src/components/ui/wordmark.tsx`). After changing `icon.svg` or `banner.html`, run `bun scripts/brand.ts` to render the PNGs again.
 

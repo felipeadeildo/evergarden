@@ -1,40 +1,43 @@
 # evergarden
 
-![A report in evergarden: a passage marked in emerald, a comment in the margin, and the agent's reply](brand/banner.png)
+A self-hosted Claude Artifacts for what your agents write.
 
-A place to publish what your agents write, and comment on it like a Google Doc.
+Your agent publishes a plan, a report or a spec over MCP. You read it on a page made for reading, comment on a passage like in Google Docs, and the agent answers and publishes the next version. Share a document or a folder with a link, or with a list of emails, and others read it or comment too.
 
-Your agent publishes a markdown document (a report, a plan, a spec) over MCP. You read it in a page made for reading, select a passage, and comment or suggest a rewrite. The agent reads the open comments, publishes a new version, and answers each one. A share link lets anyone else read it, or comment after signing in.
+**See one live:** [evergarden.adeildo.dev/d/rgcczz32ix](https://evergarden.adeildo.dev/d/rgcczz32ix), the story of why it exists, published from my own instance.
 
-It runs on Cloudflare: one Worker with TanStack Start, D1 for everything it stores. Each instance belongs to one person and lives on their own Cloudflare account.
+It is one Cloudflare Worker (TanStack Start, D1), on your own account, for one person.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/felipeadeildo/evergarden)
 
-> evergarden is early. The design is settled; the code is being built step by step, following the [roadmap](docs/roadmap.md).
+## Connect an agent
 
-## Documentation
+```sh
+pi mcp add evergarden --url https://<your-instance>/mcp
+```
 
-- [How evergarden is used](docs/flows.md): every flow, from publishing to sharing
-- [Design](docs/design.md): decisions, modules, data, security
-- [Design language](docs/design-language.md): colour, type, layout, motion
-- [Deploying](docs/deploy.md): the Deploy button, or your own repository with Workers Builds
+The agent signs in with OAuth the first time. Settings shows the same command for Claude Code, Codex and Gemini CLI, and API keys for clients without OAuth.
+
+## Docs
+
+- [How it is used](docs/flows.md)
+- [Design](docs/design.md) and [design language](docs/design-language.md)
+- [Deploying](docs/deploy.md)
 - [Roadmap](docs/roadmap.md)
 
 ## Development
 
-You need [Bun](https://bun.sh) 1.3 or newer.
+With [Bun](https://bun.sh) 1.3 or newer, and `.dev.vars` copied from `.dev.vars.example`:
 
 ```sh
-bun install                 # dependencies and git hooks
-bun run db:migrate:local    # apply migrations to the local D1
-bun run dev                 # http://localhost:3000
-bun run check               # format check, lint with type checking, tests
+bun install
+bun run db:migrate:local
+bun run dev     # http://localhost:3000
+bun run check   # format, lint, types, tests
 ```
 
-Copy `.dev.vars.example` to `.dev.vars` and fill it in before the first `dev`.
-
-Commits follow [Conventional Commits](https://www.conventionalcommits.org); a `commit-msg` hook checks them.
+Commits follow [Conventional Commits](https://www.conventionalcommits.org).
 
 ## Licence
 
-[MIT](LICENSE). Paper Mono is distributed under the [SIL Open Font License](public/fonts/paper-mono-OFL.txt).
+[MIT](LICENSE). Paper Mono is under the [SIL Open Font License](public/fonts/paper-mono-OFL.txt).

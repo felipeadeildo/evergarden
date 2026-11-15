@@ -22,7 +22,6 @@ for (const size of [180, 192, 512]) {
 }
 
 const banner = `file://${resolve("brand/banner.html")}`;
-await render(banner, "brand/banner.png", 1280, 640, 2);
 await render(banner, "public/og.png", 1200, 630);
 
 await browser.close();
