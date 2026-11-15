@@ -31,7 +31,7 @@ There is no sans-serif. Literata was drawn for long reading on screens and has a
 
 Code uses the same palette: keywords and tags in `prussian`, strings in `ochre`, numbers in `alizarin`, comments in italic `ink-soft`, function names in a heavier weight. Diagrams take `paper`, `sheet` and `ink` for their shapes and lines, and `prussian`, `ochre` and `alizarin` first among their series colours, so a chart reads as part of the page.
 
-Body text is 19 px on desktop and 17.5 px on phones, line height 1.6, at most 66 characters per line. Headings step by about 1.25 (32, 24, 19.5 px), weight 600, set with `text-wrap: balance`. Paragraphs use `text-wrap: pretty`. Numbers in tables use tabular figures.
+Body text is 19 px on desktop and 17.5 px on phones, line height 1.6, about 66 characters per line, widening to about 80 on screens of 1500 px and more, where the side columns have room to spare. Headings step by about 1.25 (32, 24, 19.5 px), weight 600, set with `text-wrap: balance`. Paragraphs use `text-wrap: pretty`. Numbers in tables use tabular figures.
 
 ## Layout
 
