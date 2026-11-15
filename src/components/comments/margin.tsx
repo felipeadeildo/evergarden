@@ -19,8 +19,8 @@ const GROUPED_GAP = 0;
  */
 export function CommentsMargin() {
   const comments = useComments();
-  const { open, ranges, places, active, setActive, setHovered, selection, draft } = comments;
-  const { startDraft, cancelDraft, source, root, wide } = comments;
+  const { shown, ranges, places, active, setActive, setHovered, selection, draft } = comments;
+  const { startDraft, cancelDraft, source, root, wide, writable } = comments;
   const margin = useRef<HTMLDivElement>(null);
   const leader = useRef<SVGPathElement>(null);
   const focused = draft ? DRAFT : active;
@@ -32,7 +32,7 @@ export function CommentsMargin() {
   useLayoutEffect(() => {
     const element = margin.current;
     if (!element || !wide) return undefined;
-    const ids = [DRAFT, ...open.map((thread) => thread.id)];
+    const ids = [DRAFT, ...shown.map((thread) => thread.id)];
     const notes = ids
       .map((id) => element.querySelector<HTMLElement>(`[data-note="${id}"]`))
       .filter((note) => note !== null);
@@ -119,7 +119,7 @@ export function CommentsMargin() {
     if (root.current) observer.observe(root.current);
     for (const note of notes) observer.observe(note);
     return () => observer.disconnect();
-  }, [ranges, places, focused, open, root, wide, block]);
+  }, [ranges, places, focused, shown, root, wide, block]);
 
   if (!wide) return null;
   return (
@@ -128,7 +128,7 @@ export function CommentsMargin() {
         <path ref={leader} />
       </svg>
       <OtherComments />
-      {(selection || block) && !draft ? (
+      {writable && (selection || block) && !draft ? (
         <button
           ref={gutterButton}
           type="button"
@@ -164,7 +164,7 @@ export function CommentsMargin() {
           />
         </div>
       ) : null}
-      {open.map((thread) => (
+      {shown.map((thread) => (
         <div
           key={thread.id}
           data-note={thread.id}

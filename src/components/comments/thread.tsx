@@ -131,7 +131,11 @@ export function OpenThread({
           <Byline name={reply.author.name} date={reply.createdAt} />
         </div>
       ))}
-      {resolved ? null : <ReplyBox onReply={onReply} />}
+      {resolved ? (
+        <p className="note-byline note-resolved">Resolved</p>
+      ) : (
+        <ReplyBox onReply={onReply} />
+      )}
     </article>
   );
 }

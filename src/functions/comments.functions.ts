@@ -12,6 +12,7 @@ import {
   resolve,
   threads,
 } from "#/server/comments";
+import { getDocument } from "#/server/library";
 import { guestAccess } from "#/server/sharing";
 
 import { libraryAccess, sessionAccess } from "./middleware";
@@ -21,8 +22,18 @@ export const getThreads = createServerFn({ method: "GET" })
   .validator(z.object({ documentId: z.string() }))
   .handler(async ({ data, context: { principal } }) => {
     setResponseHeader("cache-control", "private, no-store");
-    await guestAccess(principal, { kind: "document", id: data.documentId }, "comment");
-    return threads(data.documentId);
+    const shared = await guestAccess(
+      principal,
+      { kind: "document", id: data.documentId },
+      "comment",
+    );
+    if (shared?.versions !== "current") return threads(data.documentId);
+    // What was resolved on a version the guest cannot open stays with that version.
+    const [all, { version }] = await Promise.all([
+      threads(data.documentId),
+      getDocument(data.documentId),
+    ]);
+    return all.filter((thread) => thread.status !== "resolved" || thread.version === version);
   });
 
 export const postComment = createServerFn({ method: "POST" })

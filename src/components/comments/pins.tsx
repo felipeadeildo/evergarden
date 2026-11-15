@@ -8,15 +8,15 @@ import { pinAt } from "./places";
  * follow the figures as they redraw or the page reflows, so positions go straight to the styles.
  */
 export function CommentPins() {
-  const { open, places, active, setActive, setHovered, draft } = useComments();
+  const { shown, places, active, setActive, setHovered, draft } = useComments();
   const layer = useRef<HTMLDivElement>(null);
-  const points = open.filter((thread) => thread.anchor.kind === "point");
+  const points = shown.filter((thread) => thread.anchor.kind === "point");
   const ids = [...points.map((thread) => thread.id), ...(draft?.kind === "point" ? [DRAFT] : [])];
-  const shown = ids.join();
+  const key = ids.join();
 
   useLayoutEffect(() => {
     const element = layer.current;
-    if (!element || !shown) return undefined;
+    if (!element || !key) return undefined;
     function place() {
       const origin = element!.getBoundingClientRect();
       const found = places();
@@ -36,7 +36,7 @@ export function CommentPins() {
     const observer = new ResizeObserver(place);
     if (element.parentElement) observer.observe(element.parentElement);
     return () => observer.disconnect();
-  }, [shown, places]);
+  }, [key, places]);
 
   if (ids.length === 0) return null;
   return (

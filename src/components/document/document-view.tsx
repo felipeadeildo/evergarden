@@ -39,7 +39,7 @@ export function DocumentView({
   byline: ReactNode;
   /** Shown above the title, such as the note on an older version. */
   notice?: ReactNode;
-  /** Comments show only when given; they anchor to the current version alone. */
+  /** Comments show only when given; new ones go on the current version alone. */
   comments?: {
     active: string | null;
     setActive: (id: string | null) => void;
@@ -50,7 +50,8 @@ export function DocumentView({
   const [contentsOpen, setContentsOpen] = useState(false);
   const text = useRef<HTMLDivElement>(null);
   const hasContents = body.headings.length > 1;
-  const commenting = Boolean(comments) && version.number === document.version;
+  const commenting = Boolean(comments);
+  const writable = version.number === document.version;
 
   const contentsButton = hasContents ? (
     <button
@@ -94,12 +95,8 @@ export function DocumentView({
       <Sheet open={contentsOpen} onClose={() => setContentsOpen(false)} label="Contents">
         <Contents headings={body.headings} onNavigate={() => setContentsOpen(false)} />
       </Sheet>
-      {commenting ? (
-        <>
-          <SelectionBar />
-          <CommentsSheet />
-        </>
-      ) : null}
+      {commenting && writable ? <SelectionBar /> : null}
+      {commenting ? <CommentsSheet /> : null}
     </>
   );
 
@@ -114,25 +111,27 @@ export function DocumentView({
       active={comments.active}
       setActive={comments.setActive}
       moderate={comments.moderate}
+      writable={writable}
     >
       {view}
     </CommentsProvider>
   );
 }
 
-/** On a phone, where there is no margin, opens the first open comment. */
+/** On a phone, where there is no margin, opens the first comment. */
 function CommentsButton() {
-  const { open, setActive } = useComments();
-  if (open.length === 0) return null;
+  const { shown, setActive, writable } = useComments();
+  if (shown.length === 0) return null;
+  const label = `${shown.length} ${writable ? "open" : "resolved"} comments`;
   return (
     <button
       type="button"
       className="quiet-button comments-button"
-      aria-label={`${open.length} open comments`}
-      onClick={() => setActive(open[0]!.id)}
+      aria-label={label}
+      onClick={() => setActive(shown[0]!.id)}
     >
       <CommentIcon />
-      <span aria-hidden>{open.length}</span>
+      <span aria-hidden>{shown.length}</span>
     </button>
   );
 }

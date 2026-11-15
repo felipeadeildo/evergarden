@@ -28,11 +28,14 @@ export const SELECTION = "selection";
 type Comments = ReturnType<typeof useThreads> & {
   source: string;
   root: RefObject<HTMLElement | null>;
-  /** Open threads on the current version, in the order of their passages. */
-  open: Thread[];
-  /** The text passages of open threads, the new comment and the selection, as DOM ranges. */
+  /**
+   * Threads in the margin, in the order of their passages: the open ones on the current version,
+   * the resolved ones on an older version, and whichever the reader opened from the versions menu.
+   */
+  shown: Thread[];
+  /** The text passages of shown threads, the new comment and the selection, as DOM ranges. */
   ranges: () => Map<string, Range>;
-  /** Where each open thread and the new comment sit in the page right now, whatever their kind. */
+  /** Where each shown thread and the new comment sit in the page right now, whatever their kind. */
   places: () => Map<string, Place>;
   active: string | null;
   setActive: (id: string | null) => void;
@@ -47,14 +50,21 @@ type Comments = ReturnType<typeof useThreads> & {
   wide: boolean;
   /** Whether the reader may resolve comments and accept suggestions: the owner, not a guest. */
   moderate: boolean;
+  /** Whether new comments can be written: only on the current version. */
+  writable: boolean;
 };
 
 const CommentsContext = createContext<Comments | null>(null);
 
 export function useComments(): Comments {
-  const comments = useContext(CommentsContext);
+  const comments = useMaybeComments();
   if (!comments) throw new Error("useComments needs a CommentsProvider");
   return comments;
+}
+
+/** The comments, where the page shows them; null for a reader who cannot see them. */
+export function useMaybeComments(): Comments | null {
+  return useContext(CommentsContext);
 }
 
 export function CommentsProvider({
@@ -65,10 +75,12 @@ export function CommentsProvider({
   active,
   setActive,
   moderate,
+  writable,
   children,
 }: {
   documentId: string;
   version: number;
+  writable: boolean;
   source: string;
   root: RefObject<HTMLElement | null>;
   active: string | null;
@@ -82,19 +94,24 @@ export function CommentsProvider({
   const selection = useSelection(root, source);
   const wide = useMediaQuery("(min-width: 1200px)");
 
-  const open = useMemo(
+  // Each version keeps the comments resolved on it; the current one shows only what is still open.
+  const wanted = writable ? "open" : "resolved";
+  const shown = useMemo(
     () =>
       data.threads
-        .filter((thread) => thread.status === "open" && thread.version === version)
+        .filter(
+          (thread) =>
+            thread.version === version && (thread.status === wanted || thread.id === active),
+        )
         .toSorted((a, b) => a.anchor.start - b.anchor.start || b.anchor.end - a.anchor.end),
-    [data.threads, version],
+    [data.threads, version, wanted, active],
   );
 
   const targets = useMemo(() => {
-    const all = new Map<string, Target>(open.map((thread) => [thread.id, thread.anchor]));
+    const all = new Map<string, Target>(shown.map((thread) => [thread.id, thread.anchor]));
     if (draft) all.set(DRAFT, draft);
     return all;
-  }, [open, draft]);
+  }, [shown, draft]);
 
   const places = useCallback(() => {
     const found = new Map<string, Place>();
@@ -119,12 +136,12 @@ export function CommentsProvider({
   const startDraft = useCallback(
     (target?: Target) => {
       const chosen = target ?? (selection && { kind: "text" as const, ...selection });
-      if (!chosen) return;
+      if (!chosen || !writable) return;
       setActive(null);
       setDraft(chosen);
       window.getSelection()?.removeAllRanges();
     },
-    [selection, setActive],
+    [selection, setActive, writable],
   );
   const cancelDraft = useCallback(() => setDraft(null), []);
 
@@ -132,14 +149,14 @@ export function CommentsProvider({
   useHighlights(ranges, focus, hovered);
   useBlockMarks(places, focus, hovered);
   useClickToOpen(root, ranges, setActive);
-  useKeys(open, places, active, setActive, startDraft);
+  useKeys(shown, places, active, setActive, startDraft);
 
   const value = useMemo(
     () => ({
       ...data,
       source,
       root,
-      open,
+      shown,
       ranges,
       places,
       active,
@@ -151,12 +168,13 @@ export function CommentsProvider({
       cancelDraft,
       wide,
       moderate,
+      writable,
     }),
     [
       data,
       source,
       root,
-      open,
+      shown,
       ranges,
       places,
       active,
@@ -167,6 +185,7 @@ export function CommentsProvider({
       cancelDraft,
       wide,
       moderate,
+      writable,
     ],
   );
   return <CommentsContext.Provider value={value}>{children}</CommentsContext.Provider>;
@@ -332,7 +351,7 @@ function useClickToOpen(
 
 /** `J` and `K` walk through the comments, `Esc` closes the open one, `⌘⌥M` comments, as in Google Docs. */
 function useKeys(
-  open: Thread[],
+  shown: Thread[],
   places: () => Map<string, Place>,
   active: string | null,
   setActive: (id: string | null) => void,
@@ -357,18 +376,18 @@ function useKeys(
         return;
       }
       const step = { j: 1, k: -1 }[event.key];
-      if (!step || open.length === 0) return;
-      const index = open.findIndex((thread) => thread.id === active);
+      if (!step || shown.length === 0) return;
+      const index = shown.findIndex((thread) => thread.id === active);
       // With none open, J starts at the first comment and K at the last.
       const from = index === -1 && step < 0 ? 0 : index;
-      const next = open[(from + step + open.length) % open.length]!;
+      const next = shown[(from + step + shown.length) % shown.length]!;
       setActive(next.id);
       const place = places().get(next.id);
       if (place) scrollToPlace(place);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, places, active, setActive, startDraft]);
+  }, [shown, places, active, setActive, startDraft]);
 }
 
 /** On a phone, a selection brings a bar to the bottom of the screen, clear of the system's menu. */
@@ -394,14 +413,14 @@ export function SelectionBar() {
 /** On a phone, the open thread or the new comment in a sheet over the lower half of the screen. */
 export function CommentsSheet() {
   const comments = useComments();
-  const { open, active, setActive, draft, cancelDraft, wide, source, places } = comments;
-  const index = open.findIndex((thread) => thread.id === active);
-  const thread = index === -1 ? null : open[index];
-  const shown = draft ? DRAFT : thread?.id;
+  const { shown, active, setActive, draft, cancelDraft, wide, source, places } = comments;
+  const index = shown.findIndex((thread) => thread.id === active);
+  const thread = index === -1 ? null : shown[index];
+  const focused = draft ? DRAFT : thread?.id;
 
   // The sheet covers the lower half of the screen, so the passage moves into the upper part.
   useEffect(() => {
-    const place = !wide && shown ? places().get(shown) : undefined;
+    const place = !wide && focused ? places().get(focused) : undefined;
     if (!place) return;
     const box =
       place.kind === "text"
@@ -412,11 +431,11 @@ export function CommentsSheet() {
       top: box.top - window.innerHeight * 0.2,
       behavior: still ? "auto" : "smooth",
     });
-  }, [shown, wide, places]);
+  }, [focused, wide, places]);
 
   if (wide) return null;
   const step = (by: number) =>
-    setActive(open[(index + by + open.length) % open.length]?.id ?? null);
+    setActive(shown[(index + by + shown.length) % shown.length]?.id ?? null);
   return (
     <Sheet
       open={Boolean(draft || thread)}
@@ -440,7 +459,7 @@ export function CommentsSheet() {
       ) : null}
       {thread ? (
         <>
-          {open.length > 1 ? (
+          {shown.length > 1 ? (
             <div className="sheet-nav">
               <button
                 type="button"
@@ -451,7 +470,7 @@ export function CommentsSheet() {
                 <BackIcon />
               </button>
               <span>
-                {index + 1} of {open.length}
+                {index + 1} of {shown.length}
               </span>
               <button
                 type="button"
@@ -494,72 +513,50 @@ export function ThreadActions({ thread }: { thread: Thread }) {
   );
 }
 
-/** Threads that left the margin: their passage was rewritten, or they were resolved. */
-function useOtherThreads(): { detached: Thread[]; resolved: Thread[] } {
-  const { threads, open } = useComments();
+/** Open threads whose passage was rewritten in a later version, so they left the margin. */
+function useDetached(): Thread[] {
+  const { threads, shown, writable } = useComments();
   return useMemo(() => {
-    const shown = new Set(open.map((thread) => thread.id));
-    return {
-      detached: threads.filter((thread) => thread.status !== "resolved" && !shown.has(thread.id)),
-      resolved: threads.filter((thread) => thread.status === "resolved"),
-    };
-  }, [threads, open]);
+    if (!writable) return [];
+    const inMargin = new Set(shown.map((thread) => thread.id));
+    return threads.filter((thread) => thread.status !== "resolved" && !inMargin.has(thread.id));
+  }, [threads, shown, writable]);
 }
 
-/** On a wide screen, the other threads open from the top of the margin. */
+/** On a wide screen, comments on changed text open from the top of the margin. */
 export function OtherComments() {
-  const { detached, resolved } = useOtherThreads();
+  const detached = useDetached();
   const menuId = useId();
-  if (detached.length === 0 && resolved.length === 0) return null;
-  const label = [
-    detached.length > 0 ? `${detached.length} on changed text` : null,
-    resolved.length > 0 ? `${resolved.length} resolved` : null,
-  ]
-    .filter(Boolean)
-    .join(", ");
+  if (detached.length === 0) return null;
   return (
     <div className="other-comments">
       <button type="button" className="byline-button" popoverTarget={menuId}>
         <CommentIcon />
-        {label}
+        {detached.length} on changed text
         <OpenMenuIcon className="byline-caret" />
       </button>
-      <div id={menuId} popover="auto" className="popover menu other-comments-menu">
-        {detached.length > 0 ? (
-          <section aria-label="Comments on text that changed">
-            <h2 className="menu-title">On text that changed</h2>
-            <OtherThreadList threads={detached} />
-          </section>
-        ) : null}
-        {resolved.length > 0 ? (
-          <section aria-label="Resolved comments">
-            <h2 className="menu-title">Resolved</h2>
-            <OtherThreadList threads={resolved} />
-          </section>
-        ) : null}
+      <div
+        id={menuId}
+        popover="auto"
+        className="popover menu other-comments-menu"
+        aria-label="Comments on text that changed"
+      >
+        <OtherThreadList threads={detached} />
       </div>
     </div>
   );
 }
 
-/** On a phone, the other threads follow the text. */
+/** On a phone, comments on changed text follow the text. */
 export function CommentsEnd() {
-  const { detached, resolved } = useOtherThreads();
-  if (detached.length === 0 && resolved.length === 0) return null;
+  const detached = useDetached();
+  if (detached.length === 0) return null;
   return (
-    <section className="comments-end" aria-label="Other comments">
-      {detached.length > 0 ? (
-        <details open>
-          <summary>Comments on text that changed ({detached.length})</summary>
-          <OtherThreadList threads={detached} />
-        </details>
-      ) : null}
-      {resolved.length > 0 ? (
-        <details>
-          <summary>Resolved ({resolved.length})</summary>
-          <OtherThreadList threads={resolved} />
-        </details>
-      ) : null}
+    <section className="comments-end" aria-label="Comments on text that changed">
+      <details open>
+        <summary>Comments on text that changed ({detached.length})</summary>
+        <OtherThreadList threads={detached} />
+      </details>
     </section>
   );
 }
