@@ -101,11 +101,11 @@ Better Auth owns `user`, `session`, `account`, `verification`, `apikey` and the 
 | `content`   | `sha256`, `markdown`, the gzipped rendered tree, `renderer_version`                                                                          |
 | `folder`    | `id`, `parent_id`, `name`, `position`, `repo` (unique when set)                                                                              |
 | `document`  | `id`, `folder_id`, `position`, `title`, `summary`, `current_version`, `updated_at`, `deleted_at`, `deleted_from`                             |
-| `version`   | `id`, `document_id`, `number`, `sha256`, `author_kind`, `author_id`, `author_name`                                                           |
+| `version`   | `id`, `document_id`, `number`, `sha256`, `files` (name, hash, size, type), `author_kind`, `author_id`, `author_name`                         |
 | `comment`   | `id`, `document_id`, `version_id`, `anchor` (JSON), `body`, `suggestion`, `status` (`open`, `resolved`, `detached`), author, `agent_seen_at` |
 | `reply`     | `id`, `comment_id`, `body`, author, `edited_at`                                                                                              |
 | `sharing`   | `target_kind`, `target_id`, `audience` (`link`, `people`), `people` (JSON), `permission`, `versions` (`current`, `all`), `expires_at`        |
-| `draft`     | `document_id`, `base_version`, `markdown`, `edits`, author: the next version an agent is editing                                             |
+| `draft`     | `document_id`, `base_version`, `markdown`, `files`, `edits`, author: the next version being edited                                           |
 | `read_mark` | `user_id`, `document_id`, `version_number`: what the unread dot compares against                                                             |
 | `agent`     | `id`, `name`, `client_id` or `api_key_id`, `last_used_at`                                                                                    |
 | `search`    | FTS5 over the title and plain text of each document's current version                                                                        |
@@ -142,6 +142,8 @@ Access is checked on the server in every server function, API route and MCP tool
 | `update(id, content, base_version?)`       | Saves a new version and moves open comments onto it              |
 | `edit(id, edits)`                          | Replaces passages in the document's draft                        |
 | `publish_draft(id)`, `discard_draft(id)`   | Saves the draft as the next version, or throws it away           |
+| `attach(id, name, content_base64)`         | Puts a file in the draft; larger ones go by `PUT` to the API     |
+| `detach(id, name)`                         | Takes a file out of the draft                                    |
 | `share(id? \| folder?, who?, …)`           | Reads or sets who else can open a document or folder             |
 | `move(id? \| folder?, to)`                 | Moves a document or folder; creates the target folders           |
 | `rename(id? \| folder?, name)`             | Renames a folder, or retitles a document in a new version        |
@@ -164,3 +166,4 @@ The server's MCP instructions tell the agent to call `guide()` before its first 
 - Responses that depend on a session send `Cache-Control: private, no-store`.
 - Sign-in codes go only to the owner, to people listed on a shared page, and to guests of a page shared for comments.
 - Better Auth reads the client IP from `cf-connecting-ip`, so rate limits apply per visitor.
+- File bytes live in R2 once per hash. `/d/<id>/files/<name>` checks the same access as the document and its versions. Only PNG, JPEG, GIF, WebP and AVIF are served inline; everything else, SVG and HTML included, downloads, and every file carries `nosniff` and a sandboxing `Content-Security-Policy`, so nothing attached runs on the library's origin. A file's type comes from its name, never from the uploader.

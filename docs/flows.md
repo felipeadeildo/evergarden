@@ -79,6 +79,16 @@ Each open comment follows its passage into the new text, even when the paragraph
 
 The line under the title opens the list of versions, each with the comments resolved on it. An older version opens with a banner linking back to the current one. Nobody comments on an older version, and there is no diff view.
 
+## It carries files
+
+A document can carry files beside its markdown, like a folder with `index.md` and what it uses. The markdown names them plainly: `![chart](chart.png)` shows the image, `[the data](data.csv)` becomes a download button with the size, and every file is listed under **Files** after the text.
+
+The agent calls `attach(id, name, content_base64)`, or sends larger files with `curl -T` to `/api/v1/documents/<id>/files/<name>`. You attach with **Attach files** or by dropping them on that list. Either way the files wait in the draft and reach readers with the next version. Each version keeps its own files, so an old version still shows its old chart. A file is at most 10 MB, a document at most 100 MB of them.
+
+## It sits in a folder
+
+When a document shares its folder with others, the side column lists them above the contents, and **Previous** and **Next** after the text lead to its neighbours, as do `[` and `]`. On a phone the list is in the Contents sheet. A guest sees the neighbours only when a folder above was shared with them.
+
 ## You share it
 
 A document has one address, and so does a folder. Sharing changes who may open that address; it never makes a new one. **Share**, in the top bar, sets:

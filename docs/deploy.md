@@ -1,6 +1,6 @@
 # Deploying evergarden
 
-Every evergarden instance is one Worker on the owner's Cloudflare account, with its own D1 database. Nothing in the repository points at a specific account: the configuration names the resources, and Wrangler creates them on the first deploy.
+Every evergarden instance is one Worker on the owner's Cloudflare account, with its own D1 database and an R2 bucket for the files attached to documents. Nothing in the repository points at a specific account: the configuration names the resources, and Wrangler creates them on the first deploy. R2's free tier holds 10 GB.
 
 There are two ways to get an instance. Pick the first if you want to run evergarden; pick the second if you develop it and want each push to `main` deployed.
 
