@@ -1552,6 +1552,10 @@
     color: var(--tone);
   }
 
+  .prose .callout-title {
+    margin-bottom: 0.25em;
+  }
+
   /* Tables */
 
   .table-scroll {
@@ -1720,10 +1724,6 @@
     cursor: zoom-in;
   }
 
-  .diagram-open:hover {
-    background: color-mix(in oklab, var(--sheet) 55%, transparent);
-  }
-
   .diagram-expand {
     position: absolute;
     top: 0.5rem;
@@ -1740,7 +1740,6 @@
     transition: opacity 120ms var(--ease);
   }
 
-  .diagram-open:hover .diagram-expand,
   .diagram-open:focus-visible .diagram-expand {
     opacity: 1;
   }
