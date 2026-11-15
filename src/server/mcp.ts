@@ -2,6 +2,14 @@ import { type CallToolResult, createMcpHandler, McpServer } from "@modelcontextp
 import { z } from "zod";
 
 import { authorOf, type Principal } from "#/server/access";
+import {
+  acceptSuggestion,
+  addReply,
+  commentOn,
+  openComments,
+  openCount,
+  resolve,
+} from "#/server/comments";
 import { EvergardenError } from "#/server/errors";
 import { SYNTAX_GUIDE } from "#/server/guide";
 import {
@@ -17,7 +25,8 @@ import {
 const INSTRUCTIONS = [
   "evergarden stores the documents you write for your user (reports, plans, specs, dossiers)",
   "and the comments they leave on them. Call `guide` before your first `publish` to learn the",
-  "syntax and how your user wants documents written.",
+  "syntax and how your user wants documents written. When your user mentions comments, call",
+  "`open_comments`, then reply, update the document and resolve each thread you addressed.",
 ].join(" ");
 
 export function serveMcp(request: Request, principal: Principal): Promise<Response> {
@@ -112,9 +121,79 @@ function mcpServer(principal: Principal, origin: string): McpServer {
     ({ id, version }) =>
       run(async () => {
         const result = await read(id, version);
-        const header = `<!-- evergarden ${id}, version ${result.version.number} of ${result.document.version}, ${url(id)} -->`;
+        const open = await openCount(id);
+        const comments = open
+          ? `, ${open} open comment${open === 1 ? "" : "s"} (call open_comments)`
+          : "";
+        const header = `<!-- evergarden ${id}, version ${result.version.number} of ${result.document.version}${comments}, ${url(id)} -->`;
         return `${header}\n${result.source}`;
       }),
+  );
+
+  server.registerTool(
+    "open_comments",
+    {
+      description:
+        "Returns open comments as markdown: on one document, or on every document with the ones you have not seen first. Each shows the passage it points at, any suggested replacement and the thread.",
+      inputSchema: z.object({ id: z.string().optional().describe("A document id; omit for all.") }),
+    },
+    ({ id }) => run(() => openComments(id)),
+  );
+
+  server.registerTool(
+    "comment",
+    {
+      description:
+        "Opens a comment on a passage of a document's current version, to ask your user something about it. Quote the passage exactly as it appears in the markdown.",
+      inputSchema: z.object({
+        id: z.string(),
+        passage: z.string().describe("Text that appears exactly once in the current markdown."),
+        body: z.string(),
+      }),
+    },
+    ({ id, passage, body }) =>
+      run(async () => `Commented ${await commentOn(id, { passage, body }, author)} on ${url(id)}`),
+  );
+
+  server.registerTool(
+    "reply",
+    {
+      description: "Replies in a comment's thread.",
+      inputSchema: z.object({ comment_id: z.string(), body: z.string() }),
+    },
+    ({ comment_id, body }) =>
+      run(async () => {
+        await addReply(comment_id, body, author);
+        return `Replied on ${comment_id}.`;
+      }),
+  );
+
+  server.registerTool(
+    "resolve",
+    {
+      description:
+        "Closes a comment's thread, usually after an update that addresses it. The note, one line on what changed, is posted as the last reply.",
+      inputSchema: z.object({ comment_id: z.string(), note: z.string().optional() }),
+    },
+    ({ comment_id, note }) =>
+      run(async () => {
+        await resolve(comment_id, author, note);
+        return `Resolved ${comment_id}.`;
+      }),
+  );
+
+  server.registerTool(
+    "accept_suggestion",
+    {
+      description:
+        "Applies a comment's suggested replacement as a new version of the document, then resolves the comment.",
+      inputSchema: z.object({ comment_id: z.string() }),
+    },
+    ({ comment_id }) =>
+      run(
+        async () =>
+          `Saved version ${await acceptSuggestion(comment_id, author)} with the suggestion.`,
+      ),
   );
 
   server.registerTool(

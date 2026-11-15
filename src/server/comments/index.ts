@@ -67,6 +67,20 @@ export async function threads(documentId: string): Promise<Thread[]> {
     .toSorted((a, b) => order[a.status] - order[b.status] || a.anchor.start - b.anchor.start);
 }
 
+export async function openCount(documentId: string): Promise<number> {
+  const rows = await db
+    .select({ id: comment.id })
+    .from(comment)
+    .where(
+      and(
+        eq(comment.documentId, documentId),
+        or(eq(comment.status, "open"), eq(comment.status, "detached")),
+      ),
+    )
+    .all();
+  return rows.length;
+}
+
 /** Comments on a range of the current version, as the page selected it. */
 export async function addComment(
   documentId: string,
